@@ -1,19 +1,30 @@
-#include <iostream>
 #include <fstream>
-#include <string>
+#include <sstream>
+#include <iostream>
+
+std::string ReadFile(const std::string &filename)
+{
+	std::ifstream file(filename, std::ios::binary);
+	if (!file.is_open())
+	{
+		std::cerr << "Error: Could not open file '" << filename << "'\n";
+		return "";
+	}
+
+	std::ostringstream buffer;
+	buffer << file.rdbuf();
+	return buffer.str();
+}
 
 int main()
 {
-	std::ifstream file("Test.rd");
-	if (!file)
+	std::string source = ReadFile("test.rd");
+	if (source.empty())
 	{
-		std::cerr << "Could not open test.rd\n";
-		return 1;
+		std::cerr << "Error: file is empty or could not be read.\n";
+		return 1; 
 	}
-	std::string line;
-	while (std::getline(file, line))
-	{
-		std::cout << line << "\n";
-	}
+
+	std::cout << source;
 	return 0;
 }
