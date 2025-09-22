@@ -1,7 +1,6 @@
 *.exe
-\build\
-\dist\
-\.pytest_cache\
-\.vscode\
-\.git\
-\.idea
+build/
+dist/
+.pytest_cache/
+.vscode/
+.idea/
