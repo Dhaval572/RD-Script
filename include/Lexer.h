@@ -1,11 +1,11 @@
-#ifndef LEXER_H
-#define LEXER_H
+#pragma once
 
 #include <string>
 #include <vector>
 #include "Token.h"
 
-class t_Lexer {
+class t_Lexer 
+{
 private:
     std::string source;
     std::vector<t_Token> tokens;
@@ -34,5 +34,3 @@ public:
     t_Lexer(const std::string& source);
     std::vector<t_Token> ScanTokens();
 };
-
-#endif // LEXER_H

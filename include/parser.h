@@ -1,5 +1,4 @@
-#ifndef PARSER_H
-#define PARSER_H
+#pragma once
 
 #include <vector>
 #include "Token.h"
@@ -8,7 +7,8 @@
 class t_Expr;
 class t_Stmt;
 
-class t_Parser {
+class t_Parser 
+{
 private:
     std::vector<t_Token> tokens;
     int current;
@@ -44,5 +44,3 @@ public:
     t_Parser(const std::vector<t_Token>& tokens);
     std::vector<t_Stmt*> Parse();
 };
-
-#endif // PARSER_H

@@ -1,11 +1,11 @@
-#ifndef INTERPRETER_H
-#define INTERPRETER_H
+#pragma once
 
 #include <vector>
 #include <unordered_map>
 #include "AST.h"
 
-class t_Interpreter {
+class t_Interpreter 
+{
 private:
     std::unordered_map<std::string, std::string> environment;
 
@@ -17,5 +17,3 @@ public:
     t_Interpreter();
     void Interpret(const std::vector<t_Stmt*>& statements);
 };
-
-#endif // INTERPRETER_H
