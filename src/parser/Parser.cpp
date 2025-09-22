@@ -108,7 +108,8 @@ t_Stmt *t_Parser::DisplayStatement()
 {
     t_Expr *value = Expression();
     Consume(t_TokenType::SEMICOLON, "Expect ';' after value.");
-    return new t_PrintStmt(std::unique_ptr<t_Expr>(value));
+    // Use the new t_DisplayStmt instead of t_PrintStmt
+    return new t_DisplayStmt(std::unique_ptr<t_Expr>(value));
 }
 
 t_Stmt *t_Parser::ExpressionStatement()

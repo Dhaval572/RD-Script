@@ -1,5 +1,7 @@
 #include "Interpreter.h"
 #include <iostream>
+#include <sstream>
+#include <regex>
 
 t_Interpreter::t_Interpreter() {}
 
@@ -32,11 +34,40 @@ void t_Interpreter::Execute(t_Stmt *stmt)
         }
         environment[var_stmt->name] = value;
     }
-    else if (t_PrintStmt *display_stmt = dynamic_cast<t_PrintStmt *>(stmt))
+    else if (t_DisplayStmt *display_stmt = dynamic_cast<t_DisplayStmt *>(stmt))
     {
-        // This is now a Display statement
+        // Handle the new Display statement with format string support
         std::string value = Evaluate(display_stmt->expression.get());
-        std::cout << value << std::endl;
+        // Check if the value is a format string (starts with 'k')
+        if (value.length() > 0 && value[0] == 'k')
+        {
+            // Process format string
+            std::string format_str = value.substr(1); // Remove the 'k' prefix
+            // Replace {variable} patterns with actual values
+            std::string result = format_str;
+            std::regex var_pattern(R"(\{([^}]+)\})");
+            std::smatch match;
+            
+            while (std::regex_search(result, match, var_pattern))
+            {
+                std::string var_name = match[1].str();
+                std::string var_value = "nil";
+                
+                auto it = environment.find(var_name);
+                if (it != environment.end())
+                {
+                    var_value = it->second;
+                }
+                
+                result = std::regex_replace(result, var_pattern, var_value, std::regex_constants::format_first_only);
+            }
+            
+            std::cout << result << std::endl;
+        }
+        else
+        {
+            std::cout << value << std::endl;
+        }
     }
     else if (t_ExpressionStmt *expr_stmt = dynamic_cast<t_ExpressionStmt *>(stmt))
     {
@@ -80,22 +111,82 @@ std::string t_Interpreter::Evaluate(t_Expr *expr)
         switch (binary->op.type)
         {
         case t_TokenType::PLUS:
-            // In a real implementation, we would handle both numbers and strings
-            return left + right;
+            // Check if both operands are numbers for arithmetic addition
+            try {
+                // Try to convert to numbers for arithmetic
+                double left_num = std::stod(left);
+                double right_num = std::stod(right);
+                return std::to_string(left_num + right_num);
+            } catch (...) {
+                // If conversion fails, do string concatenation
+                return left + right;
+            }
         case t_TokenType::MINUS:
-            // In a real implementation, we would convert to numbers and subtract
-            return "result_of_subtraction";
+            // Arithmetic subtraction
+            try {
+                double left_num = std::stod(left);
+                double right_num = std::stod(right);
+                return std::to_string(left_num - right_num);
+            } catch (...) {
+                return "Error: Cannot perform arithmetic operation";
+            }
         case t_TokenType::STAR:
-            // In a real implementation, we would convert to numbers and multiply
-            return "result_of_multiplication";
+            // Arithmetic multiplication
+            try {
+                double left_num = std::stod(left);
+                double right_num = std::stod(right);
+                return std::to_string(left_num * right_num);
+            } catch (...) {
+                return "Error: Cannot perform arithmetic operation";
+            }
         case t_TokenType::SLASH:
-            // In a real implementation, we would convert to numbers and divide
-            return "result_of_division";
+            // Arithmetic division
+            try {
+                double left_num = std::stod(left);
+                double right_num = std::stod(right);
+                if (right_num == 0) {
+                    return "Error: Division by zero";
+                }
+                return std::to_string(left_num / right_num);
+            } catch (...) {
+                return "Error: Cannot perform arithmetic operation";
+            }
         case t_TokenType::BANG_EQUAL:
             return (left != right) ? "true" : "false";
         case t_TokenType::EQUAL_EQUAL:
             return (left == right) ? "true" : "false";
-            // Handle comparison operators...
+        case t_TokenType::GREATER:
+            try {
+                double left_num = std::stod(left);
+                double right_num = std::stod(right);
+                return (left_num > right_num) ? "true" : "false";
+            } catch (...) {
+                return "Error: Cannot compare non-numeric values";
+            }
+        case t_TokenType::GREATER_EQUAL:
+            try {
+                double left_num = std::stod(left);
+                double right_num = std::stod(right);
+                return (left_num >= right_num) ? "true" : "false";
+            } catch (...) {
+                return "Error: Cannot compare non-numeric values";
+            }
+        case t_TokenType::LESS:
+            try {
+                double left_num = std::stod(left);
+                double right_num = std::stod(right);
+                return (left_num < right_num) ? "true" : "false";
+            } catch (...) {
+                return "Error: Cannot compare non-numeric values";
+            }
+        case t_TokenType::LESS_EQUAL:
+            try {
+                double left_num = std::stod(left);
+                double right_num = std::stod(right);
+                return (left_num <= right_num) ? "true" : "false";
+            } catch (...) {
+                return "Error: Cannot compare non-numeric values";
+            }
         }
     }
 

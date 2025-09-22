@@ -69,13 +69,12 @@ struct t_ExpressionStmt : public t_Stmt
         : expression(std::move(expression)) {}
 };
 
-// Note: Using PrintStmt for Display statements for simplicity
-// In a full implementation, we might want a separate DisplayStmt
-struct t_PrintStmt : public t_Stmt
+// Enhanced Display statement with format string support
+struct t_DisplayStmt : public t_Stmt
 {
     std::unique_ptr<t_Expr> expression;
 
-    t_PrintStmt(std::unique_ptr<t_Expr> expression)
+    t_DisplayStmt(std::unique_ptr<t_Expr> expression)
         : expression(std::move(expression)) {}
 };
 

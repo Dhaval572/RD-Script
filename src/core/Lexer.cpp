@@ -20,9 +20,8 @@ static const std::unordered_map<std::string, t_TokenType> keywords =
     {"this", t_TokenType::THIS},
     {"true", t_TokenType::TRUE},
     {"while", t_TokenType::WHILE},
-    {"Auto", t_TokenType::AUTO},
-    {"linkedlist", t_TokenType::LINKEDLIST},
-    {"dynamic_array", t_TokenType::DYNAMIC_ARRAY}
+    {"Auto", t_TokenType::AUTO}
+    // Removed advanced functionality keywords: linkedlist, dynamic_array
 };
 
 t_Lexer::t_Lexer(const std::string &source)
@@ -122,7 +121,17 @@ void t_Lexer::ScanToken()
         }
         else if (std::isalpha(c) || c == '_')
         {
-            Identifier();
+            // Check if this is a format string starting with 'k'
+            if (c == 'k' && Peek() == '"') 
+            {
+                // Consume the opening quote
+                Advance();
+                FormatString();
+            } 
+            else 
+            {
+                Identifier();
+            }
         }
         else
         {
@@ -195,6 +204,29 @@ void t_Lexer::String()
 
     // Trim the surrounding quotes.
     std::string value = source.substr(start + 1, current - start - 2);
+    AddToken(t_TokenType::STRING, value);
+}
+
+void t_Lexer::FormatString()
+{
+    while (Peek() != '"' && !IsAtEnd())
+    {
+        if (Peek() == '\n')
+            line++;
+        Advance();
+    }
+
+    if (IsAtEnd())
+    {
+        // Error: Unterminated string.
+        throw std::runtime_error("Unterminated format string at line " + std::to_string(line));
+    }
+
+    // The closing ".
+    Advance();
+
+    // Trim the surrounding quotes.
+    std::string value = "k" + source.substr(start + 2, current - start - 3); // Include the 'k' prefix
     AddToken(t_TokenType::STRING, value);
 }
 

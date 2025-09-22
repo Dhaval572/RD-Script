@@ -24,6 +24,7 @@ private:
     
     // Helpers for literals
     void String();
+    void FormatString();  // Add this declaration
     void Number();
     void Identifier();
 

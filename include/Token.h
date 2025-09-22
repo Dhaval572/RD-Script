@@ -49,10 +49,9 @@ enum class t_TokenType
     TRUE,
     WHILE,
 
-    // Rubber Duck specific keywords
+    // Rubber Duck specific keywords - keeping only essential ones
     AUTO,
-    LINKEDLIST,
-    DYNAMIC_ARRAY,
+    // Removed advanced functionality keywords: LINKEDLIST, DYNAMIC_ARRAY
 
     EOF_TOKEN
 };
