@@ -1,30 +1,60 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <memory>
+#include "Lexer.h"
+#include "Parser.h"
+#include "Interpreter.h"
 
 std::string ReadFile(const std::string &filename)
 {
-	std::ifstream file(filename, std::ios::binary);
-	if (!file.is_open())
-	{
-		std::cerr << "Error: Could not open file '" << filename << "'\n";
-		return "";
-	}
+    std::ifstream file(filename, std::ios::binary);
+    if (!file.is_open())
+    {
+        std::cerr << "Error: Could not open file '" << filename << "'\n";
+        return "";
+    }
 
-	std::ostringstream buffer;
-	buffer << file.rdbuf();
-	return buffer.str();
+    std::ostringstream buffer;
+    buffer << file.rdbuf();
+    return buffer.str();
 }
 
-int main()
+int main(int argc, char* argv[])
 {
-	std::string source = ReadFile("test.rd");
-	if (source.empty())
-	{
-		std::cerr << "Error: file is empty or could not be read.\n";
-		return 1; 
-	}
+    if (argc < 2) {
+        std::cerr << "Usage: rubberduck <script.rd>\n";
+        return 1;
+    }
 
-	std::cout << source;
-	return 0;
+    std::string source = ReadFile(argv[1]);
+    if (source.empty())
+    {
+        std::cerr << "Error: file is empty or could not be read.\n";
+        return 1; 
+    }
+
+    try {
+        // Lexical analysis
+        t_Lexer lexer(source);
+        std::vector<t_Token> tokens = lexer.ScanTokens();
+
+        // Parsing
+        t_Parser parser(tokens);
+        std::vector<t_Stmt*> statements = parser.Parse();
+
+        // Interpretation
+        t_Interpreter interpreter;
+        interpreter.Interpret(statements);
+
+        // Clean up AST nodes
+        for (t_Stmt* stmt : statements) {
+            delete stmt;
+        }
+    } catch (const std::exception& e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+        return 1;
+    }
+
+    return 0;
 }
