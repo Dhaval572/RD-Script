@@ -1,5 +1,5 @@
 *.exe
-build\
+\build\
 \dist\
 \.pytest_cache\
 \.vscode\
