@@ -1,4 +1,4 @@
-#include "include/Parser.h"
+#include "../include/Parser.h"
 #include "AST.h"
 #include <stdexcept>
 #include <iostream>
