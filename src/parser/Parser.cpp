@@ -43,7 +43,8 @@ bool t_Parser::Check(t_TokenType type)
 
 t_Token t_Parser::Peek()
 {
-    if (current >= tokens.size()) {
+    if (current >= tokens.size())
+    {
         // Return EOF token if we're past the end of the tokens vector
         return t_Token(t_TokenType::EOF_TOKEN, "", "", 0);
     }
@@ -52,7 +53,8 @@ t_Token t_Parser::Peek()
 
 t_Token t_Parser::Previous()
 {
-    if (current <= 0) {
+    if (current <= 0)
+    {
         // Return EOF token if we're at the beginning or before
         return t_Token(t_TokenType::EOF_TOKEN, "", "", 0);
     }
@@ -122,18 +124,18 @@ t_Stmt *t_Parser::VarDeclaration()
 t_Stmt *t_Parser::DisplayStatement()
 {
     std::vector<std::unique_ptr<t_Expr>> values;
-    
+
     // Parse the first expression
     values.push_back(std::unique_ptr<t_Expr>(Expression()));
-    
+
     // Parse additional comma-separated expressions
     while (Match({t_TokenType::COMMA}))
     {
         values.push_back(std::unique_ptr<t_Expr>(Expression()));
     }
-    
+
     Consume(t_TokenType::SEMICOLON, "Expect ';' after value.");
-    
+
     // Use the new t_DisplayStmt instead of t_PrintStmt
     return new t_DisplayStmt(std::move(values));
 }
@@ -224,12 +226,12 @@ t_Expr *t_Parser::Primary()
     {
         return new t_LiteralExpr("false");
     }
-        
+
     if (Match({t_TokenType::TRUE}))
     {
         return new t_LiteralExpr("true");
     }
-    
+
     if (Match({t_TokenType::NIL}))
     {
         return new t_LiteralExpr("nil");

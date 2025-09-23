@@ -4,7 +4,7 @@
 #include <vector>
 #include "Token.h"
 
-class t_Lexer 
+class t_Lexer
 {
 private:
     std::string source;
@@ -17,14 +17,14 @@ private:
     void ScanToken();
     char Advance();
     void AddToken(t_TokenType type);
-    void AddToken(t_TokenType type, const std::string& literal);
+    void AddToken(t_TokenType type, const std::string &literal);
     bool Match(char expected);
     char Peek();
     char PeekNext();
-    
+
     // Helpers for literals
     void String();
-    void FormatString();  // Add this declaration
+    void FormatString(); // Add this declaration
     void Number();
     void Identifier();
 
@@ -32,6 +32,6 @@ private:
     t_TokenType IdentifierType();
 
 public:
-    t_Lexer(const std::string& source);
+    t_Lexer(const std::string &source);
     std::vector<t_Token> ScanTokens();
 };

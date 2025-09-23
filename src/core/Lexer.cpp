@@ -4,24 +4,23 @@
 #include <stdexcept>
 
 static const std::unordered_map<std::string, t_TokenType> keywords =
-{
-    {"and", t_TokenType::AND},
-    {"class", t_TokenType::CLASS},
-    {"else", t_TokenType::ELSE},
-    {"false", t_TokenType::FALSE},
-    {"for", t_TokenType::FOR},
-    {"fun", t_TokenType::FUN},
-    {"if", t_TokenType::IF},
-    {"nil", t_TokenType::NIL},
-    {"or", t_TokenType::OR},
-    {"display", t_TokenType::DISPLAY},
-    {"return", t_TokenType::RETURN},
-    {"super", t_TokenType::SUPER},
-    {"this", t_TokenType::THIS},
-    {"true", t_TokenType::TRUE},
-    {"while", t_TokenType::WHILE},
-    {"auto", t_TokenType::AUTO}
-};
+    {
+        {"and", t_TokenType::AND},
+        {"class", t_TokenType::CLASS},
+        {"else", t_TokenType::ELSE},
+        {"false", t_TokenType::FALSE},
+        {"for", t_TokenType::FOR},
+        {"fun", t_TokenType::FUN},
+        {"if", t_TokenType::IF},
+        {"nil", t_TokenType::NIL},
+        {"or", t_TokenType::OR},
+        {"display", t_TokenType::DISPLAY},
+        {"return", t_TokenType::RETURN},
+        {"super", t_TokenType::SUPER},
+        {"this", t_TokenType::THIS},
+        {"true", t_TokenType::TRUE},
+        {"while", t_TokenType::WHILE},
+        {"auto", t_TokenType::AUTO}};
 
 t_Lexer::t_Lexer(const std::string &source)
     : source(source), start(0), current(0), line(1) {}
@@ -116,10 +115,13 @@ void t_Lexer::ScanToken()
         String();
         break;
     case '$':
-        if (Peek() == '"') {
+        if (Peek() == '"')
+        {
             Advance(); // consume the '"'
             FormatString();
-        } else {
+        }
+        else
+        {
             // Just a regular identifier that starts with $
             Identifier();
         }
@@ -165,7 +167,7 @@ bool t_Lexer::Match(char expected)
     {
         return false;
     }
-        
+
     if (source[current] != expected)
     {
         return false;
@@ -236,7 +238,6 @@ void t_Lexer::FormatString()
     }
     Advance();
 
-    
     std::string value = "$" + source.substr(start + 2, current - start - 3); // Include the '$' prefix
     AddToken(t_TokenType::FORMAT_STRING, value);
 }

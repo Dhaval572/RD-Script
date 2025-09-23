@@ -32,7 +32,7 @@ void t_Interpreter::Execute(t_Stmt *stmt)
         {
             throw std::runtime_error("Variable '" + var_stmt->name + "' already declared");
         }
-        
+
         std::string value = "nil";
         if (var_stmt->initializer)
         {
@@ -43,14 +43,14 @@ void t_Interpreter::Execute(t_Stmt *stmt)
     else if (t_DisplayStmt *display_stmt = dynamic_cast<t_DisplayStmt *>(stmt))
     {
         bool first = true;
-        for (const auto& expr : display_stmt->expressions)
+        for (const auto &expr : display_stmt->expressions)
         {
             if (!first)
             {
                 std::cout << " "; // Add space between values
             }
             first = false;
-            
+
             std::string value = Evaluate(expr.get());
             std::cout << value;
         }
@@ -70,36 +70,37 @@ std::string t_Interpreter::Evaluate(t_Expr *expr)
         if (literal->value.length() > 0 && literal->value[0] == '$')
         {
             // Process format string
-            std::string format_str = literal->value.substr(1); 
+            std::string format_str = literal->value.substr(1);
             std::string result = format_str;
-            
+
             // Improved string replacement approach with better error handling
             size_t pos = 0;
-            while ((pos = result.find('{')) != std::string::npos) 
+            while ((pos = result.find('{')) != std::string::npos)
             {
                 size_t end_pos = result.find('}', pos);
-                if (end_pos != std::string::npos) {
+                if (end_pos != std::string::npos)
+                {
                     std::string expression = result.substr(pos + 1, end_pos - pos - 1);
-                    
+
                     // Trim whitespace from expression
                     expression.erase(0, expression.find_first_not_of(" \t"));
                     expression.erase(expression.find_last_not_of(" \t") + 1);
-                    
+
                     // Evaluate the expression instead of just looking it up as a variable
                     std::string expr_value = EvaluateFormatExpression(expression);
-                    
+
                     result.replace(pos, end_pos - pos + 1, expr_value);
-                } 
-                else 
+                }
+                else
                 {
                     // No closing brace found, treat as literal
                     break;
                 }
             }
-            
+
             return result;
         }
-        
+
         return literal->value;
     }
 
@@ -129,7 +130,7 @@ std::string t_Interpreter::Evaluate(t_Expr *expr)
         switch (binary->op.type)
         {
         case t_TokenType::PLUS:
-            try 
+            try
             {
                 // Try to convert to numbers for arithmetic
                 double left_num = std::stod(left);
@@ -187,46 +188,46 @@ std::string t_Interpreter::Evaluate(t_Expr *expr)
             return (left == right) ? "true" : "false";
 
         case t_TokenType::GREATER:
-            try 
+            try
             {
                 double left_num = std::stod(left);
                 double right_num = std::stod(right);
                 return (left_num > right_num) ? "true" : "false";
-            } 
-            catch (...) 
+            }
+            catch (...)
             {
                 return "Error: Cannot compare non-numeric values";
             }
         case t_TokenType::GREATER_EQUAL:
-            try 
+            try
             {
                 double left_num = std::stod(left);
                 double right_num = std::stod(right);
                 return (left_num >= right_num) ? "true" : "false";
-            } 
-            catch (...) 
+            }
+            catch (...)
             {
                 return "Error: Cannot compare non-numeric values";
             }
         case t_TokenType::LESS:
-            try 
+            try
             {
                 double left_num = std::stod(left);
                 double right_num = std::stod(right);
                 return (left_num < right_num) ? "true" : "false";
-            } 
-            catch (...) 
+            }
+            catch (...)
             {
                 return "Error: Cannot compare non-numeric values";
             }
         case t_TokenType::LESS_EQUAL:
-            try 
+            try
             {
                 double left_num = std::stod(left);
                 double right_num = std::stod(right);
                 return (left_num <= right_num) ? "true" : "false";
             }
-            catch (...) 
+            catch (...)
             {
                 return "Error: Cannot compare non-numeric values";
             }
@@ -240,7 +241,7 @@ std::string t_Interpreter::Evaluate(t_Expr *expr)
         {
             return it->second;
         }
-        return "nil"; 
+        return "nil";
     }
 
     return "";
@@ -252,39 +253,44 @@ std::string t_Interpreter::Stringify(const std::string &value)
     return value;
 }
 
-std::string t_Interpreter::EvaluateFormatExpression(const std::string& expr_str) {
-    try {
+std::string t_Interpreter::EvaluateFormatExpression(const std::string &expr_str)
+{
+    try
+    {
         // Handle empty expressions
-        if (expr_str.empty()) {
+        if (expr_str.empty())
+        {
             return "";
         }
-        
+
         // Create a temporary lexer and parser to evaluate the expression
         t_Lexer lexer(expr_str);
         std::vector<t_Token> tokens = lexer.ScanTokens();
-        
+
         // Remove the EOF token as it's not needed for expression parsing
-        if (!tokens.empty() && tokens.back().type == t_TokenType::EOF_TOKEN) {
+        if (!tokens.empty() && tokens.back().type == t_TokenType::EOF_TOKEN)
+        {
             tokens.pop_back();
         }
-        
+
         // If no tokens or only EOF token, return empty string
-        if (tokens.empty()) {
+        if (tokens.empty())
+        {
             return "";
         }
-        
+
         // Create a parser for the expression
         t_Parser parser(tokens);
-        
+
         // Parse and evaluate the expression
         std::unique_ptr<t_Expr> expr(parser.Expression());
-        if (expr) 
+        if (expr)
         {
             return Evaluate(expr.get());
         }
         return "nil";
     }
-    catch (...) 
+    catch (...)
     {
         // If parsing fails, treat as literal text
         return expr_str;
