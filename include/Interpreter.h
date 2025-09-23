@@ -12,6 +12,7 @@ private:
     std::string Evaluate(t_Expr* expr);
     void Execute(t_Stmt* stmt);
     std::string Stringify(const std::string& value);
+    std::string EvaluateFormatExpression(const std::string& expr_str); // Added declaration
 
 public:
     t_Interpreter();

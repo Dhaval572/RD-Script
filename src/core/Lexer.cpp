@@ -69,6 +69,9 @@ void t_Lexer::ScanToken()
     case '-':
         AddToken(t_TokenType::MINUS);
         break;
+    case '+':
+        AddToken(t_TokenType::PLUS);
+        break;
 
     case ';':
         AddToken(t_TokenType::SEMICOLON);

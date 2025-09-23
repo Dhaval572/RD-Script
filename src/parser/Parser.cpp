@@ -174,7 +174,7 @@ t_Expr *t_Parser::Term()
 {
     t_Expr *expr = Factor();
 
-    while (Match({t_TokenType::MINUS}))
+    while (Match({t_TokenType::MINUS, t_TokenType::PLUS}))
     {
         t_Token op = Previous();
         t_Expr *right = Factor();

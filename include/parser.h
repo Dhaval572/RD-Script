@@ -25,7 +25,6 @@ private:
     std::string Error(t_Token token, const std::string& message);
 
     // Recursive descent parsing functions
-    t_Expr* Expression();
     t_Expr* Equality();
     t_Expr* Comparison();
     t_Expr* Term();
@@ -42,4 +41,5 @@ private:
 public:
     t_Parser(const std::vector<t_Token>& tokens);
     std::vector<t_Stmt*> Parse();
+    t_Expr* Expression(); // Moved to public section
 };

@@ -2,6 +2,9 @@
 #include <iostream>
 #include <sstream>
 #include <regex>
+#include <stack>
+#include "../include/Lexer.h"
+#include "../include/Parser.h"
 
 t_Interpreter::t_Interpreter() {}
 
@@ -49,42 +52,7 @@ void t_Interpreter::Execute(t_Stmt *stmt)
             first = false;
             
             std::string value = Evaluate(expr.get());
-            // Check if this is a format string (starts with $)
-            if (value.length() > 0 && value[0] == '$')
-            {
-                // Process format string
-                std::string format_str = value.substr(1); 
-                std::string result = format_str;
-                
-                // Simple string replacement approach
-                size_t pos = 0;
-                while ((pos = result.find('{')) != std::string::npos) 
-                {
-                    size_t end_pos = result.find('}', pos);
-                    if (end_pos != std::string::npos) {
-                        std::string var_name = result.substr(pos + 1, end_pos - pos - 1);
-                        std::string var_value = "nil";
-                        
-                        auto it = environment.find(var_name);
-                        if (it != environment.end())
-                        {
-                            var_value = it->second;
-                        }
-                        
-                        result.replace(pos, end_pos - pos + 1, var_value);
-                    } 
-                    else 
-                    {
-                        break; // No closing brace found
-                    }
-                }
-                
-                std::cout << result;
-            }
-            else
-            {
-                std::cout << value;
-            }
+            std::cout << value;
         }
         std::cout << std::endl;
     }
@@ -98,6 +66,40 @@ std::string t_Interpreter::Evaluate(t_Expr *expr)
 {
     if (t_LiteralExpr *literal = dynamic_cast<t_LiteralExpr *>(expr))
     {
+        // Check if this is a format string (starts with $)
+        if (literal->value.length() > 0 && literal->value[0] == '$')
+        {
+            // Process format string
+            std::string format_str = literal->value.substr(1); 
+            std::string result = format_str;
+            
+            // Improved string replacement approach with better error handling
+            size_t pos = 0;
+            while ((pos = result.find('{')) != std::string::npos) 
+            {
+                size_t end_pos = result.find('}', pos);
+                if (end_pos != std::string::npos) {
+                    std::string expression = result.substr(pos + 1, end_pos - pos - 1);
+                    
+                    // Trim whitespace from expression
+                    expression.erase(0, expression.find_first_not_of(" \t"));
+                    expression.erase(expression.find_last_not_of(" \t") + 1);
+                    
+                    // Evaluate the expression instead of just looking it up as a variable
+                    std::string expr_value = EvaluateFormatExpression(expression);
+                    
+                    result.replace(pos, end_pos - pos + 1, expr_value);
+                } 
+                else 
+                {
+                    // No closing brace found, treat as literal
+                    break;
+                }
+            }
+            
+            return result;
+        }
+        
         return literal->value;
     }
 
@@ -126,6 +128,20 @@ std::string t_Interpreter::Evaluate(t_Expr *expr)
 
         switch (binary->op.type)
         {
+        case t_TokenType::PLUS:
+            try 
+            {
+                // Try to convert to numbers for arithmetic
+                double left_num = std::stod(left);
+                double right_num = std::stod(right);
+                return std::to_string(left_num + right_num);
+            }
+            catch (...)
+            {
+                // If not numbers, prevent string concatenation
+                throw std::runtime_error("String concatenation with '+' is not allowed. Use comma-separated values in display statements instead.");
+            }
+
         case t_TokenType::MINUS:
             try
             {
@@ -234,4 +250,35 @@ std::string t_Interpreter::Stringify(const std::string &value)
 {
     // In a real implementation, we would handle different types
     return value;
+}
+
+std::string t_Interpreter::EvaluateFormatExpression(const std::string& expr_str) {
+    try {
+        // Create a temporary lexer and parser to evaluate the expression
+        t_Lexer lexer(expr_str);
+        std::vector<t_Token> tokens = lexer.ScanTokens();
+        
+        // Remove the EOF token as it's not needed for expression parsing
+        if (!tokens.empty() && tokens.back().type == t_TokenType::EOF_TOKEN) {
+            tokens.pop_back();
+        }
+        
+        // If no tokens, return empty string
+        if (tokens.empty()) {
+            return "";
+        }
+        
+        // Create a parser for the expression
+        t_Parser parser(tokens);
+        
+        // Parse and evaluate the expression
+        // We need to create a simple statement wrapper to parse an expression
+        // This is a simplified approach - in a full implementation, we'd have a direct expression parser
+        std::unique_ptr<t_Expr> expr(parser.Expression());
+        return Evaluate(expr.get());
+    }
+    catch (...) {
+        // If parsing fails, treat as literal text
+        return expr_str;
+    }
 }
