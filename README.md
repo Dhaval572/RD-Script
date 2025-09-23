@@ -56,11 +56,11 @@ This project follows specific C++ coding guidelines documented in [CODING_GUIDEL
 ## Current Implementation Status
 
 The interpreter currently supports:
-* Variable declarations (`Auto name = value;`)
+* Variable declarations (`auto name = value;`)
 * Expressions with arithmetic operations (`+`, `-`, `*`, [/](file://c:\Users\LENOVO\Documents\RD%20Script\RD-Script\build\Debug\README.md))
 * Comparison operations (`==`, `!=`, `<`, `>`, `<=`, `>=`)
 * Logical operations (`!`)
-* Display statements (`Display(expression);`)
+* Display statements (`display(expression);`)
 * Grouping with parentheses
 * String and number literals
 * Variable references
@@ -90,22 +90,22 @@ cmake --build .
 
 ### Hello World
 ```rubberduck
-Display("Hello, Rubber Duck!");
+display("Hello, Rubber Duck!");
 ```
 
 ### Variables
 ```rubberduck
-Auto name = "Rubber Duck";
-Auto age = 5;
-Display(name + " is " + age + " years old");
+auto name = "Rubber Duck";
+auto age = 5;
+display(name + " is " + age + " years old");
 ```
 
 ### Expressions
 ```rubberduck
-Auto a = 10;
-Auto b = 20;
-Auto sum = a + b;
-Auto product = a * b;
-Display("Sum: " + sum);
-Display("Product: " + product);
+auto a = 10;
+auto b = 20;
+auto sum = a + b;
+auto product = a * b;
+display("Sum: " + sum);
+display("Product: " + product);
 ```

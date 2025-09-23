@@ -217,7 +217,7 @@ t_Expr *t_Parser::Primary()
         return new t_LiteralExpr("nil");
     }
 
-    if (Match({t_TokenType::NUMBER, t_TokenType::STRING}))
+    if (Match({t_TokenType::NUMBER, t_TokenType::STRING, t_TokenType::FORMAT_STRING}))
     {
         return new t_LiteralExpr(Previous().literal);
     }

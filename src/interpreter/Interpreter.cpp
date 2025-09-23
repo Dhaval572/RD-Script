@@ -34,26 +34,34 @@ void t_Interpreter::Execute(t_Stmt *stmt)
     else if (t_DisplayStmt *display_stmt = dynamic_cast<t_DisplayStmt *>(stmt))
     {
         std::string value = Evaluate(display_stmt->expression.get());
-        if (value.length() > 0 && value[0] == 'k')
+        // Check if this is a format string (starts with $)
+        if (value.length() > 0 && value[0] == '$')
         {
             // Process format string
             std::string format_str = value.substr(1); 
             std::string result = format_str;
-            std::regex var_pattern(R"(\{([^}]+)\})");
-            std::smatch match;
             
-            while (std::regex_search(result, match, var_pattern))
+            // Simple string replacement approach
+            size_t pos = 0;
+            while ((pos = result.find('{')) != std::string::npos) 
             {
-                std::string var_name = match[1].str();
-                std::string var_value = "nil";
-                
-                auto it = environment.find(var_name);
-                if (it != environment.end())
+                size_t end_pos = result.find('}', pos);
+                if (end_pos != std::string::npos) {
+                    std::string var_name = result.substr(pos + 1, end_pos - pos - 1);
+                    std::string var_value = "nil";
+                    
+                    auto it = environment.find(var_name);
+                    if (it != environment.end())
+                    {
+                        var_value = it->second;
+                    }
+                    
+                    result.replace(pos, end_pos - pos + 1, var_value);
+                } 
+                else 
                 {
-                    var_value = it->second;
+                    break; // No closing brace found
                 }
-                
-                result = std::regex_replace(result, var_pattern, var_value, std::regex_constants::format_first_only);
             }
             
             std::cout << result << std::endl;
@@ -111,6 +119,12 @@ std::string t_Interpreter::Evaluate(t_Expr *expr)
             }
             catch (...)
             {
+                // If not numbers, concatenate as strings
+                // Check if left is a format string
+                if (left.length() > 0 && left[0] == '$') 
+                {
+                    return left + right;
+                }
                 return left + right;
             }
 

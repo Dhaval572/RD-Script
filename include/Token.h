@@ -29,6 +29,7 @@ enum class t_TokenType
     // Literals
     IDENTIFIER,
     STRING,
+    FORMAT_STRING,
     NUMBER,
 
     // Keywords

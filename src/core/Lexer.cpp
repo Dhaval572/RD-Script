@@ -14,13 +14,13 @@ static const std::unordered_map<std::string, t_TokenType> keywords =
     {"if", t_TokenType::IF},
     {"nil", t_TokenType::NIL},
     {"or", t_TokenType::OR},
-    {"Display", t_TokenType::DISPLAY},
+    {"display", t_TokenType::DISPLAY},
     {"return", t_TokenType::RETURN},
     {"super", t_TokenType::SUPER},
     {"this", t_TokenType::THIS},
     {"true", t_TokenType::TRUE},
     {"while", t_TokenType::WHILE},
-    {"Auto", t_TokenType::AUTO}
+    {"auto", t_TokenType::AUTO}
 };
 
 t_Lexer::t_Lexer(const std::string &source)
@@ -114,6 +114,15 @@ void t_Lexer::ScanToken()
     case '"':
         String();
         break;
+    case '$':
+        if (Peek() == '"') {
+            Advance(); // consume the '"'
+            FormatString();
+        } else {
+            // Just a regular identifier that starts with $
+            Identifier();
+        }
+        break;
     default:
         if (std::isdigit(c))
         {
@@ -121,17 +130,7 @@ void t_Lexer::ScanToken()
         }
         else if (std::isalpha(c) || c == '_')
         {
-            // Check if this is a format string starting with 'k'
-            if (c == 'k' && Peek() == '"') 
-            {
-                // Consume the opening quote
-                Advance();
-                FormatString();
-            } 
-            else 
-            {
-                Identifier();
-            }
+            Identifier();
         }
         else
         {
@@ -236,9 +235,9 @@ void t_Lexer::FormatString()
     }
     Advance();
 
-    // Trim the surrounding quotes.
-    std::string value = "k" + source.substr(start + 2, current - start - 3); // Include the 'k' prefix
-    AddToken(t_TokenType::STRING, value);
+    
+    std::string value = "$" + source.substr(start + 2, current - start - 3); // Include the '$' prefix
+    AddToken(t_TokenType::FORMAT_STRING, value);
 }
 
 void t_Lexer::Number()
