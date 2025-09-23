@@ -11,7 +11,6 @@ enum class t_TokenType
     COMMA,
     DOT,
     MINUS,
-    PLUS,
     SEMICOLON,
     SLASH,
     STAR,

@@ -57,10 +57,10 @@ This project follows specific C++ coding guidelines documented in [CODING_GUIDEL
 
 The interpreter currently supports:
 * Variable declarations (`auto name = value;`)
-* Expressions with arithmetic operations (`+`, `-`, `*`, [/](file://c:\Users\LENOVO\Documents\RD%20Script\RD-Script\build\Debug\README.md))
+* Expressions with arithmetic operations (`-`, `*`, `/`)
 * Comparison operations (`==`, `!=`, `<`, `>`, `<=`, `>=`)
 * Logical operations (`!`)
-* Display statements (`display(expression);`)
+* Display statements with comma-separated values (`display(value1, value2, ...);`)
 * Grouping with parentheses
 * String and number literals
 * Variable references
@@ -97,15 +97,15 @@ display("Hello, Rubber Duck!");
 ```rubberduck
 auto name = "Rubber Duck";
 auto age = 5;
-display(name + " is " + age + " years old");
+display(name, "is", age, "years old");
 ```
 
 ### Expressions
 ```rubberduck
 auto a = 10;
 auto b = 20;
-auto sum = a + b;
+auto difference = a - b;
 auto product = a * b;
-display("Sum: " + sum);
-display("Product: " + product);
+display("Difference:", difference);
+display("Product:", product);
 ```

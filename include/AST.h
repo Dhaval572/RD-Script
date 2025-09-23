@@ -72,10 +72,10 @@ struct t_ExpressionStmt : public t_Stmt
 // Enhanced Display statement with format string support
 struct t_DisplayStmt : public t_Stmt
 {
-    std::unique_ptr<t_Expr> expression;
+    std::vector<std::unique_ptr<t_Expr>> expressions;
 
-    t_DisplayStmt(std::unique_ptr<t_Expr> expression)
-        : expression(std::move(expression)) {}
+    t_DisplayStmt(std::vector<std::unique_ptr<t_Expr>> expressions)
+        : expressions(std::move(expressions)) {}
 };
 
 struct t_VarStmt : public t_Stmt

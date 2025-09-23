@@ -33,43 +33,54 @@ void t_Interpreter::Execute(t_Stmt *stmt)
     }
     else if (t_DisplayStmt *display_stmt = dynamic_cast<t_DisplayStmt *>(stmt))
     {
-        std::string value = Evaluate(display_stmt->expression.get());
-        // Check if this is a format string (starts with $)
-        if (value.length() > 0 && value[0] == '$')
+        bool first = true;
+        for (const auto& expr : display_stmt->expressions)
         {
-            // Process format string
-            std::string format_str = value.substr(1); 
-            std::string result = format_str;
-            
-            // Simple string replacement approach
-            size_t pos = 0;
-            while ((pos = result.find('{')) != std::string::npos) 
+            if (!first)
             {
-                size_t end_pos = result.find('}', pos);
-                if (end_pos != std::string::npos) {
-                    std::string var_name = result.substr(pos + 1, end_pos - pos - 1);
-                    std::string var_value = "nil";
-                    
-                    auto it = environment.find(var_name);
-                    if (it != environment.end())
-                    {
-                        var_value = it->second;
-                    }
-                    
-                    result.replace(pos, end_pos - pos + 1, var_value);
-                } 
-                else 
-                {
-                    break; // No closing brace found
-                }
+                std::cout << " "; // Add space between values
             }
+            first = false;
             
-            std::cout << result << std::endl;
+            std::string value = Evaluate(expr.get());
+            // Check if this is a format string (starts with $)
+            if (value.length() > 0 && value[0] == '$')
+            {
+                // Process format string
+                std::string format_str = value.substr(1); 
+                std::string result = format_str;
+                
+                // Simple string replacement approach
+                size_t pos = 0;
+                while ((pos = result.find('{')) != std::string::npos) 
+                {
+                    size_t end_pos = result.find('}', pos);
+                    if (end_pos != std::string::npos) {
+                        std::string var_name = result.substr(pos + 1, end_pos - pos - 1);
+                        std::string var_value = "nil";
+                        
+                        auto it = environment.find(var_name);
+                        if (it != environment.end())
+                        {
+                            var_value = it->second;
+                        }
+                        
+                        result.replace(pos, end_pos - pos + 1, var_value);
+                    } 
+                    else 
+                    {
+                        break; // No closing brace found
+                    }
+                }
+                
+                std::cout << result;
+            }
+            else
+            {
+                std::cout << value;
+            }
         }
-        else
-        {
-            std::cout << value << std::endl;
-        }
+        std::cout << std::endl;
     }
     else if (t_ExpressionStmt *expr_stmt = dynamic_cast<t_ExpressionStmt *>(stmt))
     {
@@ -109,25 +120,6 @@ std::string t_Interpreter::Evaluate(t_Expr *expr)
 
         switch (binary->op.type)
         {
-        case t_TokenType::PLUS:
-            try 
-            {
-                // Try to convert to numbers for arithmetic
-                double left_num = std::stod(left);
-                double right_num = std::stod(right);
-                return std::to_string(left_num + right_num);
-            }
-            catch (...)
-            {
-                // If not numbers, concatenate as strings
-                // Check if left is a format string
-                if (left.length() > 0 && left[0] == '$') 
-                {
-                    return left + right;
-                }
-                return left + right;
-            }
-
         case t_TokenType::MINUS:
             try
             {

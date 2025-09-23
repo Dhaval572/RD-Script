@@ -113,11 +113,21 @@ t_Stmt *t_Parser::VarDeclaration()
 
 t_Stmt *t_Parser::DisplayStatement()
 {
-    t_Expr *value = Expression();
+    std::vector<std::unique_ptr<t_Expr>> values;
+    
+    // Parse the first expression
+    values.push_back(std::unique_ptr<t_Expr>(Expression()));
+    
+    // Parse additional comma-separated expressions
+    while (Match({t_TokenType::COMMA}))
+    {
+        values.push_back(std::unique_ptr<t_Expr>(Expression()));
+    }
+    
     Consume(t_TokenType::SEMICOLON, "Expect ';' after value.");
     
     // Use the new t_DisplayStmt instead of t_PrintStmt
-    return new t_DisplayStmt(std::unique_ptr<t_Expr>(value));
+    return new t_DisplayStmt(std::move(values));
 }
 
 t_Stmt *t_Parser::ExpressionStatement()
@@ -164,7 +174,7 @@ t_Expr *t_Parser::Term()
 {
     t_Expr *expr = Factor();
 
-    while (Match({t_TokenType::MINUS, t_TokenType::PLUS}))
+    while (Match({t_TokenType::MINUS}))
     {
         t_Token op = Previous();
         t_Expr *right = Factor();
