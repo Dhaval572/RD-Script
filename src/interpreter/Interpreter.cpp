@@ -24,6 +24,12 @@ void t_Interpreter::Execute(t_Stmt *stmt)
 {
     if (t_VarStmt *var_stmt = dynamic_cast<t_VarStmt *>(stmt))
     {
+        // Check if variable already exists
+        if (environment.find(var_stmt->name) != environment.end())
+        {
+            throw std::runtime_error("Variable '" + var_stmt->name + "' already declared");
+        }
+        
         std::string value = "nil";
         if (var_stmt->initializer)
         {
