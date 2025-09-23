@@ -22,9 +22,6 @@ void t_Interpreter::Interpret(const std::vector<t_Stmt *> &statements)
 
 void t_Interpreter::Execute(t_Stmt *stmt)
 {
-    // In a real implementation, we would use the visitor pattern
-    // For simplicity, we'll use dynamic casting here
-
     if (t_VarStmt *var_stmt = dynamic_cast<t_VarStmt *>(stmt))
     {
         std::string value = "nil";
@@ -36,14 +33,11 @@ void t_Interpreter::Execute(t_Stmt *stmt)
     }
     else if (t_DisplayStmt *display_stmt = dynamic_cast<t_DisplayStmt *>(stmt))
     {
-        // Handle the new Display statement with format string support
         std::string value = Evaluate(display_stmt->expression.get());
-        // Check if the value is a format string (starts with 'k')
         if (value.length() > 0 && value[0] == 'k')
         {
             // Process format string
-            std::string format_str = value.substr(1); // Remove the 'k' prefix
-            // Replace {variable} patterns with actual values
+            std::string format_str = value.substr(1); 
             std::string result = format_str;
             std::regex var_pattern(R"(\{([^}]+)\})");
             std::smatch match;
@@ -73,7 +67,6 @@ void t_Interpreter::Execute(t_Stmt *stmt)
     {
         Evaluate(expr_stmt->expression.get());
     }
-    // Handle other statement types...
 }
 
 std::string t_Interpreter::Evaluate(t_Expr *expr)
@@ -91,14 +84,12 @@ std::string t_Interpreter::Evaluate(t_Expr *expr)
     if (t_UnaryExpr *unary = dynamic_cast<t_UnaryExpr *>(expr))
     {
         std::string right = Evaluate(unary->right.get());
-
         switch (unary->op.type)
         {
         case t_TokenType::MINUS:
-            // In a real implementation, we would convert to number and negate
             return "-" + right;
+
         case t_TokenType::BANG:
-            // In a real implementation, we would convert to boolean and negate
             return (right == "false" || right == "0") ? "true" : "false";
         }
     }
@@ -111,80 +102,104 @@ std::string t_Interpreter::Evaluate(t_Expr *expr)
         switch (binary->op.type)
         {
         case t_TokenType::PLUS:
-            // Check if both operands are numbers for arithmetic addition
-            try {
+            try 
+            {
                 // Try to convert to numbers for arithmetic
                 double left_num = std::stod(left);
                 double right_num = std::stod(right);
                 return std::to_string(left_num + right_num);
-            } catch (...) {
-                // If conversion fails, do string concatenation
+            }
+            catch (...)
+            {
                 return left + right;
             }
+
         case t_TokenType::MINUS:
-            // Arithmetic subtraction
-            try {
+            try
+            {
                 double left_num = std::stod(left);
                 double right_num = std::stod(right);
                 return std::to_string(left_num - right_num);
-            } catch (...) {
+            }
+            catch (...)
+            {
                 return "Error: Cannot perform arithmetic operation";
             }
+
         case t_TokenType::STAR:
-            // Arithmetic multiplication
-            try {
+            try
+            {
                 double left_num = std::stod(left);
                 double right_num = std::stod(right);
                 return std::to_string(left_num * right_num);
-            } catch (...) {
+            }
+            catch (...)
+            {
                 return "Error: Cannot perform arithmetic operation";
             }
         case t_TokenType::SLASH:
-            // Arithmetic division
-            try {
+            try
+            {
                 double left_num = std::stod(left);
                 double right_num = std::stod(right);
-                if (right_num == 0) {
+                if (right_num == 0)
+                {
                     return "Error: Division by zero";
                 }
                 return std::to_string(left_num / right_num);
-            } catch (...) {
+            }
+            catch (...)
+            {
                 return "Error: Cannot perform arithmetic operation";
             }
         case t_TokenType::BANG_EQUAL:
             return (left != right) ? "true" : "false";
+
         case t_TokenType::EQUAL_EQUAL:
             return (left == right) ? "true" : "false";
+
         case t_TokenType::GREATER:
-            try {
+            try 
+            {
                 double left_num = std::stod(left);
                 double right_num = std::stod(right);
                 return (left_num > right_num) ? "true" : "false";
-            } catch (...) {
+            } 
+            catch (...) 
+            {
                 return "Error: Cannot compare non-numeric values";
             }
         case t_TokenType::GREATER_EQUAL:
-            try {
+            try 
+            {
                 double left_num = std::stod(left);
                 double right_num = std::stod(right);
                 return (left_num >= right_num) ? "true" : "false";
-            } catch (...) {
+            } 
+            catch (...) 
+            {
                 return "Error: Cannot compare non-numeric values";
             }
         case t_TokenType::LESS:
-            try {
+            try 
+            {
                 double left_num = std::stod(left);
                 double right_num = std::stod(right);
                 return (left_num < right_num) ? "true" : "false";
-            } catch (...) {
+            } 
+            catch (...) 
+            {
                 return "Error: Cannot compare non-numeric values";
             }
         case t_TokenType::LESS_EQUAL:
-            try {
+            try 
+            {
                 double left_num = std::stod(left);
                 double right_num = std::stod(right);
                 return (left_num <= right_num) ? "true" : "false";
-            } catch (...) {
+            }
+            catch (...) 
+            {
                 return "Error: Cannot compare non-numeric values";
             }
         }
@@ -197,10 +212,9 @@ std::string t_Interpreter::Evaluate(t_Expr *expr)
         {
             return it->second;
         }
-        return "nil"; // Or throw an error for undefined variables
+        return "nil"; 
     }
 
-    // In a real implementation, we would handle all cases
     return "";
 }
 

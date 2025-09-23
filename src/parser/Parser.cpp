@@ -25,14 +25,19 @@ bool t_Parser::IsAtEnd()
 t_Token t_Parser::Advance()
 {
     if (!IsAtEnd())
+    {
         current++;
+    }
     return Previous();
 }
 
 bool t_Parser::Check(t_TokenType type)
 {
     if (IsAtEnd())
+    {
         return false;
+    }
+
     return Peek().type == type;
 }
 
@@ -63,7 +68,9 @@ bool t_Parser::Match(std::initializer_list<t_TokenType> types)
 t_Token t_Parser::Consume(t_TokenType type, const std::string &message)
 {
     if (Check(type))
+    {
         return Advance();
+    }
 
     throw std::runtime_error(message + " at line " + std::to_string(Peek().line));
 }
@@ -108,6 +115,7 @@ t_Stmt *t_Parser::DisplayStatement()
 {
     t_Expr *value = Expression();
     Consume(t_TokenType::SEMICOLON, "Expect ';' after value.");
+    
     // Use the new t_DisplayStmt instead of t_PrintStmt
     return new t_DisplayStmt(std::unique_ptr<t_Expr>(value));
 }
@@ -195,11 +203,19 @@ t_Expr *t_Parser::Unary()
 t_Expr *t_Parser::Primary()
 {
     if (Match({t_TokenType::FALSE}))
+    {
         return new t_LiteralExpr("false");
+    }
+        
     if (Match({t_TokenType::TRUE}))
+    {
         return new t_LiteralExpr("true");
+    }
+    
     if (Match({t_TokenType::NIL}))
+    {
         return new t_LiteralExpr("nil");
+    }
 
     if (Match({t_TokenType::NUMBER, t_TokenType::STRING}))
     {

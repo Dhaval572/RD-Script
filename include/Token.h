@@ -1,5 +1,4 @@
 #pragma once
-
 #include <string>
 
 enum class t_TokenType

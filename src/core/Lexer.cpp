@@ -21,7 +21,6 @@ static const std::unordered_map<std::string, t_TokenType> keywords =
     {"true", t_TokenType::TRUE},
     {"while", t_TokenType::WHILE},
     {"Auto", t_TokenType::AUTO}
-    // Removed advanced functionality keywords: linkedlist, dynamic_array
 };
 
 t_Lexer::t_Lexer(const std::string &source)
@@ -96,7 +95,9 @@ void t_Lexer::ScanToken()
         {
             // A comment goes until the end of the line.
             while (Peek() != '\n' && !IsAtEnd())
+            {
                 Advance();
+            }
         }
         else
         {
@@ -106,7 +107,6 @@ void t_Lexer::ScanToken()
     case ' ':
     case '\r':
     case '\t':
-        // Ignore whitespace.
         break;
     case '\n':
         line++;
@@ -162,9 +162,14 @@ void t_Lexer::AddToken(t_TokenType type, const std::string &literal)
 bool t_Lexer::Match(char expected)
 {
     if (IsAtEnd())
+    {
         return false;
+    }
+        
     if (source[current] != expected)
+    {
         return false;
+    }
 
     current++;
     return true;
@@ -173,14 +178,18 @@ bool t_Lexer::Match(char expected)
 char t_Lexer::Peek()
 {
     if (IsAtEnd())
+    {
         return '\0';
+    }
     return source[current];
 }
 
 char t_Lexer::PeekNext()
 {
     if (current + 1 >= static_cast<int>(source.length()))
+    {
         return '\0';
+    }
     return source[current + 1];
 }
 
@@ -189,7 +198,9 @@ void t_Lexer::String()
     while (Peek() != '"' && !IsAtEnd())
     {
         if (Peek() == '\n')
+        {
             line++;
+        }
         Advance();
     }
 
@@ -212,7 +223,9 @@ void t_Lexer::FormatString()
     while (Peek() != '"' && !IsAtEnd())
     {
         if (Peek() == '\n')
+        {
             line++;
+        }
         Advance();
     }
 
@@ -221,8 +234,6 @@ void t_Lexer::FormatString()
         // Error: Unterminated string.
         throw std::runtime_error("Unterminated format string at line " + std::to_string(line));
     }
-
-    // The closing ".
     Advance();
 
     // Trim the surrounding quotes.
@@ -233,16 +244,19 @@ void t_Lexer::FormatString()
 void t_Lexer::Number()
 {
     while (std::isdigit(Peek()))
+    {
         Advance();
+    }
 
     // Look for a fractional part.
     if (Peek() == '.' && std::isdigit(PeekNext()))
     {
-        // Consume the "."
         Advance();
 
         while (std::isdigit(Peek()))
+        {
             Advance();
+        }
     }
 
     AddToken(t_TokenType::NUMBER, source.substr(start, current - start));
@@ -251,7 +265,9 @@ void t_Lexer::Number()
 void t_Lexer::Identifier()
 {
     while (std::isalnum(Peek()) || Peek() == '_')
+    {
         Advance();
+    }
 
     std::string text = source.substr(start, current - start);
     t_TokenType type = t_TokenType::IDENTIFIER;
