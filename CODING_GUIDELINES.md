@@ -52,7 +52,7 @@
 ## File Organization
 
 1. **Header Files (.h)**:
-   - Use include guards: `#ifndef FILENAME_H #define FILENAME_H ... #endif`
+   - Use include guards: `#pragma once`
    - Declare classes, functions, and constants
    - Include minimal necessary headers
 
