@@ -254,6 +254,11 @@ std::string t_Interpreter::Stringify(const std::string &value)
 
 std::string t_Interpreter::EvaluateFormatExpression(const std::string& expr_str) {
     try {
+        // Handle empty expressions
+        if (expr_str.empty()) {
+            return "";
+        }
+        
         // Create a temporary lexer and parser to evaluate the expression
         t_Lexer lexer(expr_str);
         std::vector<t_Token> tokens = lexer.ScanTokens();
@@ -263,7 +268,7 @@ std::string t_Interpreter::EvaluateFormatExpression(const std::string& expr_str)
             tokens.pop_back();
         }
         
-        // If no tokens, return empty string
+        // If no tokens or only EOF token, return empty string
         if (tokens.empty()) {
             return "";
         }
@@ -272,12 +277,15 @@ std::string t_Interpreter::EvaluateFormatExpression(const std::string& expr_str)
         t_Parser parser(tokens);
         
         // Parse and evaluate the expression
-        // We need to create a simple statement wrapper to parse an expression
-        // This is a simplified approach - in a full implementation, we'd have a direct expression parser
         std::unique_ptr<t_Expr> expr(parser.Expression());
-        return Evaluate(expr.get());
+        if (expr) 
+        {
+            return Evaluate(expr.get());
+        }
+        return "nil";
     }
-    catch (...) {
+    catch (...) 
+    {
         // If parsing fails, treat as literal text
         return expr_str;
     }

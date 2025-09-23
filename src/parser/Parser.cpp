@@ -43,11 +43,19 @@ bool t_Parser::Check(t_TokenType type)
 
 t_Token t_Parser::Peek()
 {
+    if (current >= tokens.size()) {
+        // Return EOF token if we're past the end of the tokens vector
+        return t_Token(t_TokenType::EOF_TOKEN, "", "", 0);
+    }
     return tokens[current];
 }
 
 t_Token t_Parser::Previous()
 {
+    if (current <= 0) {
+        // Return EOF token if we're at the beginning or before
+        return t_Token(t_TokenType::EOF_TOKEN, "", "", 0);
+    }
     return tokens[current - 1];
 }
 
