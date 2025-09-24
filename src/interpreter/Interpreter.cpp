@@ -6,7 +6,7 @@
 #include "../include/Lexer.h"
 #include "../include/Parser.h"
 
-t_Interpreter::t_Interpreter() {}
+t_Interpreter::t_Interpreter() = default;
 
 void t_Interpreter::Interpret(const std::vector<t_Stmt *> &statements)
 {

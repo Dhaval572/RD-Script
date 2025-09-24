@@ -4,23 +4,24 @@
 #include <stdexcept>
 
 static const std::unordered_map<std::string, t_TokenType> keywords =
-    {
-        {"and", t_TokenType::AND},
-        {"class", t_TokenType::CLASS},
-        {"else", t_TokenType::ELSE},
-        {"false", t_TokenType::FALSE},
-        {"for", t_TokenType::FOR},
-        {"fun", t_TokenType::FUN},
-        {"if", t_TokenType::IF},
-        {"nil", t_TokenType::NIL},
-        {"or", t_TokenType::OR},
-        {"display", t_TokenType::DISPLAY},
-        {"return", t_TokenType::RETURN},
-        {"super", t_TokenType::SUPER},
-        {"this", t_TokenType::THIS},
-        {"true", t_TokenType::TRUE},
-        {"while", t_TokenType::WHILE},
-        {"auto", t_TokenType::AUTO}};
+{
+    {"and", t_TokenType::AND},
+    {"class", t_TokenType::CLASS},
+    {"else", t_TokenType::ELSE},
+    {"false", t_TokenType::FALSE},
+    {"for", t_TokenType::FOR},
+    {"fun", t_TokenType::FUN},
+    {"if", t_TokenType::IF},
+    {"nil", t_TokenType::NIL},
+    {"or", t_TokenType::OR},
+    {"display", t_TokenType::DISPLAY},
+    {"return", t_TokenType::RETURN},
+    {"super", t_TokenType::SUPER},
+    {"this", t_TokenType::THIS},
+    {"true", t_TokenType::TRUE},
+    {"while", t_TokenType::WHILE},
+    {"auto", t_TokenType::AUTO}
+};
 
 t_Lexer::t_Lexer(const std::string &source)
     : source(source), start(0), current(0), line(1) {}
@@ -107,7 +108,6 @@ void t_Lexer::ScanToken()
     case ' ':
     case '\r':
     case '\t':
-        break;
     case '\n':
         line++;
         break;
@@ -137,7 +137,6 @@ void t_Lexer::ScanToken()
         }
         else
         {
-            // Error: unexpected character
             throw std::runtime_error("Unexpected character at line " + std::to_string(line));
         }
         break;
@@ -146,8 +145,7 @@ void t_Lexer::ScanToken()
 
 char t_Lexer::Advance()
 {
-    current++;
-    return source[current - 1];
+    return source[current++];
 }
 
 void t_Lexer::AddToken(t_TokenType type)
@@ -163,52 +161,35 @@ void t_Lexer::AddToken(t_TokenType type, const std::string &literal)
 
 bool t_Lexer::Match(char expected)
 {
-    if (IsAtEnd())
-    {
-        return false;
-    }
-
-    if (source[current] != expected)
-    {
-        return false;
-    }
-
-    current++;
-    return true;
+    if (IsAtEnd()) return false;
+    return source[current] == expected ? (++current, true) : false;
 }
 
 char t_Lexer::Peek()
 {
-    if (IsAtEnd())
-    {
-        return '\0';
-    }
+    if (IsAtEnd()) return '\0';
     return source[current];
 }
 
 char t_Lexer::PeekNext()
 {
-    if (current + 1 >= static_cast<int>(source.length()))
-    {
-        return '\0';
-    }
-    return source[current + 1];
+    return 
+    (
+        current + 1 >= static_cast<int>(source.length())
+    ) ? '\0' : source[current + 1];
+
 }
 
 void t_Lexer::String()
 {
     while (Peek() != '"' && !IsAtEnd())
     {
-        if (Peek() == '\n')
-        {
-            line++;
-        }
+        if (Peek() == '\n') line++;
         Advance();
     }
 
     if (IsAtEnd())
     {
-        // Error: Unterminated string.
         throw std::runtime_error("Unterminated string at line " + std::to_string(line));
     }
 
@@ -224,10 +205,7 @@ void t_Lexer::FormatString()
 {
     while (Peek() != '"' && !IsAtEnd())
     {
-        if (Peek() == '\n')
-        {
-            line++;
-        }
+        if (Peek() == '\n') line++;
         Advance();
     }
 
@@ -252,12 +230,10 @@ void t_Lexer::Number()
     // Look for a fractional part.
     if (Peek() == '.' && std::isdigit(PeekNext()))
     {
-        Advance();
-
-        while (std::isdigit(Peek()))
+        do 
         {
             Advance();
-        }
+        }while(std::isdigit(Peek()));
     }
 
     AddToken(t_TokenType::NUMBER, source.substr(start, current - start));
@@ -273,6 +249,7 @@ void t_Lexer::Identifier()
     std::string text = source.substr(start, current - start);
     t_TokenType type = t_TokenType::IDENTIFIER;
 
+    // Checks that is keyword or not
     auto it = keywords.find(text);
     if (it != keywords.end())
     {
