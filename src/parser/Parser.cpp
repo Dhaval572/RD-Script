@@ -24,20 +24,13 @@ bool t_Parser::IsAtEnd()
 
 t_Token t_Parser::Advance()
 {
-    if (!IsAtEnd())
-    {
-        current++;
-    }
+    if (!IsAtEnd()) current++;
     return Previous();
 }
 
 bool t_Parser::Check(t_TokenType type)
 {
-    if (IsAtEnd())
-    {
-        return false;
-    }
-
+    if (IsAtEnd()) return false;
     return Peek().type == type;
 }
 
@@ -169,8 +162,18 @@ t_Expr *t_Parser::Equality()
 t_Expr *t_Parser::Comparison()
 {
     t_Expr *expr = Term();
-
-    while (Match({t_TokenType::GREATER, t_TokenType::GREATER_EQUAL, t_TokenType::LESS, t_TokenType::LESS_EQUAL}))
+    while 
+    (
+        Match
+        (
+            {
+                t_TokenType::GREATER, 
+                t_TokenType::GREATER_EQUAL, 
+                t_TokenType::LESS, 
+                t_TokenType::LESS_EQUAL
+            }
+        )
+    )
     {
         t_Token op = Previous();
         t_Expr *right = Term();
