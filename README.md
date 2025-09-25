@@ -18,6 +18,7 @@ Extension: .rd
 ├── CMakeLists.txt              # Build configuration
 ├── README.md                   # This file
 ├── CODING_GUIDELINES.md        # C++ coding standards for the project
+├── MEMORY_MANAGEMENT.md        # Memory management explanation
 ├── main.cpp                    # Main entry point
 ├── include/                    # Header files
 │   ├── Token.h                 # Token definitions
@@ -52,6 +53,10 @@ This project follows specific C++ coding guidelines documented in [CODING_GUIDEL
 * Variable names: `var_name`
 * Function names: `FunctionName`
 * Braces style: Allman style (opening brace on the next line)
+
+## Memory Management
+
+See [MEMORY_MANAGEMENT.md](MEMORY_MANAGEMENT.md) for a detailed explanation of how memory is managed in this interpreter, especially helpful for beginner developers.
 
 ## Current Implementation Status
 
