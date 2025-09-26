@@ -170,7 +170,7 @@ std::string t_Interpreter::Evaluate(t_Expr *expr)
         if (literal->value.length() > 0 && literal->value[0] == '$')
         {
             // Process format string
-            std::string format_str = literal->value.substr(1);
+            std::string format_str = literal->value.substr(1); // Remove the $ prefix
             std::string result = format_str;
 
             // Improved string replacement approach with better error handling

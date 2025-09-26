@@ -136,15 +136,21 @@ void t_Lexer::ScanToken()
         line++;
         break;
     case '"':
-        if (Match('$'))
         {
+            std::string value = String();
+            AddToken(t_TokenType::STRING, value);
+        }
+        break;
+    case '$':
+        if (Peek() == '"') 
+        {
+            Advance(); // Consume the '"'
             std::string value = FormatString();
             AddToken(t_TokenType::FORMAT_STRING, value);
         }
         else
         {
-            std::string value = String();
-            AddToken(t_TokenType::STRING, value);
+            throw std::runtime_error("Unexpected character at line " + std::to_string(line));
         }
         break;
     default:
@@ -211,7 +217,7 @@ std::string t_Lexer::String()
 
 std::string t_Lexer::FormatString()
 {
-    std::string value;
+    std::string value = "$"; // Preserve the $ prefix for format string identification
     while (Peek() != '"' && !IsAtEnd())
     {
         if (Peek() == '\n') line++;
@@ -229,7 +235,7 @@ std::string t_Lexer::FormatString()
     // The closing ".
     Advance();
 
-    // Trim the surrounding quotes.
+    // Return the value including the $ prefix
     return value;
 }
 
