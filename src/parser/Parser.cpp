@@ -97,6 +97,21 @@ t_Stmt *t_Parser::Statement()
         return IfStatement();
     }
 
+    if (Match({t_TokenType::FOR}))
+    {
+        return ForStatement();
+    }
+
+    if (Match({t_TokenType::BREAK}))
+    {
+        return BreakStatement();
+    }
+
+    if (Match({t_TokenType::CONTINUE}))
+    {
+        return ContinueStatement();
+    }
+
     if (Match({t_TokenType::AUTO}))
     {
         return VarDeclaration();
@@ -121,11 +136,29 @@ t_Stmt *t_Parser::BlockStatement()
 
     Consume(t_TokenType::RIGHT_BRACE, "Expect '}' after block.");
     return new t_BlockStmt(std::move(statements));
+} 
+
+t_Stmt *t_Parser::BreakStatement()
+{
+    t_Token keyword = Previous();
+    Consume(t_TokenType::SEMICOLON, "Expect ';' after 'break'.");
+    return new t_BreakStmt(keyword);
+}
+
+t_Stmt *t_Parser::ContinueStatement()
+{
+    t_Token keyword = Previous();
+    Consume(t_TokenType::SEMICOLON, "Expect ';' after 'continue'.");
+    return new t_ContinueStmt(keyword);
 }
 
 t_Stmt *t_Parser::IfStatement()
 {
-    Consume(t_TokenType::LEFT_PAREN, "Expect '(' after 'if'.");
+    Consume
+    (
+        t_TokenType::LEFT_PAREN, 
+        "Expect '(' after 'if'."
+    );
     t_Expr *condition = Expression();
     Consume(t_TokenType::RIGHT_PAREN, "Expect ')' after if condition.");
 
@@ -144,6 +177,58 @@ t_Stmt *t_Parser::IfStatement()
         std::unique_ptr<t_Expr>(condition), 
         std::unique_ptr<t_Stmt>(then_branch), 
         std::move(else_branch)
+    );
+}
+
+t_Stmt *t_Parser::ForStatement()
+{
+    Consume(t_TokenType::LEFT_PAREN, "Expect '(' after 'for'.");
+
+    // Parse initializer (can be a variable declaration or an expression statement)
+    std::unique_ptr<t_Stmt> initializer;
+    if (Match({t_TokenType::SEMICOLON}))
+    {
+        // No initializer
+        initializer = nullptr;
+    }
+    else if (Match({t_TokenType::AUTO}))
+    {
+        // Variable declaration
+        initializer = std::unique_ptr<t_Stmt>(VarDeclaration());
+        // Note: VarDeclaration already consumes the semicolon
+        // So we don't need to consume it here
+    }
+    else
+    {
+        // Expression statement
+        initializer = std::unique_ptr<t_Stmt>(ExpressionStatement());
+    }
+
+    // Parse condition
+    std::unique_ptr<t_Expr> condition;
+    if (!Check(t_TokenType::SEMICOLON))
+    {
+        condition = std::unique_ptr<t_Expr>(Expression());
+    }
+    Consume(t_TokenType::SEMICOLON, "Expect ';' after loop condition.");
+
+    // Parse increment
+    std::unique_ptr<t_Expr> increment;
+    if (!Check(t_TokenType::RIGHT_PAREN))
+    {
+        increment = std::unique_ptr<t_Expr>(Expression());
+    }
+    Consume(t_TokenType::RIGHT_PAREN, "Expect ')' after for clauses.");
+
+    // Parse body
+    t_Stmt *body = Statement();
+
+    return new t_ForStmt
+    (
+        std::move(initializer),
+        std::move(condition),
+        std::move(increment),
+        std::unique_ptr<t_Stmt>(body)
     );
 }
 
@@ -188,6 +273,11 @@ t_Stmt *t_Parser::ExpressionStatement()
 }
 
 t_Expr *t_Parser::Expression()
+{
+    return Assignment();
+}
+
+t_Expr *t_Parser::Assignment()
 {
     return Or();
 }
@@ -325,7 +415,21 @@ t_Expr *t_Parser::Unary()
         return new t_UnaryExpr(op, std::unique_ptr<t_Expr>(right));
     }
 
-    return Primary();
+    return FinishUnary();
+}
+
+t_Expr *t_Parser::FinishUnary()
+{
+    t_Expr *expr = Primary();
+
+    // Handle postfix increment/decrement
+    while (Match({t_TokenType::PLUS_PLUS, t_TokenType::MINUS_MINUS}))
+    {
+        t_Token op = Previous();
+        expr = new t_PostfixExpr(std::unique_ptr<t_Expr>(expr), op);
+    }
+
+    return expr;
 }
 
 t_Expr *t_Parser::Primary()
@@ -348,6 +452,14 @@ t_Expr *t_Parser::Primary()
     if (Match({t_TokenType::NUMBER, t_TokenType::STRING, t_TokenType::FORMAT_STRING}))
     {
         return new t_LiteralExpr(Previous().literal);
+    }
+
+    // Handle prefix increment/decrement
+    if (Match({t_TokenType::PLUS_PLUS, t_TokenType::MINUS_MINUS}))
+    {
+        t_Token op = Previous();
+        t_Expr *operand = Primary();
+        return new t_PrefixExpr(op, std::unique_ptr<t_Expr>(operand));
     }
 
     if (Match({t_TokenType::IDENTIFIER}))

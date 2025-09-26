@@ -81,3 +81,80 @@
 2. **C-like Syntax**: Familiar syntax for developers coming from C/C++/Java/C#
 3. **Automatic Memory Management**: No manual memory management required
 4. **Consistent Naming**: Language keywords use lowercase (e.g., `auto`, `linkedlist`, `dynamicarray`)
+
+## Language Constructs
+
+### For Loop Syntax
+
+The for loop in RD Script follows C++ style syntax with the following structure:
+
+```rubberduck
+for (initialization; condition; increment) {
+    // body statements
+}
+```
+
+Example:
+```rubberduck
+for (auto i = 0; i < 10; i++) {
+    display "Number: ", i;
+}
+```
+
+The for loop consists of three parts:
+1. **Initialization**: Executed once before the loop starts (typically variable declaration)
+2. **Condition**: Evaluated before each iteration; loop continues if true
+3. **Increment**: Executed at the end of each iteration
+
+All three parts are optional. An infinite loop can be created with:
+```rubberduck
+for (;;) {
+    // infinite loop body
+}
+```
+
+### Increment and Decrement Operators
+
+RD Script supports both prefix and postfix increment (`++`) and decrement (`--`) operators:
+
+1. **Prefix Increment**: `++variable`
+   - Increments the variable and returns the new value
+   - Example: `++i` increments i and returns the incremented value
+
+2. **Postfix Increment**: `variable++`
+   - Returns the current value and then increments the variable
+   - Example: `i++` returns the current value of i and then increments it
+
+3. **Prefix Decrement**: `--variable`
+   - Decrements the variable and returns the new value
+   - Example: `--i` decrements i and returns the decremented value
+
+4. **Postfix Decrement**: `variable--`
+   - Returns the current value and then decrements the variable
+   - Example: `i--` returns the current value of i and then decrements it
+
+Examples:
+```rubberduck
+auto x = 5;
+display ++x;  // Displays 6 (prefix increment)
+display x;    // Displays 6
+
+auto y = 5;
+display y++;  // Displays 5 (postfix increment)
+display y;    // Displays 6
+
+auto z = 10;
+display --z;  // Displays 9 (prefix decrement)
+display z;    // Displays 9
+
+auto w = 10;
+display w--;  // Displays 10 (postfix decrement)
+display w;    // Displays 9
+```
+
+These operators can be used in for loops for more concise code:
+```rubberduck
+for (auto i = 0; i < 10; i++) {
+    display "Number: ", i;
+}
+```

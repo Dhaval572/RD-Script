@@ -32,6 +32,16 @@ void t_Interpreter::Execute(t_Stmt *stmt)
             Execute(statement.get());
         }
     }
+    else if (t_BreakStmt *break_stmt = dynamic_cast<t_BreakStmt *>(stmt))
+    {
+        // Throw a special exception to break out of loops
+        throw std::string("break");
+    }
+    else if (t_ContinueStmt *continue_stmt = dynamic_cast<t_ContinueStmt *>(stmt))
+    {
+        // Throw a special exception to continue to next iteration
+        throw std::string("continue");
+    }
     else if (t_IfStmt *if_stmt = dynamic_cast<t_IfStmt *>(stmt))
     {
         std::string condition_value = Evaluate(if_stmt->condition.get());
@@ -44,7 +54,73 @@ void t_Interpreter::Execute(t_Stmt *stmt)
             Execute(if_stmt->else_branch.get());
         }
     }
-    else if (t_VarStmt *var_stmt = dynamic_cast<t_VarStmt *>(stmt))
+    else if (t_ForStmt *for_stmt = dynamic_cast<t_ForStmt *>(stmt))
+    {
+        // Create a new scope for the loop
+        std::unordered_map<std::string, std::string> outer_scope = environment;
+
+        // Execute initializer (if any)
+        if (for_stmt->initializer)
+        {
+            Execute(for_stmt->initializer.get());
+        }
+
+        // Loop while condition is true (or forever if no condition)
+        while (true)
+        {
+            // Check condition (if any)
+            if (for_stmt->condition)
+            {
+                std::string condition_value = 
+                Evaluate(for_stmt->condition.get());
+
+                if (!IsTruthy(condition_value))
+                {
+                    break; // Exit loop if condition is false
+                }
+            }
+            else if (!for_stmt->condition && !for_stmt->increment)
+            {
+                // Special case: for (;;) should run forever unless broken
+                // This is already handled by the infinite loop, but we need to be careful
+                // about the logic when both condition and increment are missing
+            }
+
+            // Execute body
+            try
+            {
+                Execute(for_stmt->body.get());
+            }
+            catch (const std::string &control_flow)
+            {
+                if (control_flow == "break")
+                {
+                    break; 
+                }
+                else if (control_flow == "continue")
+                {
+                    // Continue to next iteration (execute increment then continue loop)
+                }
+                else
+                {
+                    throw; // Re-throw other exceptions
+                }
+            }
+
+            // Execute increment (if any)
+            if (for_stmt->increment)
+            {
+                Evaluate(for_stmt->increment.get());
+            }
+        }
+
+        // Restore outer scope
+        environment = outer_scope;
+    }
+    else if 
+    (
+        t_VarStmt *var_stmt = dynamic_cast<t_VarStmt *>(stmt)
+    )
     {
         // Check if variable already exists
         if (environment.find(var_stmt->name) != environment.end())
@@ -83,9 +159,6 @@ void t_Interpreter::Execute(t_Stmt *stmt)
 
 bool t_Interpreter::IsTruthy(const std::string &value)
 {
-    // In our language:
-    // - "false" and "nil" are falsey
-    // - Everything else is truthy
     return value != "false" && value != "nil";
 }
 
@@ -107,14 +180,16 @@ std::string t_Interpreter::Evaluate(t_Expr *expr)
                 size_t end_pos = result.find('}', pos);
                 if (end_pos != std::string::npos)
                 {
-                    std::string expression = result.substr(pos + 1, end_pos - pos - 1);
+                    std::string expression = 
+                    result.substr(pos + 1, end_pos - pos - 1);
 
                     // Trim whitespace from expression
                     expression.erase(0, expression.find_first_not_of(" \t"));
                     expression.erase(expression.find_last_not_of(" \t") + 1);
 
                     // Evaluate the expression instead of just looking it up as a variable
-                    std::string expr_value = EvaluateFormatExpression(expression);
+                    std::string expr_value = 
+                    EvaluateFormatExpression(expression);
 
                     result.replace(pos, end_pos - pos + 1, expr_value);
                 }
@@ -147,6 +222,117 @@ std::string t_Interpreter::Evaluate(t_Expr *expr)
         case t_TokenType::BANG:
             return (right == "false" || right == "0") ? "true" : "false";
         }
+    }
+
+    if (t_PrefixExpr *prefix = dynamic_cast<t_PrefixExpr *>(expr))
+    {
+        if (t_VariableExpr *var_expr = dynamic_cast<t_VariableExpr *>(prefix->operand.get()))
+        {
+            std::string var_name = var_expr->name;
+            auto it = environment.find(var_name);
+            
+            if (it == environment.end())
+            {
+                throw std::runtime_error("Undefined variable '" + var_name + "'");
+            }
+            
+            std::string current_value = it->second;
+            
+            // Try to convert to number for arithmetic operations
+            try
+            {
+                double num_value = std::stod(current_value);
+                
+                if (prefix->op.type == t_TokenType::PLUS_PLUS)
+                {
+                    num_value += 1.0;
+                    std::string new_value = std::to_string(num_value);
+                    // Remove trailing zeros and decimal point if not needed
+                    new_value.erase(new_value.find_last_not_of('0') + 1, std::string::npos);
+                    new_value.erase(new_value.find_last_not_of('.') + 1, std::string::npos);
+                    environment[var_name] = new_value;
+                    return new_value;
+                }
+                else if (prefix->op.type == t_TokenType::MINUS_MINUS)
+                {
+                    num_value -= 1.0;
+                    std::string new_value = std::to_string(num_value);
+                    // Remove trailing zeros and decimal point if not needed
+                    new_value.erase(new_value.find_last_not_of('0') + 1, std::string::npos);
+                    new_value.erase(new_value.find_last_not_of('.') + 1, std::string::npos);
+                    environment[var_name] = new_value;
+                    return new_value;
+                }
+            }
+            catch (...)
+            {
+                throw std::runtime_error("Cannot perform increment/decrement on non-numeric value");
+            }
+        }
+        throw std::runtime_error("Prefix increment/decrement can only be applied to variables");
+    }
+
+    if (t_PostfixExpr *postfix = dynamic_cast<t_PostfixExpr *>(expr))
+    {
+        if 
+        (
+            t_VariableExpr *var_expr = 
+            dynamic_cast<t_VariableExpr *>(postfix->operand.get())
+        )
+        {
+            std::string var_name = var_expr->name;
+            auto it = environment.find(var_name);
+            
+            if (it == environment.end())
+            {
+                throw std::runtime_error
+                (
+                    "Undefined variable '" + var_name + "'"
+                );
+            }
+            
+            std::string current_value = it->second;
+            std::string return_value = current_value; // Return the value BEFORE increment/decrement
+            
+            // Try to convert to number for arithmetic operations
+            try
+            {
+                double num_value = std::stod(current_value);
+                
+                if (postfix->op.type == t_TokenType::PLUS_PLUS)
+                {
+                    num_value += 1.0;
+                    std::string new_value = std::to_string(num_value);
+
+                    // Remove trailing zeros and decimal point if not needed
+                    new_value.erase(new_value.find_last_not_of('0') + 1, std::string::npos);
+                    new_value.erase(new_value.find_last_not_of('.') + 1, std::string::npos);
+                    environment[var_name] = new_value;
+                }
+                else if (postfix->op.type == t_TokenType::MINUS_MINUS)
+                {
+                    num_value -= 1.0;
+                    std::string new_value = std::to_string(num_value);
+                    // Remove trailing zeros and decimal point if not needed
+                    new_value.erase(new_value.find_last_not_of('0') + 1, std::string::npos);
+                    new_value.erase(new_value.find_last_not_of('.') + 1, std::string::npos);
+                    environment[var_name] = new_value;
+                }
+            }
+            catch (...)
+            {
+                throw std::runtime_error
+                (
+                    "Cannot perform increment/decrement on non-numeric value"
+                );
+            }
+            
+            return return_value;
+        }
+        throw std::runtime_error
+        (
+            "Postfix increment/decrement can only be applied to variables"
+        );
     }
 
     if (t_BinaryExpr *binary = dynamic_cast<t_BinaryExpr *>(expr))

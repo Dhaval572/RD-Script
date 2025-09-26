@@ -38,6 +38,7 @@ Extension: .rd
 │   ├── variables.rd            # Variable usage
 │   ├── static_typing.rd        # Static typing example
 │   ├── simple_example.rd       # More comprehensive example
+│   ├── for_loop_example.rd     # For loop example
 │   ├── control_structures.rd   # Control structures (not yet implemented)
 │   ├── data_structures.rd      # Data structures (not yet implemented)
 │   ├── functions.rd            # Function definitions (not yet implemented)
@@ -69,10 +70,10 @@ The interpreter currently supports:
 * Grouping with parentheses
 * String and number literals
 * Variable references
-* Control structures (`if`, `else`)
+* Control structures (`if`, `else`, `for`)
 
 Not yet implemented:
-* Loops (`while`, `for`)
+* Loops (`while`)
 * Functions
 * Data structures (dynamic arrays, linked lists)
 * System automation features
@@ -114,6 +115,24 @@ auto difference = a - b;
 auto product = a * b;
 display("Difference:", difference);
 display("Product:", product);
+```
+
+### For Loop
+```rubberduck
+// Simple for loop counting from 0 to 9
+for (auto i = 0; i < 10; i = i + 1) {
+    display "Number: ", i;
+}
+
+// Infinite loop with break
+auto j = 0;
+for (;;) {
+    display "j = ", j;
+    j = j + 1;
+    if (j >= 3) {
+        break;
+    }
+}
 ```
 
 ### If-Else Statements

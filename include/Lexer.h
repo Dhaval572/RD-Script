@@ -23,8 +23,8 @@ private:
     char PeekNext();
 
     // Helpers for literals
-    void String();
-    void FormatString(); 
+    std::string String();
+    std::string FormatString(); 
     void Number();
     void Identifier();
 

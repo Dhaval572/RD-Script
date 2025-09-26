@@ -25,6 +25,8 @@ enum class t_TokenType
     GREATER_EQUAL,
     LESS,
     LESS_EQUAL,
+    PLUS_PLUS,      // ++
+    MINUS_MINUS,    // --
 
     // Literals
     IDENTIFIER,
@@ -34,7 +36,9 @@ enum class t_TokenType
 
     // Keywords
     AND,
+    BREAK,
     CLASS,
+    CONTINUE,
     ELSE,
     FALSE,
     FUN,

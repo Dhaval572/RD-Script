@@ -65,6 +65,25 @@ struct t_VariableExpr : public t_Expr
     t_VariableExpr(const std::string &name) : name(name) {}
 };
 
+// Increment/Decrement expressions
+struct t_PrefixExpr : public t_Expr
+{
+    t_Token op;
+    std::unique_ptr<t_Expr> operand;
+
+    t_PrefixExpr(t_Token op, std::unique_ptr<t_Expr> operand)
+        : op(op), operand(std::move(operand)) {}
+};
+
+struct t_PostfixExpr : public t_Expr
+{
+    std::unique_ptr<t_Expr> operand;
+    t_Token op;
+
+    t_PostfixExpr(std::unique_ptr<t_Expr> operand, t_Token op)
+        : operand(std::move(operand)), op(op) {}
+};
+
 // Statement types
 struct t_ExpressionStmt : public t_Stmt
 {
@@ -118,4 +137,40 @@ struct t_IfStmt : public t_Stmt
         : condition(std::move(condition)), 
           then_branch(std::move(then_branch)),
           else_branch(std::move(else_branch)) {}
+};
+
+// For loop statement
+struct t_ForStmt : public t_Stmt
+{
+    std::unique_ptr<t_Stmt> initializer;
+    std::unique_ptr<t_Expr> condition;
+    std::unique_ptr<t_Expr> increment;
+    std::unique_ptr<t_Stmt> body;
+
+    t_ForStmt(std::unique_ptr<t_Stmt> initializer,
+              std::unique_ptr<t_Expr> condition,
+              std::unique_ptr<t_Expr> increment,
+              std::unique_ptr<t_Stmt> body)
+        : initializer(std::move(initializer)),
+          condition(std::move(condition)),
+          increment(std::move(increment)),
+          body(std::move(body)) {}
+};
+
+// Break statement
+struct t_BreakStmt : public t_Stmt
+{
+    t_Token keyword;
+
+    t_BreakStmt(t_Token keyword)
+        : keyword(keyword) {}
+};
+
+// Continue statement
+struct t_ContinueStmt : public t_Stmt
+{
+    t_Token keyword;
+
+    t_ContinueStmt(t_Token keyword)
+        : keyword(keyword) {}
 };
