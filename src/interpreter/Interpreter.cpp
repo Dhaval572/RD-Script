@@ -3,6 +3,7 @@
 #include <sstream>
 #include <regex>
 #include <stack>
+#include <cctype>
 #include "../include/Lexer.h"
 #include "../include/Parser.h"
 
@@ -21,6 +22,62 @@ void t_Interpreter::Interpret(const std::vector<t_Stmt *> &statements)
     {
         std::cerr << "Runtime error: " << e.what() << std::endl;
     }
+}
+
+// Helper function to detect the type of a value
+t_ValueType t_Interpreter::DetectType(const std::string& value)
+{
+    if (value == "nil")
+    {
+        return t_ValueType::NIL;
+    }
+    
+    if (value == "true" || value == "false")
+    {
+        return t_ValueType::BOOLEAN;
+    }
+    
+    // Check if it's a number (integer or floating point)
+    if (!value.empty())
+    {
+        bool is_number = true;
+        bool has_decimal = false;
+        size_t start = 0;
+        
+        // Handle negative numbers
+        if (value[0] == '-')
+        {
+            start = 1;
+        }
+        
+        // Check each character
+        for (size_t i = start; i < value.length(); i++)
+        {
+            if (value[i] == '.')
+            {
+                if (has_decimal)
+                {
+                    is_number = false;
+                    break;
+                }
+                has_decimal = true;
+            }
+            else if (!std::isdigit(value[i]))
+            {
+                is_number = false;
+                break;
+            }
+        }
+        
+        // Make sure we have at least one digit
+        if (is_number && value.length() > start)
+        {
+            return t_ValueType::NUMBER;
+        }
+    }
+    
+    // Default to string for all other values
+    return t_ValueType::STRING;
 }
 
 void t_Interpreter::Execute(t_Stmt *stmt)
@@ -57,7 +114,7 @@ void t_Interpreter::Execute(t_Stmt *stmt)
     else if (t_ForStmt *for_stmt = dynamic_cast<t_ForStmt *>(stmt))
     {
         // Create a new scope for the loop
-        std::unordered_map<std::string, std::string> outer_scope = environment;
+        std::unordered_map<std::string, t_TypedValue> outer_scope = environment;
 
         // Execute initializer (if any)
         if (for_stmt->initializer)
@@ -128,12 +185,14 @@ void t_Interpreter::Execute(t_Stmt *stmt)
             throw std::runtime_error("Variable '" + var_stmt->name + "' already declared");
         }
 
-        std::string value = "nil";
+        t_TypedValue typed_value("nil", t_ValueType::NIL);
         if (var_stmt->initializer)
         {
-            value = Evaluate(var_stmt->initializer.get());
+            std::string value = Evaluate(var_stmt->initializer.get());
+            t_ValueType type = DetectType(value);
+            typed_value = t_TypedValue(value, type);
         }
-        environment[var_stmt->name] = value;
+        environment[var_stmt->name] = typed_value;
     }
     else if (t_DisplayStmt *display_stmt = dynamic_cast<t_DisplayStmt *>(stmt))
     {
@@ -236,7 +295,7 @@ std::string t_Interpreter::Evaluate(t_Expr *expr)
                 throw std::runtime_error("Undefined variable '" + var_name + "'");
             }
             
-            std::string current_value = it->second;
+            std::string current_value = it->second.value;
             
             // Try to convert to number for arithmetic operations
             try
@@ -250,7 +309,7 @@ std::string t_Interpreter::Evaluate(t_Expr *expr)
                     // Remove trailing zeros and decimal point if not needed
                     new_value.erase(new_value.find_last_not_of('0') + 1, std::string::npos);
                     new_value.erase(new_value.find_last_not_of('.') + 1, std::string::npos);
-                    environment[var_name] = new_value;
+                    environment[var_name] = t_TypedValue(new_value, t_ValueType::NUMBER);
                     return new_value;
                 }
                 else if (prefix->op.type == t_TokenType::MINUS_MINUS)
@@ -260,7 +319,7 @@ std::string t_Interpreter::Evaluate(t_Expr *expr)
                     // Remove trailing zeros and decimal point if not needed
                     new_value.erase(new_value.find_last_not_of('0') + 1, std::string::npos);
                     new_value.erase(new_value.find_last_not_of('.') + 1, std::string::npos);
-                    environment[var_name] = new_value;
+                    environment[var_name] = t_TypedValue(new_value, t_ValueType::NUMBER);
                     return new_value;
                 }
             }
@@ -291,7 +350,7 @@ std::string t_Interpreter::Evaluate(t_Expr *expr)
                 );
             }
             
-            std::string current_value = it->second;
+            std::string current_value = it->second.value;
             std::string return_value = current_value; // Return the value BEFORE increment/decrement
             
             // Try to convert to number for arithmetic operations
@@ -307,7 +366,7 @@ std::string t_Interpreter::Evaluate(t_Expr *expr)
                     // Remove trailing zeros and decimal point if not needed
                     new_value.erase(new_value.find_last_not_of('0') + 1, std::string::npos);
                     new_value.erase(new_value.find_last_not_of('.') + 1, std::string::npos);
-                    environment[var_name] = new_value;
+                    environment[var_name] = t_TypedValue(new_value, t_ValueType::NUMBER);
                 }
                 else if (postfix->op.type == t_TokenType::MINUS_MINUS)
                 {
@@ -316,7 +375,7 @@ std::string t_Interpreter::Evaluate(t_Expr *expr)
                     // Remove trailing zeros and decimal point if not needed
                     new_value.erase(new_value.find_last_not_of('0') + 1, std::string::npos);
                     new_value.erase(new_value.find_last_not_of('.') + 1, std::string::npos);
-                    environment[var_name] = new_value;
+                    environment[var_name] = t_TypedValue(new_value, t_ValueType::NUMBER);
                 }
             }
             catch (...)
@@ -455,7 +514,7 @@ std::string t_Interpreter::Evaluate(t_Expr *expr)
         auto it = environment.find(variable->name);
         if (it != environment.end())
         {
-            return it->second;
+            return it->second.value;
         }
         return "nil";
     }
