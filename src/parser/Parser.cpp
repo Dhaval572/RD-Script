@@ -122,6 +122,16 @@ t_Stmt *t_Parser::Statement()
         return DisplayStatement();
     }
 
+    if (Match({t_TokenType::BENCHMARK}))
+    {
+        return BenchmarkStatement();
+    }
+
+    if (Match({t_TokenType::SEMICOLON}))
+    {
+        return EmptyStatement();
+    }
+
     return ExpressionStatement();
 }
 
@@ -272,6 +282,31 @@ t_Stmt *t_Parser::ExpressionStatement()
     return new t_ExpressionStmt(std::unique_ptr<t_Expr>(expr));
 }
 
+t_Stmt *t_Parser::EmptyStatement()
+{
+    t_Token semicolon = Previous();
+    return new t_EmptyStmt(semicolon);
+}
+
+t_Stmt *t_Parser::BenchmarkStatement()
+{
+    Consume(t_TokenType::LEFT_BRACE, "Expect '{' after 'benchmark'.");
+    
+    // Parse the benchmark body
+    std::vector<std::unique_ptr<t_Stmt>> statements;
+    while (!Check(t_TokenType::RIGHT_BRACE) && !IsAtEnd())
+    {
+        statements.push_back(std::unique_ptr<t_Stmt>(Statement()));
+    }
+    
+    Consume(t_TokenType::RIGHT_BRACE, "Expect '}' after benchmark body.");
+    
+    // Create a block statement for the body
+    t_Stmt *body = new t_BlockStmt(std::move(statements));
+    
+    return new t_BenchmarkStmt(std::unique_ptr<t_Stmt>(body));
+}
+
 t_Expr *t_Parser::Expression()
 {
     return Assignment();
@@ -279,7 +314,24 @@ t_Expr *t_Parser::Expression()
 
 t_Expr *t_Parser::Assignment()
 {
-    return Or();
+    t_Expr *expr = Or();
+
+    if (Match({t_TokenType::EQUAL}))
+    {
+        t_Token equals = Previous();
+        t_Expr *value = Assignment();
+
+        if (t_VariableExpr *var_expr = dynamic_cast<t_VariableExpr *>(expr))
+        {
+            std::string name = var_expr->name;
+            return new t_BinaryExpr(std::unique_ptr<t_Expr>(expr), equals, std::unique_ptr<t_Expr>(value));
+        }
+
+        // If we get here, we're trying to assign to a non-variable
+        throw std::runtime_error("Invalid assignment target at line " + std::to_string(equals.line));
+    }
+
+    return expr;
 }
 
 t_Expr *t_Parser::Or()

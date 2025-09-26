@@ -158,3 +158,52 @@ for (auto i = 0; i < 10; i++) {
     display "Number: ", i;
 }
 ```
+
+### Assignment Expressions
+
+RD Script supports assignment expressions using the `=` operator:
+
+```rubberduck
+auto x = 10;
+x = x + 5;  // Assigns 15 to x
+```
+
+Assignment expressions can be used in statements and can be chained:
+
+```rubberduck
+auto a = 5;
+auto b = 10;
+auto c = 15;
+a = b = c;  // Assigns 15 to both a and b
+```
+
+### Benchmarking
+
+RD Script includes a built-in benchmarking tool that measures execution time with high precision using C++ chrono library. The benchmark statement executes a block of code and reports the execution time in multiple units.
+
+Syntax:
+```rubberduck
+benchmark {
+    // code to benchmark
+}
+```
+
+Example:
+```rubberduck
+benchmark {
+    for (auto i = 0; i < 1000; i++) {
+        display "Iteration: ", i;
+    }
+}
+```
+
+The benchmark statement will output timing information in the following format:
+```
+Benchmark Results:
+  Execution time: X nanoseconds
+  Execution time: Y microseconds
+  Execution time: Z milliseconds
+  Execution time: W seconds
+```
+
+This provides an easy way to measure performance, similar to Python's timeit module but with the speed of C++ chrono.

@@ -46,6 +46,8 @@ private:
     t_Stmt *DisplayStatement();
     t_Stmt *ExpressionStatement();
     t_Stmt *VarDeclaration();
+    t_Stmt *BenchmarkStatement();
+    t_Stmt *EmptyStatement();  // New empty statement parser
 
 public:
     t_Parser(const std::vector<t_Token> &tokens);

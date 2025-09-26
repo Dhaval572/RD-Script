@@ -92,6 +92,15 @@ struct t_ExpressionStmt : public t_Stmt
         : expression(std::move(expression)) {}
 };
 
+// Empty statement
+struct t_EmptyStmt : public t_Stmt
+{
+    t_Token semicolon;
+
+    t_EmptyStmt(t_Token semicolon)
+        : semicolon(semicolon) {}
+};
+
 // Enhanced Display statement with format string support
 struct t_DisplayStmt : public t_Stmt
 {
@@ -173,4 +182,13 @@ struct t_ContinueStmt : public t_Stmt
 
     t_ContinueStmt(t_Token keyword)
         : keyword(keyword) {}
+};
+
+// Benchmark statement
+struct t_BenchmarkStmt : public t_Stmt
+{
+    std::unique_ptr<t_Stmt> body;
+
+    t_BenchmarkStmt(std::unique_ptr<t_Stmt> body)
+        : body(std::move(body)) {}
 };

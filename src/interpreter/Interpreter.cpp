@@ -4,6 +4,7 @@
 #include <regex>
 #include <stack>
 #include <cctype>
+#include <iomanip>
 #include "../include/Lexer.h"
 #include "../include/Parser.h"
 
@@ -209,6 +210,31 @@ void t_Interpreter::Execute(t_Stmt *stmt)
             std::cout << value;
         }
         std::cout << std::endl;
+    }
+    else if (t_BenchmarkStmt *benchmark_stmt = dynamic_cast<t_BenchmarkStmt *>(stmt))
+    {
+        // Record start time
+        auto start_time = std::chrono::high_resolution_clock::now();
+        
+        // Execute the benchmark body
+        Execute(benchmark_stmt->body.get());
+        
+        // Record end time
+        auto end_time = std::chrono::high_resolution_clock::now();
+        
+        // Calculate duration
+        auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time);
+        
+        // Display benchmark results
+        std::cout << "Benchmark Results:" << std::endl;
+        std::cout << "  Execution time: " << duration.count() << " nanoseconds" << std::endl;
+        std::cout << "  Execution time: " << duration.count() / 1000.0 << " microseconds" << std::endl;
+        std::cout << "  Execution time: " << duration.count() / 1000000.0 << " milliseconds" << std::endl;
+        std::cout << "  Execution time: " << duration.count() / 1000000000.0 << " seconds" << std::endl;
+    }
+    else if (t_EmptyStmt *empty_stmt = dynamic_cast<t_EmptyStmt *>(stmt))
+    {
+        // Do nothing for empty statements
     }
     else if (t_ExpressionStmt *expr_stmt = dynamic_cast<t_ExpressionStmt *>(stmt))
     {

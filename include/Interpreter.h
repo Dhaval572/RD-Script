@@ -3,6 +3,7 @@
 #include <vector>
 #include <unordered_map>
 #include <string>
+#include <chrono>
 #include "AST.h"
 
 // Type enumeration for RD Script values

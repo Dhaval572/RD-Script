@@ -55,6 +55,7 @@ enum class t_TokenType
 
     // Rubber Duck specific keywords - keeping only essential ones
     AUTO,
+    BENCHMARK,  // New benchmark keyword
     // Removed advanced functionality keywords: LINKEDLIST, DYNAMIC_ARRAY
 
     EOF_TOKEN
