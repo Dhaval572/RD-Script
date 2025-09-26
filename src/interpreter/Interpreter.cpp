@@ -422,6 +422,28 @@ std::string t_Interpreter::Evaluate(t_Expr *expr)
 
     if (t_BinaryExpr *binary = dynamic_cast<t_BinaryExpr *>(expr))
     {
+        // Handle assignment expressions
+        if (binary->op.type == t_TokenType::EQUAL)
+        {
+            // Left side must be a variable
+            if (t_VariableExpr *var_expr = dynamic_cast<t_VariableExpr *>(binary->left.get()))
+            {
+                std::string var_name = var_expr->name;
+                std::string value = Evaluate(binary->right.get());
+                t_ValueType type = DetectType(value);
+                
+                // Update the variable in the environment
+                environment[var_name] = t_TypedValue(value, type);
+                
+                // Return the assigned value
+                return value;
+            }
+            else
+            {
+                throw std::runtime_error("Left side of assignment must be a variable");
+            }
+        }
+        
         std::string left = Evaluate(binary->left.get());
         std::string right = Evaluate(binary->right.get());
 
