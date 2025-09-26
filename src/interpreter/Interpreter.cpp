@@ -25,7 +25,26 @@ void t_Interpreter::Interpret(const std::vector<t_Stmt *> &statements)
 
 void t_Interpreter::Execute(t_Stmt *stmt)
 {
-    if (t_VarStmt *var_stmt = dynamic_cast<t_VarStmt *>(stmt))
+    if (t_BlockStmt *block_stmt = dynamic_cast<t_BlockStmt *>(stmt))
+    {
+        for (const auto &statement : block_stmt->statements)
+        {
+            Execute(statement.get());
+        }
+    }
+    else if (t_IfStmt *if_stmt = dynamic_cast<t_IfStmt *>(stmt))
+    {
+        std::string condition_value = Evaluate(if_stmt->condition.get());
+        if (IsTruthy(condition_value))
+        {
+            Execute(if_stmt->then_branch.get());
+        }
+        else if (if_stmt->else_branch)
+        {
+            Execute(if_stmt->else_branch.get());
+        }
+    }
+    else if (t_VarStmt *var_stmt = dynamic_cast<t_VarStmt *>(stmt))
     {
         // Check if variable already exists
         if (environment.find(var_stmt->name) != environment.end())
@@ -60,6 +79,14 @@ void t_Interpreter::Execute(t_Stmt *stmt)
     {
         Evaluate(expr_stmt->expression.get());
     }
+}
+
+bool t_Interpreter::IsTruthy(const std::string &value)
+{
+    // In our language:
+    // - "false" and "nil" are falsey
+    // - Everything else is truthy
+    return value != "false" && value != "nil";
 }
 
 std::string t_Interpreter::Evaluate(t_Expr *expr)
@@ -140,7 +167,10 @@ std::string t_Interpreter::Evaluate(t_Expr *expr)
             catch (...)
             {
                 // If not numbers, prevent string concatenation
-                throw std::runtime_error("String concatenation with '+' is not allowed. Use comma-separated values in display statements instead.");
+                throw std::runtime_error
+                (
+                    "String concatenation with '+' is not allowed. Use comma-separated values in display statements instead."
+                );
             }
 
         case t_TokenType::MINUS:

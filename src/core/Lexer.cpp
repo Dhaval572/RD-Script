@@ -85,6 +85,16 @@ void t_Lexer::ScanToken()
     case '=':
         AddToken(Match('=') ? t_TokenType::EQUAL_EQUAL : t_TokenType::EQUAL);
         break;
+    case '&':
+        if (Match('&')) 
+        {
+            AddToken(t_TokenType::AND);
+        } 
+        else 
+        {
+            throw std::runtime_error("Unexpected character at line " + std::to_string(line));
+        }
+        break;
     case '<':
         AddToken(Match('=') ? t_TokenType::LESS_EQUAL : t_TokenType::LESS);
         break;
@@ -106,10 +116,16 @@ void t_Lexer::ScanToken()
         }
         break;
     case ' ':
-    case '\r':
     case '\t':
     case '\n':
-        line++;
+        // Skip whitespace characters
+        if (c == '\n') 
+        {
+            line++;
+        }
+        break;
+    case '\r':
+        // Skip carriage returns (removed permanently)
         break;
     case '"':
         String();
@@ -182,10 +198,48 @@ char t_Lexer::PeekNext()
 
 void t_Lexer::String()
 {
+    std::string value = "";
+    
     while (Peek() != '"' && !IsAtEnd())
     {
-        if (Peek() == '\n') line++;
-        Advance();
+        if (Peek() == '\n') 
+        {
+            line++;
+        }
+        
+        if (Peek() == '\\')
+        {
+            // Handle escape sequences
+            Advance(); // consume the backslash
+            char escaped = Advance(); // consume the escaped character
+            
+            switch (escaped)
+            {
+            case 'n':
+                value += '\n';
+                break;
+            case 't':
+                value += '\t';
+                break;
+            case 'r':
+                value += '\r';
+                break;
+            case '"':
+                value += '"';
+                break;
+            case '\\':
+                value += '\\';
+                break;
+            default:
+                // For unrecognized escape sequences, just add the character as-is
+                value += escaped;
+                break;
+            }
+        }
+        else
+        {
+            value += Advance();
+        }
     }
 
     if (IsAtEnd())
@@ -196,17 +250,53 @@ void t_Lexer::String()
     // The closing ".
     Advance();
 
-    // Trim the surrounding quotes.
-    std::string value = source.substr(start + 1, current - start - 2);
     AddToken(t_TokenType::STRING, value);
 }
 
 void t_Lexer::FormatString()
 {
+    std::string value = "$"; // Include the '$' prefix
+    
     while (Peek() != '"' && !IsAtEnd())
     {
-        if (Peek() == '\n') line++;
-        Advance();
+        if (Peek() == '\n') 
+        {
+            line++;
+        }
+        
+        if (Peek() == '\\')
+        {
+            // Handle escape sequences
+            Advance(); // consume the backslash
+            char escaped = Advance(); // consume the escaped character
+            
+            switch (escaped)
+            {
+            case 'n':
+                value += '\n';
+                break;
+            case 't':
+                value += '\t';
+                break;
+            case 'r':
+                value += '\r';
+                break;
+            case '"':
+                value += '"';
+                break;
+            case '\\':
+                value += '\\';
+                break;
+            default:
+                // For unrecognized escape sequences, just add the character as-is
+                value += escaped;
+                break;
+            }
+        }
+        else
+        {
+            value += Advance();
+        }
     }
 
     if (IsAtEnd())
@@ -216,7 +306,6 @@ void t_Lexer::FormatString()
     }
     Advance();
 
-    std::string value = "$" + source.substr(start + 2, current - start - 3); // Include the '$' prefix
     AddToken(t_TokenType::FORMAT_STRING, value);
 }
 

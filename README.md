@@ -69,9 +69,10 @@ The interpreter currently supports:
 * Grouping with parentheses
 * String and number literals
 * Variable references
+* Control structures (`if`, `else`)
 
 Not yet implemented:
-* Control structures (`if`, `while`, `for`)
+* Loops (`while`, `for`)
 * Functions
 * Data structures (dynamic arrays, linked lists)
 * System automation features
@@ -113,4 +114,20 @@ auto difference = a - b;
 auto product = a * b;
 display("Difference:", difference);
 display("Product:", product);
+```
+
+### If-Else Statements
+```rubberduck
+auto x = 10;
+auto y = 20;
+
+if (x < y) {
+    display "x is less than y";
+}
+
+if (x > y) {
+    display "x is greater than y";
+} else {
+    display "x is not greater than y";
+}
 ```

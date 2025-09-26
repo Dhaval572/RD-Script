@@ -11,6 +11,7 @@ private:
 
     std::string Evaluate(t_Expr *expr);
     void Execute(t_Stmt *stmt);
+    bool IsTruthy(const std::string &value);
     std::string Stringify(const std::string &value);
     std::string EvaluateFormatExpression(const std::string &expr_str); 
 

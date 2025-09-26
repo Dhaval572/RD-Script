@@ -25,14 +25,20 @@ struct t_BinaryExpr : public t_Expr
     t_Token op;
     std::unique_ptr<t_Expr> right;
 
-    t_BinaryExpr(std::unique_ptr<t_Expr> left, t_Token op, std::unique_ptr<t_Expr> right)
-        : left(std::move(left)), op(op), right(std::move(right)) {}
+    t_BinaryExpr
+    (
+        std::unique_ptr<t_Expr> left, 
+        t_Token op, 
+        std::unique_ptr<t_Expr> right
+    )
+        : left(std::move(left)), 
+          op(op), 
+          right(std::move(right)) {}
 };
 
 struct t_LiteralExpr : public t_Expr
 {
     std::string value;
-
     t_LiteralExpr(const std::string &value) : value(value) {}
 };
 
@@ -56,7 +62,6 @@ struct t_GroupingExpr : public t_Expr
 struct t_VariableExpr : public t_Expr
 {
     std::string name;
-
     t_VariableExpr(const std::string &name) : name(name) {}
 };
 
@@ -64,7 +69,6 @@ struct t_VariableExpr : public t_Expr
 struct t_ExpressionStmt : public t_Stmt
 {
     std::unique_ptr<t_Expr> expression;
-
     t_ExpressionStmt(std::unique_ptr<t_Expr> expression)
         : expression(std::move(expression)) {}
 };
@@ -83,6 +87,35 @@ struct t_VarStmt : public t_Stmt
     std::string name;
     std::unique_ptr<t_Expr> initializer;
 
-    t_VarStmt(const std::string &name, std::unique_ptr<t_Expr> initializer)
-        : name(name), initializer(std::move(initializer)) {}
+    t_VarStmt
+    (
+        const std::string &name,
+        std::unique_ptr<t_Expr> initializer
+    )
+        : name(name), 
+          initializer(std::move(initializer)) {}
+};
+
+// Block statement
+struct t_BlockStmt : public t_Stmt
+{
+    std::vector<std::unique_ptr<t_Stmt>> statements;
+
+    t_BlockStmt(std::vector<std::unique_ptr<t_Stmt>> statements)
+        : statements(std::move(statements)) {}
+};
+
+// If statement
+struct t_IfStmt : public t_Stmt
+{
+    std::unique_ptr<t_Expr> condition;
+    std::unique_ptr<t_Stmt> then_branch;
+    std::unique_ptr<t_Stmt> else_branch;
+
+    t_IfStmt(std::unique_ptr<t_Expr> condition, 
+             std::unique_ptr<t_Stmt> then_branch,
+             std::unique_ptr<t_Stmt> else_branch)
+        : condition(std::move(condition)), 
+          then_branch(std::move(then_branch)),
+          else_branch(std::move(else_branch)) {}
 };

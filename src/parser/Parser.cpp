@@ -87,6 +87,16 @@ std::string t_Parser::Error(t_Token token, const std::string &message)
 
 t_Stmt *t_Parser::Statement()
 {
+    if (Match({t_TokenType::LEFT_BRACE}))
+    {
+        return BlockStatement();
+    }
+
+    if (Match({t_TokenType::IF}))
+    {
+        return IfStatement();
+    }
+
     if (Match({t_TokenType::AUTO}))
     {
         return VarDeclaration();
@@ -98,6 +108,43 @@ t_Stmt *t_Parser::Statement()
     }
 
     return ExpressionStatement();
+}
+
+t_Stmt *t_Parser::BlockStatement()
+{
+    std::vector<std::unique_ptr<t_Stmt>> statements;
+
+    while (!Check(t_TokenType::RIGHT_BRACE) && !IsAtEnd())
+    {
+        statements.push_back(std::unique_ptr<t_Stmt>(Statement()));
+    }
+
+    Consume(t_TokenType::RIGHT_BRACE, "Expect '}' after block.");
+    return new t_BlockStmt(std::move(statements));
+}
+
+t_Stmt *t_Parser::IfStatement()
+{
+    Consume(t_TokenType::LEFT_PAREN, "Expect '(' after 'if'.");
+    t_Expr *condition = Expression();
+    Consume(t_TokenType::RIGHT_PAREN, "Expect ')' after if condition.");
+
+    // Parse the then branch
+    t_Stmt *then_branch = Statement();
+
+    // Check for else branch
+    std::unique_ptr<t_Stmt> else_branch = nullptr;
+    if (Match({t_TokenType::ELSE}))
+    {
+        else_branch = std::unique_ptr<t_Stmt>(Statement());
+    }
+
+    return new t_IfStmt
+    (
+        std::unique_ptr<t_Expr>(condition), 
+        std::unique_ptr<t_Stmt>(then_branch), 
+        std::move(else_branch)
+    );
 }
 
 t_Stmt *t_Parser::VarDeclaration()
@@ -142,7 +189,45 @@ t_Stmt *t_Parser::ExpressionStatement()
 
 t_Expr *t_Parser::Expression()
 {
-    return Equality();
+    return Or();
+}
+
+t_Expr *t_Parser::Or()
+{
+    t_Expr *expr = And();
+
+    while (Match({t_TokenType::OR}))
+    {
+        t_Token op = Previous();
+        t_Expr *right = And();
+        expr = new t_BinaryExpr
+        (
+            std::unique_ptr<t_Expr>(expr), 
+            op, 
+            std::unique_ptr<t_Expr>(right)
+        );
+    }
+
+    return expr;
+}
+
+t_Expr *t_Parser::And()
+{
+    t_Expr *expr = Equality();
+
+    while (Match({t_TokenType::AND}))
+    {
+        t_Token op = Previous();
+        t_Expr *right = Equality();
+        expr = new t_BinaryExpr
+        (
+            std::unique_ptr<t_Expr>(expr), 
+            op, 
+            std::unique_ptr<t_Expr>(right)
+        );
+    }
+
+    return expr;
 }
 
 t_Expr *t_Parser::Equality()
@@ -153,7 +238,12 @@ t_Expr *t_Parser::Equality()
     {
         t_Token op = Previous();
         t_Expr *right = Comparison();
-        expr = new t_BinaryExpr(std::unique_ptr<t_Expr>(expr), op, std::unique_ptr<t_Expr>(right));
+        expr = new t_BinaryExpr
+        (
+            std::unique_ptr<t_Expr>(expr), 
+            op, 
+            std::unique_ptr<t_Expr>(right)
+        );
     }
 
     return expr;
@@ -177,7 +267,12 @@ t_Expr *t_Parser::Comparison()
     {
         t_Token op = Previous();
         t_Expr *right = Term();
-        expr = new t_BinaryExpr(std::unique_ptr<t_Expr>(expr), op, std::unique_ptr<t_Expr>(right));
+        expr = new t_BinaryExpr
+        (
+            std::unique_ptr<t_Expr>(expr), 
+            op, 
+            std::unique_ptr<t_Expr>(right)
+        );
     }
 
     return expr;
@@ -191,7 +286,12 @@ t_Expr *t_Parser::Term()
     {
         t_Token op = Previous();
         t_Expr *right = Factor();
-        expr = new t_BinaryExpr(std::unique_ptr<t_Expr>(expr), op, std::unique_ptr<t_Expr>(right));
+        expr = new t_BinaryExpr
+        (
+            std::unique_ptr<t_Expr>(expr), 
+            op, 
+            std::unique_ptr<t_Expr>(right)
+        );
     }
 
     return expr;
@@ -205,7 +305,12 @@ t_Expr *t_Parser::Factor()
     {
         t_Token op = Previous();
         t_Expr *right = Unary();
-        expr = new t_BinaryExpr(std::unique_ptr<t_Expr>(expr), op, std::unique_ptr<t_Expr>(right));
+        expr = new t_BinaryExpr
+        (
+            std::unique_ptr<t_Expr>(expr), 
+            op, 
+            std::unique_ptr<t_Expr>(right)
+        );
     }
 
     return expr;
@@ -253,9 +358,16 @@ t_Expr *t_Parser::Primary()
     if (Match({t_TokenType::LEFT_PAREN}))
     {
         t_Expr *expr = Expression();
-        Consume(t_TokenType::RIGHT_PAREN, "Expect ')' after expression.");
+        Consume
+        (
+            t_TokenType::RIGHT_PAREN, 
+            "Expect ')' after expression."
+        );
         return new t_GroupingExpr(std::unique_ptr<t_Expr>(expr));
     }
 
-    throw std::runtime_error("Expect expression at line " + std::to_string(Peek().line));
+    throw std::runtime_error
+    (
+        "Expect expression at line " + std::to_string(Peek().line)
+    );
 }
