@@ -74,6 +74,10 @@ void t_Lexer::ScanToken()
         {
             AddToken(t_TokenType::MINUS_MINUS);
         } 
+        else if (Match('='))
+        {
+            AddToken(t_TokenType::MINUS_EQUAL);
+        }
         else 
         {
             AddToken(t_TokenType::MINUS);
@@ -84,6 +88,10 @@ void t_Lexer::ScanToken()
         {
             AddToken(t_TokenType::PLUS_PLUS);
         } 
+        else if (Match('='))
+        {
+            AddToken(t_TokenType::PLUS_EQUAL);
+        }
         else 
         {
             AddToken(t_TokenType::PLUS);
@@ -93,7 +101,14 @@ void t_Lexer::ScanToken()
         AddToken(t_TokenType::SEMICOLON);
         break;
     case '*':
-        AddToken(t_TokenType::STAR);
+        if (Match('='))
+        {
+            AddToken(t_TokenType::STAR_EQUAL);
+        }
+        else
+        {
+            AddToken(t_TokenType::STAR);
+        }
         break;
     case '!':
         AddToken(Match('=') ? t_TokenType::BANG_EQUAL : t_TokenType::BANG);
@@ -123,6 +138,10 @@ void t_Lexer::ScanToken()
             // A comment goes until the end of the line.
             while (Peek() != '\n' && !IsAtEnd()) Advance();
         } 
+        else if (Match('='))
+        {
+            AddToken(t_TokenType::SLASH_EQUAL);
+        }
         else 
         {
             AddToken(t_TokenType::SLASH);

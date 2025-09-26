@@ -81,6 +81,68 @@ t_ValueType t_Interpreter::DetectType(const std::string& value)
     return t_ValueType::STRING;
 }
 
+// Helper function to format numeric values properly (remove unnecessary decimal places)
+std::string t_Interpreter::FormatNumber(double value)
+{
+    // Convert to string with high precision first
+    std::string str = std::to_string(value);
+    
+    // Remove trailing zeros
+    str.erase(str.find_last_not_of('0') + 1, std::string::npos);
+    
+    // Remove trailing decimal point if no decimal places
+    str.erase(str.find_last_not_of('.') + 1, std::string::npos);
+    
+    return str;
+}
+
+// Helper function to check if a string represents an integer
+bool t_Interpreter::IsInteger(const std::string& value)
+{
+    if (value.empty()) return false;
+    
+    size_t start = 0;
+    if (value[0] == '-' || value[0] == '+') {
+        if (value.length() == 1) return false;
+        start = 1;
+    }
+    
+    for (size_t i = start; i < value.length(); i++) {
+        if (!std::isdigit(value[i])) {
+            return false;
+        }
+    }
+    
+    return true;
+}
+
+// Helper function to check if a string represents a float
+bool t_Interpreter::IsFloat(const std::string& value)
+{
+    if (value.empty()) return false;
+    
+    size_t start = 0;
+    if (value[0] == '-' || value[0] == '+') {
+        if (value.length() == 1) return false;
+        start = 1;
+    }
+    
+    bool has_decimal = false;
+    for (size_t i = start; i < value.length(); i++) {
+        if (value[i] == '.') 
+        {
+            if (has_decimal) return false;
+            has_decimal = true;
+        } 
+        else if (!std::isdigit(value[i])) 
+        {
+            return false;
+        }
+    }
+    
+    return has_decimal && (value.length() > start + 1);
+}
+
 void t_Interpreter::Execute(t_Stmt *stmt)
 {
     if (t_BlockStmt *block_stmt = dynamic_cast<t_BlockStmt *>(stmt))
@@ -423,20 +485,98 @@ std::string t_Interpreter::Evaluate(t_Expr *expr)
     if (t_BinaryExpr *binary = dynamic_cast<t_BinaryExpr *>(expr))
     {
         // Handle assignment expressions
-        if (binary->op.type == t_TokenType::EQUAL)
+        if (binary->op.type == t_TokenType::EQUAL || 
+            binary->op.type == t_TokenType::PLUS_EQUAL ||
+            binary->op.type == t_TokenType::MINUS_EQUAL ||
+            binary->op.type == t_TokenType::STAR_EQUAL ||
+            binary->op.type == t_TokenType::SLASH_EQUAL)
         {
             // Left side must be a variable
             if (t_VariableExpr *var_expr = dynamic_cast<t_VariableExpr *>(binary->left.get()))
             {
                 std::string var_name = var_expr->name;
-                std::string value = Evaluate(binary->right.get());
-                t_ValueType type = DetectType(value);
+                
+                // For compound assignments, we need to get the current value first
+                std::string left_value = Evaluate(binary->left.get());
+                std::string right_value = Evaluate(binary->right.get());
+                
+                std::string final_value;
+                
+                // Handle compound assignments by converting them to regular operations
+                switch (binary->op.type)
+                {
+                case t_TokenType::EQUAL:
+                    final_value = right_value;
+                    break;
+                    
+                case t_TokenType::PLUS_EQUAL:
+                    try
+                    {
+                        double left_num = std::stod(left_value);
+                        double right_num = std::stod(right_value);
+                        final_value = FormatNumber(left_num + right_num);
+                    }
+                    catch (...)
+                    {
+                        throw std::runtime_error("String concatenation with '+=' is not allowed");
+                    }
+                    break;
+                    
+                case t_TokenType::MINUS_EQUAL:
+                    try
+                    {
+                        double left_num = std::stod(left_value);
+                        double right_num = std::stod(right_value);
+                        final_value = FormatNumber(left_num - right_num);
+                    }
+                    catch (...)
+                    {
+                        throw std::runtime_error("Cannot perform arithmetic operation with '-='");
+                    }
+                    break;
+                    
+                case t_TokenType::STAR_EQUAL:
+                    try
+                    {
+                        double left_num = std::stod(left_value);
+                        double right_num = std::stod(right_value);
+                        final_value = FormatNumber(left_num * right_num);
+                    }
+                    catch (...)
+                    {
+                        throw std::runtime_error("Cannot perform arithmetic operation with '*='");
+                    }
+                    break;
+                    
+                case t_TokenType::SLASH_EQUAL:
+                    try
+                    {
+                        double left_num = std::stod(left_value);
+                        double right_num = std::stod(right_value);
+                        if (right_num == 0)
+                        {
+                            throw std::runtime_error("Division by zero");
+                        }
+                        final_value = FormatNumber(left_num / right_num);
+                    }
+                    catch (...)
+                    {
+                        throw std::runtime_error("Cannot perform arithmetic operation with '/='");
+                    }
+                    break;
+                    
+                default:
+                    final_value = right_value;
+                    break;
+                }
+                
+                t_ValueType type = DetectType(final_value);
                 
                 // Update the variable in the environment
-                environment[var_name] = t_TypedValue(value, type);
+                environment[var_name] = t_TypedValue(final_value, type);
                 
                 // Return the assigned value
-                return value;
+                return final_value;
             }
             else
             {
@@ -455,7 +595,7 @@ std::string t_Interpreter::Evaluate(t_Expr *expr)
                 // Try to convert to numbers for arithmetic
                 double left_num = std::stod(left);
                 double right_num = std::stod(right);
-                return std::to_string(left_num + right_num);
+                return FormatNumber(left_num + right_num);
             }
             catch (...)
             {
@@ -471,7 +611,7 @@ std::string t_Interpreter::Evaluate(t_Expr *expr)
             {
                 double left_num = std::stod(left);
                 double right_num = std::stod(right);
-                return std::to_string(left_num - right_num);
+                return FormatNumber(left_num - right_num);
             }
             catch (...)
             {
@@ -483,7 +623,7 @@ std::string t_Interpreter::Evaluate(t_Expr *expr)
             {
                 double left_num = std::stod(left);
                 double right_num = std::stod(right);
-                return std::to_string(left_num * right_num);
+                return FormatNumber(left_num * right_num);
             }
             catch (...)
             {
@@ -498,7 +638,7 @@ std::string t_Interpreter::Evaluate(t_Expr *expr)
                 {
                     return "Error: Division by zero";
                 }
-                return std::to_string(left_num / right_num);
+                return FormatNumber(left_num / right_num);
             }
             catch (...)
             {

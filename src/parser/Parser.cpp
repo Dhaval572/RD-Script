@@ -316,7 +316,8 @@ t_Expr *t_Parser::Assignment()
 {
     t_Expr *expr = Or();
 
-    if (Match({t_TokenType::EQUAL}))
+    if (Match({t_TokenType::EQUAL, t_TokenType::PLUS_EQUAL, t_TokenType::MINUS_EQUAL, 
+               t_TokenType::STAR_EQUAL, t_TokenType::SLASH_EQUAL}))
     {
         t_Token equals = Previous();
         t_Expr *value = Assignment();

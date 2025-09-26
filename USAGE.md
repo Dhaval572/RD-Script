@@ -12,10 +12,10 @@ run_rd.bat <script_file.rd>
 
 ### Examples:
 
-```cmd
-./run_rd.bat test.rd
-./run_rd.bat comprehensive_test.rd
-./run_rd.bat templates/control_structures.rd
+```
+run_rd.bat test.rd
+run_rd.bat comprehensive_test.rd
+run_rd.bat templates/control_structures.rd
 ```
 
 ## How it works
@@ -64,3 +64,15 @@ if (temperature > 70 && !is_raining) {
     display "Perfect weather for outdoor activities!";
 }
 ```
+
+### Display Statement
+
+The display statement outputs values to the console. It supports comma-separated values without parentheses:
+
+```rubberduck
+display "Hello, World!";
+display "The value of x is", x;
+display "Result:", a + b, "units";
+```
+
+Note: Parentheses are not used with the display statement. Values are separated by commas.

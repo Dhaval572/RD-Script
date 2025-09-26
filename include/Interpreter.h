@@ -38,6 +38,11 @@ private:
     
     // Helper function to detect the type of a value
     t_ValueType DetectType(const std::string& value);
+    
+    // Helper functions for number formatting and type checking
+    std::string FormatNumber(double value);
+    bool IsInteger(const std::string& value);
+    bool IsFloat(const std::string& value);
 
 public:
     t_Interpreter();

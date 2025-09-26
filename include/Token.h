@@ -27,6 +27,12 @@ enum class t_TokenType
     LESS_EQUAL,
     PLUS_PLUS,      // ++
     MINUS_MINUS,    // --
+    
+    // Compound assignment operators
+    PLUS_EQUAL,     // +=
+    MINUS_EQUAL,    // -=
+    STAR_EQUAL,     // *=
+    SLASH_EQUAL,    // /=
 
     // Literals
     IDENTIFIER,
