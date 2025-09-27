@@ -84,6 +84,36 @@
 
 ## Language Constructs
 
+### String Escape Sequences
+
+RD Script supports common escape sequences in string literals to represent special characters:
+
+1. **`\n`** - Newline character
+2. **`\t`** - Tab character
+3. **`\r`** - Carriage return
+4. **`\\`** - Literal backslash
+5. **`\"`** - Literal double quote
+
+These escape sequences work in both regular strings and format strings:
+
+```rubberduck
+// Regular strings with escape sequences
+auto multiline = "Line 1\nLine 2\nLine 3";
+auto tabbed = "Column 1\tColumn 2\tColumn 3";
+auto path = "C:\\Users\\Documents\\file.txt";
+auto quote = "She said \"Hello World!\"";
+
+// Format strings with escape sequences
+auto name = "John";
+auto age = 30;
+auto formatted = $"Hello {name}!\nYou are {age} years old.";
+```
+
+Unrecognized escape sequences are preserved as literal characters:
+```rubberduck
+auto unknown = "Backslash-x: \x";  // Results in "Backslash-x: \x"
+```
+
 ### For Loop Syntax
 
 The for loop in RD Script follows C++ style syntax with the following structure:

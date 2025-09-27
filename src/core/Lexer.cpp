@@ -217,7 +217,41 @@ std::string t_Lexer::String()
     while (Peek() != '"' && !IsAtEnd())
     {
         if (Peek() == '\n') line++;
-        value += Advance();
+        
+        // Handle escape sequences
+        if (Peek() == '\\') 
+        {
+            Advance(); // Consume the backslash
+            char escaped = Advance(); // Get the character after backslash
+            
+            switch (escaped) 
+            {
+                case 'n':
+                    value += '\n';
+                    break;
+                case 't':
+                    value += '\t';
+                    break;
+                case 'r':
+                    value += '\r';
+                    break;
+                case '\\':
+                    value += '\\';
+                    break;
+                case '"':
+                    value += '"';
+                    break;
+                default:
+                    // For unrecognized escape sequences, keep both characters
+                    value += '\\';
+                    value += escaped;
+                    break;
+            }
+        } 
+        else 
+        {
+            value += Advance();
+        }
     }
 
     if (IsAtEnd())
@@ -231,7 +265,7 @@ std::string t_Lexer::String()
     // The closing ".
     Advance();
 
-    // Trim the surrounding quotes.
+    // Return the processed string value (without surrounding quotes)
     return value;
 }
 
@@ -241,7 +275,41 @@ std::string t_Lexer::FormatString()
     while (Peek() != '"' && !IsAtEnd())
     {
         if (Peek() == '\n') line++;
-        value += Advance();
+        
+        // Handle escape sequences
+        if (Peek() == '\\') 
+        {
+            Advance(); // Consume the backslash
+            char escaped = Advance(); // Get the character after backslash
+            
+            switch (escaped) 
+            {
+                case 'n':
+                    value += '\n';
+                    break;
+                case 't':
+                    value += '\t';
+                    break;
+                case 'r':
+                    value += '\r';
+                    break;
+                case '\\':
+                    value += '\\';
+                    break;
+                case '"':
+                    value += '"';
+                    break;
+                default:
+                    // For unrecognized escape sequences, keep both characters
+                    value += '\\';
+                    value += escaped;
+                    break;
+            }
+        } 
+        else 
+        {
+            value += Advance();
+        }
     }
 
     if (IsAtEnd())

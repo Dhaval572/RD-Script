@@ -102,13 +102,16 @@ bool t_Interpreter::IsInteger(const std::string& value)
     if (value.empty()) return false;
     
     size_t start = 0;
-    if (value[0] == '-' || value[0] == '+') {
+    if (value[0] == '-' || value[0] == '+') 
+    {
         if (value.length() == 1) return false;
         start = 1;
     }
     
-    for (size_t i = start; i < value.length(); i++) {
-        if (!std::isdigit(value[i])) {
+    for (size_t i = start; i < value.length(); i++) 
+    {
+        if (!std::isdigit(value[i])) 
+        {
             return false;
         }
     }
@@ -122,13 +125,15 @@ bool t_Interpreter::IsFloat(const std::string& value)
     if (value.empty()) return false;
     
     size_t start = 0;
-    if (value[0] == '-' || value[0] == '+') {
+    if (value[0] == '-' || value[0] == '+') 
+    {
         if (value.length() == 1) return false;
         start = 1;
     }
     
     bool has_decimal = false;
-    for (size_t i = start; i < value.length(); i++) {
+    for (size_t i = start; i < value.length(); i++) 
+    {
         if (value[i] == '.') 
         {
             if (has_decimal) return false;
@@ -176,8 +181,12 @@ void t_Interpreter::Execute(t_Stmt *stmt)
     }
     else if (t_ForStmt *for_stmt = dynamic_cast<t_ForStmt *>(stmt))
     {
-        // Create a new scope for the loop
-        std::unordered_map<std::string, t_TypedValue> outer_scope = environment;
+        // Store the keys of variables that existed before the loop
+        std::vector<std::string> pre_loop_variables;
+        for (const auto& pair : environment) 
+        {
+            pre_loop_variables.push_back(pair.first);
+        }
 
         // Execute initializer (if any)
         if (for_stmt->initializer)
@@ -234,8 +243,14 @@ void t_Interpreter::Execute(t_Stmt *stmt)
             }
         }
 
-        // Restore outer scope
-        environment = outer_scope;
+        // Remove variables that were created within the loop scope
+        // Keep only the variables that existed before the loop
+        std::unordered_map<std::string, t_TypedValue> cleaned_environment;
+        for (const std::string& var_name : pre_loop_variables) 
+        {
+            cleaned_environment[var_name] = environment[var_name];
+        }
+        environment = cleaned_environment;
     }
     else if 
     (

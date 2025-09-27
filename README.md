@@ -34,6 +34,7 @@ Extension: .rd
 │   ├── interpreter/
 │   │   └── Interpreter.cpp     # Interpreter implementation
 ├── templates/                  # Example scripts
+│   ├── escape_sequences.rd     # Escape sequences example
 │   ├── hello_world.rd          # Hello world example
 │   ├── variables.rd            # Variable usage
 │   ├── static_typing.rd        # Static typing example
@@ -68,7 +69,7 @@ The interpreter currently supports:
 * Logical operations (`!`)
 * Display statements with comma-separated values (`display(value1, value2, ...);`)
 * Grouping with parentheses
-* String and number literals
+* String and number literals with escape sequence support (`\n`, `\t`, `\r`, `\\`, `\"`)
 * Variable references
 * Control structures (`if`, `else`, `for`)
 
@@ -115,6 +116,26 @@ auto difference = a - b;
 auto product = a * b;
 display("Difference:", difference);
 display("Product:", product);
+```
+
+### String Escape Sequences
+```rubberduck
+// Escape sequences in regular strings
+auto multiline = "Line 1\nLine 2\nLine 3";
+auto tabbed = "Column 1\tColumn 2\tColumn 3";
+auto path = "C:\\Users\\Documents\\file.txt";
+auto quote = "She said \"Hello World!\"";
+
+display(multiline);
+display(tabbed);
+display(path);
+display(quote);
+
+// Escape sequences also work in format strings
+auto name = "John";
+auto age = 30;
+auto formatted = $"Hello {name}!\nYou are {age} years old.";
+display(formatted);
 ```
 
 ### For Loop
