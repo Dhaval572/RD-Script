@@ -101,14 +101,7 @@ void t_Lexer::ScanToken()
         AddToken(t_TokenType::SEMICOLON);
         break;
     case '*':
-        if (Match('='))
-        {
-            AddToken(t_TokenType::STAR_EQUAL);
-        }
-        else
-        {
-            AddToken(t_TokenType::STAR);
-        }
+        AddToken(Match('=') ? t_TokenType::STAR_EQUAL : t_TokenType::STAR);
         break;
     case '!':
         AddToken(Match('=') ? t_TokenType::BANG_EQUAL : t_TokenType::BANG);
@@ -138,19 +131,12 @@ void t_Lexer::ScanToken()
             // A comment goes until the end of the line.
             while (Peek() != '\n' && !IsAtEnd()) Advance();
         } 
-        else if (Match('='))
-        {
-            AddToken(t_TokenType::SLASH_EQUAL);
-        }
-        else 
-        {
-            AddToken(t_TokenType::SLASH);
-        }
+        AddToken(Match('=') ? t_TokenType::SLASH_EQUAL : t_TokenType::SLASH);
         break;
+
     case ' ':
     case '\r':
     case '\t':
-        // Ignore whitespace.
         break;
     case '\n':
         line++;
@@ -207,8 +193,10 @@ char t_Lexer::Peek()
 
 char t_Lexer::PeekNext()
 {
-    if (current + 1 >= static_cast<int>(source.length())) return '\0';
-    return source[current + 1];
+    return 
+    (
+        current + 1 < static_cast<int>(source.length())
+    ) ? source[current + 1] : '\0';
 }
 
 std::string t_Lexer::String()
@@ -348,7 +336,6 @@ void t_Lexer::Identifier()
     while (std::isalnum(Peek()) || Peek() == '_') Advance();
 
     std::string text = source.substr(start, current - start);
-    
     t_TokenType type = IdentifierType();
     AddToken(type, text);
 }
@@ -363,8 +350,7 @@ t_TokenType t_Lexer::IdentifierType()
 
 char t_Lexer::Advance()
 {
-    current++;
-    return source[current - 1];
+    return source[++current];
 }
 
 void t_Lexer::AddToken(t_TokenType type)
