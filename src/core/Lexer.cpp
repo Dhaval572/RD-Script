@@ -350,7 +350,7 @@ t_TokenType t_Lexer::IdentifierType()
 
 char t_Lexer::Advance()
 {
-    return source[++current];
+    return source[current++];
 }
 
 void t_Lexer::AddToken(t_TokenType type)

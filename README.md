@@ -33,18 +33,6 @@ Extension: .rd
 │   │   └── Parser.cpp          # Parser implementation
 │   ├── interpreter/
 │   │   └── Interpreter.cpp     # Interpreter implementation
-├── templates/                  # Example scripts
-│   ├── escape_sequences.rd     # Escape sequences example
-│   ├── hello_world.rd          # Hello world example
-│   ├── variables.rd            # Variable usage
-│   ├── static_typing.rd        # Static typing example
-│   ├── simple_example.rd       # More comprehensive example
-│   ├── for_loop_example.rd     # For loop example
-│   ├── control_structures.rd   # Control structures (not yet implemented)
-│   ├── data_structures.rd      # Data structures (not yet implemented)
-│   ├── functions.rd            # Function definitions (not yet implemented)
-│   └── system_automation.rd    # System automation examples (not yet implemented)
-└── Test.rd                     # Test file
 ```
 
 ## Coding Guidelines

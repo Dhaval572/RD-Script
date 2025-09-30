@@ -140,9 +140,12 @@ struct t_IfStmt : public t_Stmt
     std::unique_ptr<t_Stmt> then_branch;
     std::unique_ptr<t_Stmt> else_branch;
 
-    t_IfStmt(std::unique_ptr<t_Expr> condition, 
-             std::unique_ptr<t_Stmt> then_branch,
-             std::unique_ptr<t_Stmt> else_branch)
+    t_IfStmt
+    (
+        std::unique_ptr<t_Expr> condition, 
+        std::unique_ptr<t_Stmt> then_branch,
+        std::unique_ptr<t_Stmt> else_branch
+    )
         : condition(std::move(condition)), 
           then_branch(std::move(then_branch)),
           else_branch(std::move(else_branch)) {}
@@ -156,10 +159,12 @@ struct t_ForStmt : public t_Stmt
     std::unique_ptr<t_Expr> increment;
     std::unique_ptr<t_Stmt> body;
 
-    t_ForStmt(std::unique_ptr<t_Stmt> initializer,
-              std::unique_ptr<t_Expr> condition,
-              std::unique_ptr<t_Expr> increment,
-              std::unique_ptr<t_Stmt> body)
+    t_ForStmt
+    (   std::unique_ptr<t_Stmt> initializer,
+        std::unique_ptr<t_Expr> condition,
+        std::unique_ptr<t_Expr> increment,
+        std::unique_ptr<t_Stmt> body
+    )
         : initializer(std::move(initializer)),
           condition(std::move(condition)),
           increment(std::move(increment)),
