@@ -131,7 +131,10 @@ void t_Lexer::ScanToken()
             // A comment goes until the end of the line.
             while (Peek() != '\n' && !IsAtEnd()) Advance();
         } 
-        AddToken(Match('=') ? t_TokenType::SLASH_EQUAL : t_TokenType::SLASH);
+        else
+        {
+            AddToken(Match('=') ? t_TokenType::SLASH_EQUAL : t_TokenType::SLASH);
+        }
         break;
 
     case ' ':
