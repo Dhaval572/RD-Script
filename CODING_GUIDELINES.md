@@ -77,7 +77,7 @@
 
 ## Language Design Principles
 
-1. **Static Typing**: All variables must be explicitly declared using the `auto` keyword
+1. **Static Typing**: All variables must be explicitly declared using the `auto` keyword and maintain their type throughout their lifetime
 2. **C-like Syntax**: Familiar syntax for developers coming from C/C++/Java/C#
 3. **Automatic Memory Management**: No manual memory management required
 4. **Consistent Naming**: Language keywords use lowercase (e.g., `auto`, `linkedlist`, `dynamicarray`)
@@ -104,6 +104,22 @@ Attempting to use a variable without declaring it with `auto` will result in a r
 ```rubberduck
 x = 10;  // Error: Variable 'x' must be declared with 'auto' keyword before use
 ```
+
+### Static Typing Enforcement
+
+RD Script enforces static typing similar to C++. Once a variable is declared with a specific type, it cannot be assigned values of a different type:
+
+```rubberduck
+auto x = 10;     // x is a number
+x = 20;          // Valid - assigning another number
+x = "Hello";     // Error: x is number, cannot assign string
+
+auto name = "Rubber Duck";  // name is a string
+name = "Programming";       // Valid - assigning another string
+name = 42;                  // Error: name is string, cannot assign number
+```
+
+This type safety prevents common programming errors and makes the code more robust.
 
 ### String Escape Sequences
 
@@ -212,11 +228,14 @@ for (auto i = 0; i < 10; i++) {
 
 ### Assignment Expressions
 
-RD Script supports assignment expressions using the `=` operator, but all variables must be declared with the `auto` keyword before they can be assigned to:
+RD Script supports assignment expressions using the `=` operator, but all variables must be declared with the `auto` keyword before they can be assigned to, and they maintain their declared type:
 
 ```rubberduck
-auto x = 10;
-x = x + 5;  // Assigns 15 to x
+auto x = 10;     // x is declared as a number
+x = x + 5;       // Assigns 15 to x (valid - still a number)
+
+auto name = "John";  // name is declared as a string
+name = "Jane";       // Valid - assigning another string
 ```
 
 Assignment expressions can be used in statements and can be chained:
@@ -226,6 +245,12 @@ auto a = 5;
 auto b = 10;
 auto c = 15;
 a = b = c;  // Assigns 15 to both a and b
+```
+
+Attempting to assign a value of a different type will result in an error:
+```rubberduck
+auto x = 10;     // x is a number
+x = "Hello";     // Error: x is number, cannot assign string
 ```
 
 Attempting to assign to an undeclared variable will result in an error:

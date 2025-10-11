@@ -594,6 +594,52 @@ std::string t_Interpreter::Evaluate(t_Expr *expr)
                 
                 t_ValueType type = DetectType(final_value);
                 
+                // Enforce static typing - check if the new value type matches the declared variable type
+                auto it = environment.find(var_name);
+                if (it != environment.end())
+                {
+                    t_ValueType declared_type = it->second.type;
+                    // Allow assignment only if types match or if assigning to a NIL typed variable (initial assignment)
+                    if (declared_type != t_ValueType::NIL && declared_type != type)
+                    {
+                        std::string type_name;
+                        switch (declared_type)
+                        {
+                        case t_ValueType::NUMBER:
+                            type_name = "number";
+                            break;
+                        case t_ValueType::STRING:
+                            type_name = "string";
+                            break;
+                        case t_ValueType::BOOLEAN:
+                            type_name = "boolean";
+                            break;
+                        default:
+                            type_name = "unknown";
+                            break;
+                        }
+                        
+                        std::string new_type_name;
+                        switch (type)
+                        {
+                        case t_ValueType::NUMBER:
+                            new_type_name = "number";
+                            break;
+                        case t_ValueType::STRING:
+                            new_type_name = "string";
+                            break;
+                        case t_ValueType::BOOLEAN:
+                            new_type_name = "boolean";
+                            break;
+                        default:
+                            new_type_name = "unknown";
+                            break;
+                        }
+                        
+                        throw std::runtime_error("Type mismatch: variable '" + var_name + "' is " + type_name + ", cannot assign " + new_type_name);
+                    }
+                }
+                
                 // Update the variable in the environment
                 environment[var_name] = t_TypedValue(final_value, type);
                 
