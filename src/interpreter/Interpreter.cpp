@@ -511,6 +511,13 @@ std::string t_Interpreter::Evaluate(t_Expr *expr)
             {
                 std::string var_name = var_expr->name;
                 
+                // Check if variable was properly declared with 'auto' keyword
+                // All variables must be declared before use
+                if (environment.find(var_name) == environment.end())
+                {
+                    throw std::runtime_error("Variable '" + var_name + "' must be declared with 'auto' keyword before use");
+                }
+                
                 // For compound assignments, we need to get the current value first
                 std::string left_value = Evaluate(binary->left.get());
                 std::string right_value = Evaluate(binary->right.get());
@@ -719,7 +726,8 @@ std::string t_Interpreter::Evaluate(t_Expr *expr)
         {
             return it->second.value;
         }
-        return "nil";
+        // Variables must be declared with 'auto' keyword before use
+        throw std::runtime_error("Variable '" + variable->name + "' must be declared with 'auto' keyword before use");
     }
 
     return "";

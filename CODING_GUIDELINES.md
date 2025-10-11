@@ -84,6 +84,27 @@
 
 ## Language Constructs
 
+### Variable Declarations
+
+In RD Script, all variables must be explicitly declared using the `auto` keyword before they can be used. This enforces static typing and prevents accidental variable creation.
+
+Syntax:
+```rubberduck
+auto variable_name = initial_value;
+```
+
+Examples:
+```rubberduck
+auto x = 10;
+auto name = "Rubber Duck";
+auto is_active = true;
+```
+
+Attempting to use a variable without declaring it with `auto` will result in a runtime error:
+```rubberduck
+x = 10;  // Error: Variable 'x' must be declared with 'auto' keyword before use
+```
+
 ### String Escape Sequences
 
 RD Script supports common escape sequences in string literals to represent special characters:
@@ -191,7 +212,7 @@ for (auto i = 0; i < 10; i++) {
 
 ### Assignment Expressions
 
-RD Script supports assignment expressions using the `=` operator:
+RD Script supports assignment expressions using the `=` operator, but all variables must be declared with the `auto` keyword before they can be assigned to:
 
 ```rubberduck
 auto x = 10;
@@ -205,6 +226,11 @@ auto a = 5;
 auto b = 10;
 auto c = 15;
 a = b = c;  // Assigns 15 to both a and b
+```
+
+Attempting to assign to an undeclared variable will result in an error:
+```rubberduck
+x = 10;  // Error: Variable 'x' must be declared with 'auto' keyword before use
 ```
 
 ### Benchmarking
