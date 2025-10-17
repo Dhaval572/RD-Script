@@ -3,6 +3,14 @@
 #include <stdexcept>
 #include <iostream>
 
+// Initialize static memory pools with optimized sizes
+// Larger block size for statements since they can contain multiple sub-elements
+t_MemoryPool t_Parser::stmt_pool(sizeof(t_VarStmt) > sizeof(t_DisplayStmt) ? 
+                                 sizeof(t_VarStmt) : sizeof(t_DisplayStmt));
+// Larger block size for expressions since they can be complex
+t_MemoryPool t_Parser::expr_pool(sizeof(t_BinaryExpr) > sizeof(t_LiteralExpr) ? 
+                                 sizeof(t_BinaryExpr) : sizeof(t_LiteralExpr));
+
 t_Parser::t_Parser(const std::vector<t_Token> &tokens)
     : tokens(tokens), current(0) {}
 
@@ -15,6 +23,13 @@ std::vector<t_Stmt *> t_Parser::Parse()
     }
 
     return statements;
+}
+
+// Reset the memory pools
+void t_Parser::ResetPools()
+{
+    stmt_pool.Reset();
+    expr_pool.Reset();
 }
 
 bool t_Parser::IsAtEnd()
@@ -145,21 +160,27 @@ t_Stmt *t_Parser::BlockStatement()
     }
 
     Consume(t_TokenType::RIGHT_BRACE, "Expect '}' after block.");
-    return new t_BlockStmt(std::move(statements));
+    t_BlockStmt* stmt = static_cast<t_BlockStmt*>(stmt_pool.Allocate());
+    new (stmt) t_BlockStmt(std::move(statements));
+    return stmt;
 } 
 
 t_Stmt *t_Parser::BreakStatement()
 {
     t_Token keyword = Previous();
     Consume(t_TokenType::SEMICOLON, "Expect ';' after 'break'.");
-    return new t_BreakStmt(keyword);
+    t_BreakStmt* stmt = static_cast<t_BreakStmt*>(stmt_pool.Allocate());
+    new (stmt) t_BreakStmt(keyword);
+    return stmt;
 }
 
 t_Stmt *t_Parser::ContinueStatement()
 {
     t_Token keyword = Previous();
     Consume(t_TokenType::SEMICOLON, "Expect ';' after 'continue'.");
-    return new t_ContinueStmt(keyword);
+    t_ContinueStmt* stmt = static_cast<t_ContinueStmt*>(stmt_pool.Allocate());
+    new (stmt) t_ContinueStmt(keyword);
+    return stmt;
 }
 
 t_Stmt *t_Parser::IfStatement()
@@ -182,12 +203,14 @@ t_Stmt *t_Parser::IfStatement()
         else_branch = std::unique_ptr<t_Stmt>(Statement());
     }
 
-    return new t_IfStmt
+    t_IfStmt* stmt = static_cast<t_IfStmt*>(stmt_pool.Allocate());
+    new (stmt) t_IfStmt
     (
         std::unique_ptr<t_Expr>(condition), 
         std::unique_ptr<t_Stmt>(then_branch), 
         std::move(else_branch)
     );
+    return stmt;
 }
 
 t_Stmt *t_Parser::ForStatement()
@@ -233,13 +256,15 @@ t_Stmt *t_Parser::ForStatement()
     // Parse body
     t_Stmt *body = Statement();
 
-    return new t_ForStmt
+    t_ForStmt* stmt = static_cast<t_ForStmt*>(stmt_pool.Allocate());
+    new (stmt) t_ForStmt
     (
         std::move(initializer),
         std::move(condition),
         std::move(increment),
         std::unique_ptr<t_Stmt>(body)
     );
+    return stmt;
 }
 
 t_Stmt *t_Parser::VarDeclaration()
@@ -253,7 +278,9 @@ t_Stmt *t_Parser::VarDeclaration()
     }
 
     Consume(t_TokenType::SEMICOLON, "Expect ';' after variable declaration.");
-    return new t_VarStmt(name.lexeme, std::move(initializer));
+    t_VarStmt* stmt = static_cast<t_VarStmt*>(stmt_pool.Allocate());
+    new (stmt) t_VarStmt(name.lexeme, std::move(initializer));
+    return stmt;
 }
 
 t_Stmt *t_Parser::DisplayStatement()
@@ -272,20 +299,26 @@ t_Stmt *t_Parser::DisplayStatement()
     Consume(t_TokenType::SEMICOLON, "Expect ';' after value.");
 
     // Use the new t_DisplayStmt instead of t_PrintStmt
-    return new t_DisplayStmt(std::move(values));
+    t_DisplayStmt* stmt = static_cast<t_DisplayStmt*>(stmt_pool.Allocate());
+    new (stmt) t_DisplayStmt(std::move(values));
+    return stmt;
 }
 
 t_Stmt *t_Parser::ExpressionStatement()
 {
     t_Expr *expr = Expression();
     Consume(t_TokenType::SEMICOLON, "Expect ';' after expression.");
-    return new t_ExpressionStmt(std::unique_ptr<t_Expr>(expr));
+    t_ExpressionStmt* stmt = static_cast<t_ExpressionStmt*>(stmt_pool.Allocate());
+    new (stmt) t_ExpressionStmt(std::unique_ptr<t_Expr>(expr));
+    return stmt;
 }
 
 t_Stmt *t_Parser::EmptyStatement()
 {
     t_Token semicolon = Previous();
-    return new t_EmptyStmt(semicolon);
+    t_EmptyStmt* stmt = static_cast<t_EmptyStmt*>(stmt_pool.Allocate());
+    new (stmt) t_EmptyStmt(semicolon);
+    return stmt;
 }
 
 t_Stmt *t_Parser::BenchmarkStatement()
@@ -304,7 +337,9 @@ t_Stmt *t_Parser::BenchmarkStatement()
     // Create a block statement for the body
     t_Stmt *body = new t_BlockStmt(std::move(statements));
     
-    return new t_BenchmarkStmt(std::unique_ptr<t_Stmt>(body));
+    t_BenchmarkStmt* stmt = static_cast<t_BenchmarkStmt*>(stmt_pool.Allocate());
+    new (stmt) t_BenchmarkStmt(std::unique_ptr<t_Stmt>(body));
+    return stmt;
 }
 
 t_Expr *t_Parser::Expression()
@@ -325,7 +360,9 @@ t_Expr *t_Parser::Assignment()
         if (t_VariableExpr *var_expr = dynamic_cast<t_VariableExpr *>(expr))
         {
             std::string name = var_expr->name;
-            return new t_BinaryExpr(std::unique_ptr<t_Expr>(expr), equals, std::unique_ptr<t_Expr>(value));
+            t_BinaryExpr* expr_node = static_cast<t_BinaryExpr*>(expr_pool.Allocate());
+            new (expr_node) t_BinaryExpr(std::unique_ptr<t_Expr>(expr), equals, std::unique_ptr<t_Expr>(value));
+            return expr_node;
         }
 
         // If we get here, we're trying to assign to a non-variable
@@ -343,12 +380,14 @@ t_Expr *t_Parser::Or()
     {
         t_Token op = Previous();
         t_Expr *right = And();
-        expr = new t_BinaryExpr
+        t_BinaryExpr* expr_node = static_cast<t_BinaryExpr*>(expr_pool.Allocate());
+        new (expr_node) t_BinaryExpr
         (
             std::unique_ptr<t_Expr>(expr), 
             op, 
             std::unique_ptr<t_Expr>(right)
         );
+        expr = expr_node;
     }
 
     return expr;
@@ -362,12 +401,14 @@ t_Expr *t_Parser::And()
     {
         t_Token op = Previous();
         t_Expr *right = Equality();
-        expr = new t_BinaryExpr
+        t_BinaryExpr* expr_node = static_cast<t_BinaryExpr*>(expr_pool.Allocate());
+        new (expr_node) t_BinaryExpr
         (
             std::unique_ptr<t_Expr>(expr), 
             op, 
             std::unique_ptr<t_Expr>(right)
         );
+        expr = expr_node;
     }
 
     return expr;
@@ -381,12 +422,14 @@ t_Expr *t_Parser::Equality()
     {
         t_Token op = Previous();
         t_Expr *right = Comparison();
-        expr = new t_BinaryExpr
+        t_BinaryExpr* expr_node = static_cast<t_BinaryExpr*>(expr_pool.Allocate());
+        new (expr_node) t_BinaryExpr
         (
             std::unique_ptr<t_Expr>(expr), 
             op, 
             std::unique_ptr<t_Expr>(right)
         );
+        expr = expr_node;
     }
 
     return expr;
@@ -410,12 +453,14 @@ t_Expr *t_Parser::Comparison()
     {
         t_Token op = Previous();
         t_Expr *right = Term();
-        expr = new t_BinaryExpr
+        t_BinaryExpr* expr_node = static_cast<t_BinaryExpr*>(expr_pool.Allocate());
+        new (expr_node) t_BinaryExpr
         (
             std::unique_ptr<t_Expr>(expr), 
             op, 
             std::unique_ptr<t_Expr>(right)
         );
+        expr = expr_node;
     }
 
     return expr;
@@ -429,12 +474,14 @@ t_Expr *t_Parser::Term()
     {
         t_Token op = Previous();
         t_Expr *right = Factor();
-        expr = new t_BinaryExpr
+        t_BinaryExpr* expr_node = static_cast<t_BinaryExpr*>(expr_pool.Allocate());
+        new (expr_node) t_BinaryExpr
         (
             std::unique_ptr<t_Expr>(expr), 
             op, 
             std::unique_ptr<t_Expr>(right)
         );
+        expr = expr_node;
     }
 
     return expr;
@@ -448,12 +495,14 @@ t_Expr *t_Parser::Factor()
     {
         t_Token op = Previous();
         t_Expr *right = Unary();
-        expr = new t_BinaryExpr
+        t_BinaryExpr* expr_node = static_cast<t_BinaryExpr*>(expr_pool.Allocate());
+        new (expr_node) t_BinaryExpr
         (
             std::unique_ptr<t_Expr>(expr), 
             op, 
             std::unique_ptr<t_Expr>(right)
         );
+        expr = expr_node;
     }
 
     return expr;
@@ -465,7 +514,9 @@ t_Expr *t_Parser::Unary()
     {
         t_Token op = Previous();
         t_Expr *right = Unary();
-        return new t_UnaryExpr(op, std::unique_ptr<t_Expr>(right));
+        t_UnaryExpr* expr_node = static_cast<t_UnaryExpr*>(expr_pool.Allocate());
+        new (expr_node) t_UnaryExpr(op, std::unique_ptr<t_Expr>(right));
+        return expr_node;
     }
 
     return FinishUnary();
@@ -479,7 +530,9 @@ t_Expr *t_Parser::FinishUnary()
     while (Match({t_TokenType::PLUS_PLUS, t_TokenType::MINUS_MINUS}))
     {
         t_Token op = Previous();
-        expr = new t_PostfixExpr(std::unique_ptr<t_Expr>(expr), op);
+        t_PostfixExpr* expr_node = static_cast<t_PostfixExpr*>(expr_pool.Allocate());
+        new (expr_node) t_PostfixExpr(std::unique_ptr<t_Expr>(expr), op);
+        expr = expr_node;
     }
 
     return expr;
@@ -489,22 +542,30 @@ t_Expr *t_Parser::Primary()
 {
     if (Match({t_TokenType::FALSE}))
     {
-        return new t_LiteralExpr("false");
+        t_LiteralExpr* expr_node = static_cast<t_LiteralExpr*>(expr_pool.Allocate());
+        new (expr_node) t_LiteralExpr("false");
+        return expr_node;
     }
 
     if (Match({t_TokenType::TRUE}))
     {
-        return new t_LiteralExpr("true");
+        t_LiteralExpr* expr_node = static_cast<t_LiteralExpr*>(expr_pool.Allocate());
+        new (expr_node) t_LiteralExpr("true");
+        return expr_node;
     }
 
     if (Match({t_TokenType::NIL}))
     {
-        return new t_LiteralExpr("nil");
+        t_LiteralExpr* expr_node = static_cast<t_LiteralExpr*>(expr_pool.Allocate());
+        new (expr_node) t_LiteralExpr("nil");
+        return expr_node;
     }
 
     if (Match({t_TokenType::NUMBER, t_TokenType::STRING, t_TokenType::FORMAT_STRING}))
     {
-        return new t_LiteralExpr(Previous().literal);
+        t_LiteralExpr* expr_node = static_cast<t_LiteralExpr*>(expr_pool.Allocate());
+        new (expr_node) t_LiteralExpr(Previous().literal);
+        return expr_node;
     }
 
     // Handle prefix increment/decrement
@@ -512,12 +573,16 @@ t_Expr *t_Parser::Primary()
     {
         t_Token op = Previous();
         t_Expr *operand = Primary();
-        return new t_PrefixExpr(op, std::unique_ptr<t_Expr>(operand));
+        t_PrefixExpr* expr_node = static_cast<t_PrefixExpr*>(expr_pool.Allocate());
+        new (expr_node) t_PrefixExpr(op, std::unique_ptr<t_Expr>(operand));
+        return expr_node;
     }
 
     if (Match({t_TokenType::IDENTIFIER}))
     {
-        return new t_VariableExpr(Previous().lexeme);
+        t_VariableExpr* expr_node = static_cast<t_VariableExpr*>(expr_pool.Allocate());
+        new (expr_node) t_VariableExpr(Previous().lexeme);
+        return expr_node;
     }
 
     if (Match({t_TokenType::LEFT_PAREN}))
@@ -528,7 +593,9 @@ t_Expr *t_Parser::Primary()
             t_TokenType::RIGHT_PAREN, 
             "Expect ')' after expression."
         );
-        return new t_GroupingExpr(std::unique_ptr<t_Expr>(expr));
+        t_GroupingExpr* expr_node = static_cast<t_GroupingExpr*>(expr_pool.Allocate());
+        new (expr_node) t_GroupingExpr(std::unique_ptr<t_Expr>(expr));
+        return expr_node;
     }
 
     throw std::runtime_error

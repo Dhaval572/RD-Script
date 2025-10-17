@@ -25,6 +25,21 @@ void t_Interpreter::Interpret(const std::vector<t_Stmt *> &statements)
     }
 }
 
+// Helper function to format numeric values properly (remove unnecessary decimal places)
+std::string t_Interpreter::FormatNumber(double value)
+{
+    // Convert to string with high precision first
+    std::string str = std::to_string(value);
+    
+    // Remove trailing zeros
+    str.erase(str.find_last_not_of('0') + 1, std::string::npos);
+    
+    // Remove trailing decimal point if no decimal places
+    str.erase(str.find_last_not_of('.') + 1, std::string::npos);
+    
+    return str;
+}
+
 // Helper function to detect the type of a value
 t_ValueType t_Interpreter::DetectType(const std::string& value)
 {
@@ -81,21 +96,6 @@ t_ValueType t_Interpreter::DetectType(const std::string& value)
     return t_ValueType::STRING;
 }
 
-// Helper function to format numeric values properly (remove unnecessary decimal places)
-std::string t_Interpreter::FormatNumber(double value)
-{
-    // Convert to string with high precision first
-    std::string str = std::to_string(value);
-    
-    // Remove trailing zeros
-    str.erase(str.find_last_not_of('0') + 1, std::string::npos);
-    
-    // Remove trailing decimal point if no decimal places
-    str.erase(str.find_last_not_of('.') + 1, std::string::npos);
-    
-    return str;
-}
-
 // Helper function to check if a string represents an integer
 bool t_Interpreter::IsInteger(const std::string& value)
 {
@@ -148,6 +148,162 @@ bool t_Interpreter::IsFloat(const std::string& value)
     return has_decimal && (value.length() > start + 1);
 }
 
+// Optimized arithmetic operations
+std::string t_Interpreter::PerformAddition(const t_TypedValue& left, const t_TypedValue& right)
+{
+    // If both values have precomputed numeric values, use them directly
+    if (left.has_numeric_value && right.has_numeric_value)
+    {
+        return FormatNumber(left.numeric_value + right.numeric_value);
+    }
+    
+    // Fallback to string-based conversion
+    try
+    {
+        double left_num = left.has_numeric_value ? left.numeric_value : std::stod(left.value);
+        double right_num = right.has_numeric_value ? right.numeric_value : std::stod(right.value);
+        return FormatNumber(left_num + right_num);
+    }
+    catch (...)
+    {
+        throw std::runtime_error("String concatenation with '+' is not allowed. Use comma-separated values in display statements instead.");
+    }
+}
+
+std::string t_Interpreter::PerformSubtraction(const t_TypedValue& left, const t_TypedValue& right)
+{
+    // If both values have precomputed numeric values, use them directly
+    if (left.has_numeric_value && right.has_numeric_value)
+    {
+        return FormatNumber(left.numeric_value - right.numeric_value);
+    }
+    
+    // Fallback to string-based conversion
+    try
+    {
+        double left_num = left.has_numeric_value ? left.numeric_value : std::stod(left.value);
+        double right_num = right.has_numeric_value ? right.numeric_value : std::stod(right.value);
+        return FormatNumber(left_num - right_num);
+    }
+    catch (...)
+    {
+        return "Error: Cannot perform arithmetic operation";
+    }
+}
+
+std::string t_Interpreter::PerformMultiplication(const t_TypedValue& left, const t_TypedValue& right)
+{
+    // If both values have precomputed numeric values, use them directly
+    if (left.has_numeric_value && right.has_numeric_value)
+    {
+        return FormatNumber(left.numeric_value * right.numeric_value);
+    }
+    
+    // Fallback to string-based conversion
+    try
+    {
+        double left_num = left.has_numeric_value ? left.numeric_value : std::stod(left.value);
+        double right_num = right.has_numeric_value ? right.numeric_value : std::stod(right.value);
+        return FormatNumber(left_num * right_num);
+    }
+    catch (...)
+    {
+        return "Error: Cannot perform arithmetic operation";
+    }
+}
+
+std::string t_Interpreter::PerformDivision(const t_TypedValue& left, const t_TypedValue& right)
+{
+    // If both values have precomputed numeric values, use them directly
+    if (left.has_numeric_value && right.has_numeric_value)
+    {
+        if (right.numeric_value == 0)
+        {
+            return "Error: Division by zero";
+        }
+        return FormatNumber(left.numeric_value / right.numeric_value);
+    }
+    
+    // Fallback to string-based conversion
+    try
+    {
+        double left_num = left.has_numeric_value ? left.numeric_value : std::stod(left.value);
+        double right_num = right.has_numeric_value ? right.numeric_value : std::stod(right.value);
+        if (right_num == 0)
+        {
+            return "Error: Division by zero";
+        }
+        return FormatNumber(left_num / right_num);
+    }
+    catch (...)
+    {
+        return "Error: Cannot perform arithmetic operation";
+    }
+}
+
+bool t_Interpreter::PerformComparison(const t_TypedValue& left, const t_TokenType op, const t_TypedValue& right)
+{
+    // If both values have precomputed numeric values, use them directly
+    if (left.has_numeric_value && right.has_numeric_value)
+    {
+        switch (op)
+        {
+        case t_TokenType::GREATER:
+            return left.numeric_value > right.numeric_value;
+        case t_TokenType::GREATER_EQUAL:
+            return left.numeric_value >= right.numeric_value;
+        case t_TokenType::LESS:
+            return left.numeric_value < right.numeric_value;
+        case t_TokenType::LESS_EQUAL:
+            return left.numeric_value <= right.numeric_value;
+        case t_TokenType::EQUAL_EQUAL:
+            return left.numeric_value == right.numeric_value;
+        case t_TokenType::BANG_EQUAL:
+            return left.numeric_value != right.numeric_value;
+        default:
+            return false;
+        }
+    }
+    
+    // Fallback to string-based conversion
+    try
+    {
+        double left_num = left.has_numeric_value ? left.numeric_value : std::stod(left.value);
+        double right_num = right.has_numeric_value ? right.numeric_value : std::stod(right.value);
+        
+        switch (op)
+        {
+        case t_TokenType::GREATER:
+            return left_num > right_num;
+        case t_TokenType::GREATER_EQUAL:
+            return left_num >= right_num;
+        case t_TokenType::LESS:
+            return left_num < right_num;
+        case t_TokenType::LESS_EQUAL:
+            return left_num <= right_num;
+        case t_TokenType::EQUAL_EQUAL:
+            return left_num == right_num;
+        case t_TokenType::BANG_EQUAL:
+            return left_num != right_num;
+        default:
+            return false;
+        }
+    }
+    catch (...)
+    {
+        // For non-numeric comparisons, fallback to string comparison
+        switch (op)
+        {
+        case t_TokenType::EQUAL_EQUAL:
+            return left.value == right.value;
+        case t_TokenType::BANG_EQUAL:
+            return left.value != right.value;
+        default:
+            throw std::runtime_error("Cannot compare non-numeric values");
+        }
+    }
+}
+
 void t_Interpreter::Execute(t_Stmt *stmt)
 {
     if (t_BlockStmt *block_stmt = dynamic_cast<t_BlockStmt *>(stmt))
@@ -181,76 +337,84 @@ void t_Interpreter::Execute(t_Stmt *stmt)
     }
     else if (t_ForStmt *for_stmt = dynamic_cast<t_ForStmt *>(stmt))
     {
-        // Store the keys of variables that existed before the loop
-        std::vector<std::string> pre_loop_variables;
-        for (const auto& pair : environment) 
+        // Check for specialized numeric loop pattern: for (auto i = 0; i < N; i++)
+        if (IsSimpleNumericLoop(for_stmt))
         {
-            pre_loop_variables.push_back(pair.first);
+            ExecuteSimpleNumericLoop(for_stmt);
         }
-
-        // Execute initializer (if any)
-        if (for_stmt->initializer)
+        else
         {
-            Execute(for_stmt->initializer.get());
-        }
-
-        // Loop while condition is true (or forever if no condition)
-        while (true)
-        {
-            // Check condition (if any)
-            if (for_stmt->condition)
+            // Store the keys of variables that existed before the loop
+            std::vector<std::string> pre_loop_variables;
+            for (const auto& pair : environment) 
             {
-                std::string condition_value = 
-                Evaluate(for_stmt->condition.get());
+                pre_loop_variables.push_back(pair.first);
+            }
 
-                if (!IsTruthy(condition_value))
+            // Execute initializer (if any)
+            if (for_stmt->initializer)
+            {
+                Execute(for_stmt->initializer.get());
+            }
+
+            // Loop while condition is true (or forever if no condition)
+            while (true)
+            {
+                // Check condition (if any)
+                if (for_stmt->condition)
                 {
-                    break; // Exit loop if condition is false
+                    std::string condition_value = 
+                    Evaluate(for_stmt->condition.get());
+
+                    if (!IsTruthy(condition_value))
+                    {
+                        break; // Exit loop if condition is false
+                    }
+                }
+                else if (!for_stmt->condition && !for_stmt->increment)
+                {
+                    // Special case: for (;;) should run forever unless broken
+                    // This is already handled by the infinite loop, but we need to be careful
+                    // about the logic when both condition and increment are missing
+                }
+
+                // Execute body
+                try
+                {
+                    Execute(for_stmt->body.get());
+                }
+                catch (const std::string &control_flow)
+                {
+                    if (control_flow == "break")
+                    {
+                        break; 
+                    }
+                    else if (control_flow == "continue")
+                    {
+                        // Continue to next iteration (execute increment then continue loop)
+                    }
+                    else
+                    {
+                        throw; // Re-throw other exceptions
+                    }
+                }
+
+                // Execute increment (if any)
+                if (for_stmt->increment)
+                {
+                    Evaluate(for_stmt->increment.get());
                 }
             }
-            else if (!for_stmt->condition && !for_stmt->increment)
-            {
-                // Special case: for (;;) should run forever unless broken
-                // This is already handled by the infinite loop, but we need to be careful
-                // about the logic when both condition and increment are missing
-            }
 
-            // Execute body
-            try
+            // Remove variables that were created within the loop scope
+            // Keep only the variables that existed before the loop
+            std::unordered_map<std::string, t_TypedValue> cleaned_environment;
+            for (const std::string& var_name : pre_loop_variables) 
             {
-                Execute(for_stmt->body.get());
+                cleaned_environment[var_name] = environment[var_name];
             }
-            catch (const std::string &control_flow)
-            {
-                if (control_flow == "break")
-                {
-                    break; 
-                }
-                else if (control_flow == "continue")
-                {
-                    // Continue to next iteration (execute increment then continue loop)
-                }
-                else
-                {
-                    throw; // Re-throw other exceptions
-                }
-            }
-
-            // Execute increment (if any)
-            if (for_stmt->increment)
-            {
-                Evaluate(for_stmt->increment.get());
-            }
+            environment = cleaned_environment;
         }
-
-        // Remove variables that were created within the loop scope
-        // Keep only the variables that existed before the loop
-        std::unordered_map<std::string, t_TypedValue> cleaned_environment;
-        for (const std::string& var_name : pre_loop_variables) 
-        {
-            cleaned_environment[var_name] = environment[var_name];
-        }
-        environment = cleaned_environment;
     }
     else if 
     (
@@ -263,11 +427,12 @@ void t_Interpreter::Execute(t_Stmt *stmt)
             throw std::runtime_error("Variable '" + var_stmt->name + "' already declared");
         }
 
-        t_TypedValue typed_value("nil", t_ValueType::NIL);
+        t_TypedValue typed_value;
         if (var_stmt->initializer)
         {
             std::string value = Evaluate(var_stmt->initializer.get());
             t_ValueType type = DetectType(value);
+            // Use optimized TypedValue constructor
             typed_value = t_TypedValue(value, type);
         }
         environment[var_stmt->name] = typed_value;
@@ -379,6 +544,20 @@ std::string t_Interpreter::Evaluate(t_Expr *expr)
         switch (unary->op.type)
         {
         case t_TokenType::MINUS:
+            // Optimize unary minus for numeric literals
+            if (t_LiteralExpr* right_literal = dynamic_cast<t_LiteralExpr*>(unary->right.get()))
+            {
+                t_ValueType type = DetectType(right_literal->value);
+                if (type == t_ValueType::NUMBER)
+                {
+                    try
+                    {
+                        double value = std::stod(right_literal->value);
+                        return FormatNumber(-value);
+                    }
+                    catch (...) {}
+                }
+            }
             return "-" + right;
 
         case t_TokenType::BANG:
@@ -398,37 +577,56 @@ std::string t_Interpreter::Evaluate(t_Expr *expr)
                 throw std::runtime_error("Undefined variable '" + var_name + "'");
             }
             
-            std::string current_value = it->second.value;
+            t_TypedValue& current_value = it->second;
             
-            // Try to convert to number for arithmetic operations
-            try
+            // Use direct numeric operations when possible
+            if (current_value.has_numeric_value)
             {
-                double num_value = std::stod(current_value);
-                
                 if (prefix->op.type == t_TokenType::PLUS_PLUS)
                 {
-                    num_value += 1.0;
-                    std::string new_value = std::to_string(num_value);
-                    // Remove trailing zeros and decimal point if not needed
-                    new_value.erase(new_value.find_last_not_of('0') + 1, std::string::npos);
-                    new_value.erase(new_value.find_last_not_of('.') + 1, std::string::npos);
-                    environment[var_name] = t_TypedValue(new_value, t_ValueType::NUMBER);
-                    return new_value;
+                    double new_value = current_value.numeric_value + 1.0;
+                    environment[var_name] = t_TypedValue(new_value);
+                    return std::to_string(new_value);
                 }
                 else if (prefix->op.type == t_TokenType::MINUS_MINUS)
                 {
-                    num_value -= 1.0;
-                    std::string new_value = std::to_string(num_value);
-                    // Remove trailing zeros and decimal point if not needed
-                    new_value.erase(new_value.find_last_not_of('0') + 1, std::string::npos);
-                    new_value.erase(new_value.find_last_not_of('.') + 1, std::string::npos);
-                    environment[var_name] = t_TypedValue(new_value, t_ValueType::NUMBER);
-                    return new_value;
+                    double new_value = current_value.numeric_value - 1.0;
+                    environment[var_name] = t_TypedValue(new_value);
+                    return std::to_string(new_value);
                 }
             }
-            catch (...)
+            else
             {
-                throw std::runtime_error("Cannot perform increment/decrement on non-numeric value");
+                // Fallback to string-based operations
+                try
+                {
+                    double num_value = std::stod(current_value.value);
+                    
+                    if (prefix->op.type == t_TokenType::PLUS_PLUS)
+                    {
+                        num_value += 1.0;
+                        std::string new_value = std::to_string(num_value);
+                        // Remove trailing zeros and decimal point if not needed
+                        new_value.erase(new_value.find_last_not_of('0') + 1, std::string::npos);
+                        new_value.erase(new_value.find_last_not_of('.') + 1, std::string::npos);
+                        environment[var_name] = t_TypedValue(new_value, t_ValueType::NUMBER);
+                        return new_value;
+                    }
+                    else if (prefix->op.type == t_TokenType::MINUS_MINUS)
+                    {
+                        num_value -= 1.0;
+                        std::string new_value = std::to_string(num_value);
+                        // Remove trailing zeros and decimal point if not needed
+                        new_value.erase(new_value.find_last_not_of('0') + 1, std::string::npos);
+                        new_value.erase(new_value.find_last_not_of('.') + 1, std::string::npos);
+                        environment[var_name] = t_TypedValue(new_value, t_ValueType::NUMBER);
+                        return new_value;
+                    }
+                }
+                catch (...)
+                {
+                    throw std::runtime_error("Cannot perform increment/decrement on non-numeric value");
+                }
             }
         }
         throw std::runtime_error("Prefix increment/decrement can only be applied to variables");
@@ -453,40 +651,59 @@ std::string t_Interpreter::Evaluate(t_Expr *expr)
                 );
             }
             
-            std::string current_value = it->second.value;
-            std::string return_value = current_value; // Return the value BEFORE increment/decrement
+            t_TypedValue& current_value = it->second;
+            std::string return_value = current_value.value; // Return the value BEFORE increment/decrement
             
-            // Try to convert to number for arithmetic operations
-            try
+            // Use direct numeric operations when possible
+            if (current_value.has_numeric_value)
             {
-                double num_value = std::stod(current_value);
-                
                 if (postfix->op.type == t_TokenType::PLUS_PLUS)
                 {
-                    num_value += 1.0;
-                    std::string new_value = std::to_string(num_value);
-
-                    // Remove trailing zeros and decimal point if not needed
-                    new_value.erase(new_value.find_last_not_of('0') + 1, std::string::npos);
-                    new_value.erase(new_value.find_last_not_of('.') + 1, std::string::npos);
-                    environment[var_name] = t_TypedValue(new_value, t_ValueType::NUMBER);
+                    double new_value = current_value.numeric_value + 1.0;
+                    environment[var_name] = t_TypedValue(new_value);
+                    return current_value.value; // Return original value
                 }
                 else if (postfix->op.type == t_TokenType::MINUS_MINUS)
                 {
-                    num_value -= 1.0;
-                    std::string new_value = std::to_string(num_value);
-                    // Remove trailing zeros and decimal point if not needed
-                    new_value.erase(new_value.find_last_not_of('0') + 1, std::string::npos);
-                    new_value.erase(new_value.find_last_not_of('.') + 1, std::string::npos);
-                    environment[var_name] = t_TypedValue(new_value, t_ValueType::NUMBER);
+                    double new_value = current_value.numeric_value - 1.0;
+                    environment[var_name] = t_TypedValue(new_value);
+                    return current_value.value; // Return original value
                 }
             }
-            catch (...)
+            else
             {
-                throw std::runtime_error
-                (
-                    "Cannot perform increment/decrement on non-numeric value"
-                );
+                // Fallback to string-based operations
+                try
+                {
+                    double num_value = std::stod(current_value.value);
+                    
+                    if (postfix->op.type == t_TokenType::PLUS_PLUS)
+                    {
+                        num_value += 1.0;
+                        std::string new_value = std::to_string(num_value);
+
+                        // Remove trailing zeros and decimal point if not needed
+                        new_value.erase(new_value.find_last_not_of('0') + 1, std::string::npos);
+                        new_value.erase(new_value.find_last_not_of('.') + 1, std::string::npos);
+                        environment[var_name] = t_TypedValue(new_value, t_ValueType::NUMBER);
+                    }
+                    else if (postfix->op.type == t_TokenType::MINUS_MINUS)
+                    {
+                        num_value -= 1.0;
+                        std::string new_value = std::to_string(num_value);
+                        // Remove trailing zeros and decimal point if not needed
+                        new_value.erase(new_value.find_last_not_of('0') + 1, std::string::npos);
+                        new_value.erase(new_value.find_last_not_of('.') + 1, std::string::npos);
+                        environment[var_name] = t_TypedValue(new_value, t_ValueType::NUMBER);
+                    }
+                }
+                catch (...)
+                {
+                    throw std::runtime_error
+                    (
+                        "Cannot perform increment/decrement on non-numeric value"
+                    );
+                }
             }
             
             return return_value;
@@ -534,9 +751,12 @@ std::string t_Interpreter::Evaluate(t_Expr *expr)
                 case t_TokenType::PLUS_EQUAL:
                     try
                     {
-                        double left_num = std::stod(left_value);
-                        double right_num = std::stod(right_value);
-                        final_value = FormatNumber(left_num + right_num);
+                        // Get typed values for optimized operations
+                        auto left_it = environment.find(var_name);
+                        t_TypedValue left_typed = left_it != environment.end() ? left_it->second : t_TypedValue(left_value, DetectType(left_value));
+                        t_TypedValue right_typed(right_value, DetectType(right_value));
+                        
+                        final_value = PerformAddition(left_typed, right_typed);
                     }
                     catch (...)
                     {
@@ -547,9 +767,12 @@ std::string t_Interpreter::Evaluate(t_Expr *expr)
                 case t_TokenType::MINUS_EQUAL:
                     try
                     {
-                        double left_num = std::stod(left_value);
-                        double right_num = std::stod(right_value);
-                        final_value = FormatNumber(left_num - right_num);
+                        // Get typed values for optimized operations
+                        auto left_it = environment.find(var_name);
+                        t_TypedValue left_typed = left_it != environment.end() ? left_it->second : t_TypedValue(left_value, DetectType(left_value));
+                        t_TypedValue right_typed(right_value, DetectType(right_value));
+                        
+                        final_value = PerformSubtraction(left_typed, right_typed);
                     }
                     catch (...)
                     {
@@ -560,9 +783,12 @@ std::string t_Interpreter::Evaluate(t_Expr *expr)
                 case t_TokenType::STAR_EQUAL:
                     try
                     {
-                        double left_num = std::stod(left_value);
-                        double right_num = std::stod(right_value);
-                        final_value = FormatNumber(left_num * right_num);
+                        // Get typed values for optimized operations
+                        auto left_it = environment.find(var_name);
+                        t_TypedValue left_typed = left_it != environment.end() ? left_it->second : t_TypedValue(left_value, DetectType(left_value));
+                        t_TypedValue right_typed(right_value, DetectType(right_value));
+                        
+                        final_value = PerformMultiplication(left_typed, right_typed);
                     }
                     catch (...)
                     {
@@ -573,13 +799,12 @@ std::string t_Interpreter::Evaluate(t_Expr *expr)
                 case t_TokenType::SLASH_EQUAL:
                     try
                     {
-                        double left_num = std::stod(left_value);
-                        double right_num = std::stod(right_value);
-                        if (right_num == 0)
-                        {
-                            throw std::runtime_error("Division by zero");
-                        }
-                        final_value = FormatNumber(left_num / right_num);
+                        // Get typed values for optimized operations
+                        auto left_it = environment.find(var_name);
+                        t_TypedValue left_typed = left_it != environment.end() ? left_it->second : t_TypedValue(left_value, DetectType(left_value));
+                        t_TypedValue right_typed(right_value, DetectType(right_value));
+                        
+                        final_value = PerformDivision(left_typed, right_typed);
                     }
                     catch (...)
                     {
@@ -652,116 +877,35 @@ std::string t_Interpreter::Evaluate(t_Expr *expr)
             }
         }
         
-        std::string left = Evaluate(binary->left.get());
-        std::string right = Evaluate(binary->right.get());
+        // Evaluate operands
+        std::string left_str = Evaluate(binary->left.get());
+        std::string right_str = Evaluate(binary->right.get());
+        
+        // Get typed values for optimized operations
+        t_TypedValue left_typed(left_str, DetectType(left_str));
+        t_TypedValue right_typed(right_str, DetectType(right_str));
 
         switch (binary->op.type)
         {
         case t_TokenType::PLUS:
-            try
-            {
-                // Try to convert to numbers for arithmetic
-                double left_num = std::stod(left);
-                double right_num = std::stod(right);
-                return FormatNumber(left_num + right_num);
-            }
-            catch (...)
-            {
-                // If not numbers, prevent string concatenation
-                throw std::runtime_error
-                (
-                    "String concatenation with '+' is not allowed. Use comma-separated values in display statements instead."
-                );
-            }
+            return PerformAddition(left_typed, right_typed);
 
         case t_TokenType::MINUS:
-            try
-            {
-                double left_num = std::stod(left);
-                double right_num = std::stod(right);
-                return FormatNumber(left_num - right_num);
-            }
-            catch (...)
-            {
-                return "Error: Cannot perform arithmetic operation";
-            }
+            return PerformSubtraction(left_typed, right_typed);
 
         case t_TokenType::STAR:
-            try
-            {
-                double left_num = std::stod(left);
-                double right_num = std::stod(right);
-                return FormatNumber(left_num * right_num);
-            }
-            catch (...)
-            {
-                return "Error: Cannot perform arithmetic operation";
-            }
+            return PerformMultiplication(left_typed, right_typed);
+            
         case t_TokenType::SLASH:
-            try
-            {
-                double left_num = std::stod(left);
-                double right_num = std::stod(right);
-                if (right_num == 0)
-                {
-                    return "Error: Division by zero";
-                }
-                return FormatNumber(left_num / right_num);
-            }
-            catch (...)
-            {
-                return "Error: Cannot perform arithmetic operation";
-            }
+            return PerformDivision(left_typed, right_typed);
+            
         case t_TokenType::BANG_EQUAL:
-            return (left != right) ? "true" : "false";
-
         case t_TokenType::EQUAL_EQUAL:
-            return (left == right) ? "true" : "false";
-
         case t_TokenType::GREATER:
-            try
-            {
-                double left_num = std::stod(left);
-                double right_num = std::stod(right);
-                return (left_num > right_num) ? "true" : "false";
-            }
-            catch (...)
-            {
-                return "Error: Cannot compare non-numeric values";
-            }
         case t_TokenType::GREATER_EQUAL:
-            try
-            {
-                double left_num = std::stod(left);
-                double right_num = std::stod(right);
-                return (left_num >= right_num) ? "true" : "false";
-            }
-            catch (...)
-            {
-                return "Error: Cannot compare non-numeric values";
-            }
         case t_TokenType::LESS:
-            try
-            {
-                double left_num = std::stod(left);
-                double right_num = std::stod(right);
-                return (left_num < right_num) ? "true" : "false";
-            }
-            catch (...)
-            {
-                return "Error: Cannot compare non-numeric values";
-            }
         case t_TokenType::LESS_EQUAL:
-            try
-            {
-                double left_num = std::stod(left);
-                double right_num = std::stod(right);
-                return (left_num <= right_num) ? "true" : "false";
-            }
-            catch (...)
-            {
-                return "Error: Cannot compare non-numeric values";
-            }
+            return PerformComparison(left_typed, binary->op.type, right_typed) ? "true" : "false";
         }
     }
 
@@ -827,4 +971,121 @@ std::string t_Interpreter::EvaluateFormatExpression(const std::string &expr_str)
         // If parsing fails, treat as literal text
         return expr_str;
     }
+}
+
+// Helper function to check if a for loop is a simple numeric loop pattern: for (auto i = 0; i < N; i++)
+bool t_Interpreter::IsSimpleNumericLoop(t_ForStmt* for_stmt)
+{
+    // Check if initializer is: auto var = 0
+    if (!for_stmt->initializer) return false;
+    
+    t_VarStmt* init_var = dynamic_cast<t_VarStmt*>(for_stmt->initializer.get());
+    if (!init_var || !init_var->initializer) return false;
+    
+    t_LiteralExpr* init_literal = dynamic_cast<t_LiteralExpr*>(init_var->initializer.get());
+    if (!init_literal || init_literal->value != "0") return false;
+    
+    // Check if condition is: var < number
+    if (!for_stmt->condition) return false;
+    
+    t_BinaryExpr* condition_binary = dynamic_cast<t_BinaryExpr*>(for_stmt->condition.get());
+    if (!condition_binary || condition_binary->op.type != t_TokenType::LESS) return false;
+    
+    t_VariableExpr* condition_var = dynamic_cast<t_VariableExpr*>(condition_binary->left.get());
+    if (!condition_var || condition_var->name != init_var->name) return false;
+    
+    t_LiteralExpr* condition_literal = dynamic_cast<t_LiteralExpr*>(condition_binary->right.get());
+    if (!condition_literal) return false;
+    
+    // Try to convert condition literal to number
+    try {
+        std::stod(condition_literal->value);
+    } catch (...) {
+        return false;
+    }
+    
+    // Check if increment is: var++ or ++var
+    if (!for_stmt->increment) return false;
+    
+    // Check for postfix increment: var++
+    t_PostfixExpr* postfix_inc = dynamic_cast<t_PostfixExpr*>(for_stmt->increment.get());
+    if (postfix_inc) {
+        t_VariableExpr* inc_var = dynamic_cast<t_VariableExpr*>(postfix_inc->operand.get());
+        if (inc_var && inc_var->name == init_var->name && 
+            postfix_inc->op.type == t_TokenType::PLUS_PLUS) {
+            return true;
+        }
+    }
+    
+    // Check for prefix increment: ++var
+    t_PrefixExpr* prefix_inc = dynamic_cast<t_PrefixExpr*>(for_stmt->increment.get());
+    if (prefix_inc) {
+        t_VariableExpr* inc_var = dynamic_cast<t_VariableExpr*>(prefix_inc->operand.get());
+        if (inc_var && inc_var->name == init_var->name && 
+            prefix_inc->op.type == t_TokenType::PLUS_PLUS) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+// Optimized execution for simple numeric loops: for (auto i = 0; i < N; i++)
+void t_Interpreter::ExecuteSimpleNumericLoop(t_ForStmt* for_stmt)
+{
+    // Extract loop parameters
+    t_VarStmt* init_var = dynamic_cast<t_VarStmt*>(for_stmt->initializer.get());
+    t_BinaryExpr* condition_binary = dynamic_cast<t_BinaryExpr*>(for_stmt->condition.get());
+    t_LiteralExpr* condition_literal = dynamic_cast<t_LiteralExpr*>(condition_binary->right.get());
+    
+    // Get the loop limit
+    int limit = static_cast<int>(std::stod(condition_literal->value));
+    
+    // Store the variable name
+    std::string loop_var_name = init_var->name;
+    
+    // Store the keys of variables that existed before the loop
+    std::vector<std::string> pre_loop_variables;
+    for (const auto& pair : environment) 
+    {
+        pre_loop_variables.push_back(pair.first);
+    }
+    
+    // Execute the loop with direct numeric operations
+    for (int i = 0; i < limit; i++)
+    {
+        // Set loop variable directly as integer
+        environment[loop_var_name] = t_TypedValue(static_cast<double>(i));
+        
+        // Execute body
+        try
+        {
+            Execute(for_stmt->body.get());
+        }
+        catch (const std::string &control_flow)
+        {
+            if (control_flow == "break")
+            {
+                break; 
+            }
+            else if (control_flow == "continue")
+            {
+                // Continue to next iteration
+                continue;
+            }
+            else
+            {
+                throw; // Re-throw other exceptions
+            }
+        }
+    }
+    
+    // Remove variables that were created within the loop scope
+    // Keep only the variables that existed before the loop
+    std::unordered_map<std::string, t_TypedValue> cleaned_environment;
+    for (const std::string& var_name : pre_loop_variables) 
+    {
+        cleaned_environment[var_name] = environment[var_name];
+    }
+    environment = cleaned_environment;
 }

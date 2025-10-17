@@ -41,7 +41,7 @@ int main(int argc, char* argv[])
         t_Lexer lexer(source);
         std::vector<t_Token> tokens = lexer.ScanTokens();
 
-        // Parsing
+        // Parsing with memory pool optimization
         t_Parser parser(tokens);
         std::vector<t_Stmt*> statements = parser.Parse();
 
@@ -49,11 +49,9 @@ int main(int argc, char* argv[])
         t_Interpreter interpreter;
         interpreter.Interpret(statements);
 
-        // Clean up AST nodes
-        for (t_Stmt* stmt : statements) 
-        {
-            delete stmt;
-        }
+        // No need to manually delete statements - they're managed by the memory pool
+        // Reset the pools for the next run
+        t_Parser::ResetPools();
     } 
     catch (const std::exception& e) 
     {
