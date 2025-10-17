@@ -8,7 +8,13 @@
 #include "../include/Lexer.h"
 #include "../include/Parser.h"
 
-t_Interpreter::t_Interpreter() = default;
+t_Interpreter::t_Interpreter()
+{
+    // Optimize std::cout performance by disabling synchronization with C stdio
+    // and untieing cin from cout
+    std::ios::sync_with_stdio(false);
+    std::cin.tie(nullptr);
+}
 
 void t_Interpreter::Interpret(const std::vector<t_Stmt *> &statements)
 {
@@ -444,14 +450,14 @@ void t_Interpreter::Execute(t_Stmt *stmt)
         {
             if (!first)
             {
-                std::cout << " "; // Add space between values
+                std::cout << ' '; // Add space between values (use char instead of string for performance)
             }
             first = false;
 
             std::string value = Evaluate(expr.get());
             std::cout << value;
         }
-        std::cout << std::endl;
+        std::cout << '\n'; // Use char instead of std::endl for better performance
     }
     else if (t_BenchmarkStmt *benchmark_stmt = dynamic_cast<t_BenchmarkStmt *>(stmt))
     {
@@ -468,11 +474,11 @@ void t_Interpreter::Execute(t_Stmt *stmt)
         auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time);
         
         // Display benchmark results
-        std::cout << "Benchmark Results:" << std::endl;
-        std::cout << "  Execution time: " << duration.count() << " nanoseconds" << std::endl;
-        std::cout << "  Execution time: " << duration.count() / 1000.0 << " microseconds" << std::endl;
-        std::cout << "  Execution time: " << duration.count() / 1000000.0 << " milliseconds" << std::endl;
-        std::cout << "  Execution time: " << duration.count() / 1000000000.0 << " seconds" << std::endl;
+        std::cout << "Benchmark Results:\n";
+        std::cout << "  Execution time: " << duration.count() << " nanoseconds\n";
+        std::cout << "  Execution time: " << duration.count() / 1000.0 << " microseconds\n";
+        std::cout << "  Execution time: " << duration.count() / 1000000.0 << " milliseconds\n";
+        std::cout << "  Execution time: " << duration.count() / 1000000000.0 << " seconds\n";
     }
     else if (t_EmptyStmt *empty_stmt = dynamic_cast<t_EmptyStmt *>(stmt))
     {
@@ -493,11 +499,11 @@ std::string t_Interpreter::Evaluate(t_Expr *expr)
 {
     if (t_LiteralExpr *literal = dynamic_cast<t_LiteralExpr *>(expr))
     {
-        // Check if this is a format string (starts with $)
-        if (literal->value.length() > 0 && literal->value[0] == '$')
+        // Check if this is a format string based on token type
+        if (literal->token_type == t_TokenType::FORMAT_STRING)
         {
             // Process format string
-            std::string format_str = literal->value.substr(1); // Remove the $ prefix
+            std::string format_str = literal->value;
             std::string result = format_str;
 
             // Improved string replacement approach with better error handling
@@ -939,32 +945,153 @@ std::string t_Interpreter::EvaluateFormatExpression(const std::string &expr_str)
             return "";
         }
 
-        // Create a temporary lexer and parser to evaluate the expression
-        t_Lexer lexer(expr_str);
-        std::vector<t_Token> tokens = lexer.ScanTokens();
-
-        // Remove the EOF token as it's not needed for expression parsing
-        if (!tokens.empty() && tokens.back().type == t_TokenType::EOF_TOKEN)
+        // For simple variable names, look them up directly in the environment
+        auto it = environment.find(expr_str);
+        if (it != environment.end())
         {
-            tokens.pop_back();
+            return it->second.value;
         }
-
-        // If no tokens or only EOF token, return empty string
-        if (tokens.empty())
+        
+        // For numeric literals, return them directly
+        if (DetectType(expr_str) == t_ValueType::NUMBER)
         {
-            return "";
+            return expr_str;
         }
-
-        // Create a parser for the expression
-        t_Parser parser(tokens);
-
-        // Parse and evaluate the expression
-        std::unique_ptr<t_Expr> expr(parser.Expression());
-        if (expr)
+        
+        // Handle simple arithmetic expressions
+        // Look for operators in order of precedence (multiplication and division first)
+        size_t mul_pos = expr_str.find('*');
+        size_t div_pos = expr_str.find('/');
+        size_t plus_pos = expr_str.find('+');
+        size_t minus_pos = expr_str.find('-');
+        
+        // Handle multiplication
+        if (mul_pos != std::string::npos && mul_pos > 0 && mul_pos < expr_str.length() - 1)
         {
-            return Evaluate(expr.get());
+            std::string left_str = expr_str.substr(0, mul_pos);
+            std::string right_str = expr_str.substr(mul_pos + 1);
+            
+            // Trim whitespace
+            left_str.erase(0, left_str.find_first_not_of(" \t"));
+            left_str.erase(left_str.find_last_not_of(" \t") + 1);
+            right_str.erase(0, right_str.find_first_not_of(" \t"));
+            right_str.erase(right_str.find_last_not_of(" \t") + 1);
+            
+            // Evaluate left and right operands
+            std::string left_value = EvaluateFormatExpression(left_str);
+            std::string right_value = EvaluateFormatExpression(right_str);
+            
+            // Try to perform multiplication
+            try
+            {
+                t_TypedValue left_typed(left_value, DetectType(left_value));
+                t_TypedValue right_typed(right_value, DetectType(right_value));
+                return PerformMultiplication(left_typed, right_typed);
+            }
+            catch (...)
+            {
+                // If multiplication fails, return the original expression
+                return expr_str;
+            }
         }
-        return "nil";
+        
+        // Handle division
+        if (div_pos != std::string::npos && div_pos > 0 && div_pos < expr_str.length() - 1)
+        {
+            std::string left_str = expr_str.substr(0, div_pos);
+            std::string right_str = expr_str.substr(div_pos + 1);
+            
+            // Trim whitespace
+            left_str.erase(0, left_str.find_first_not_of(" \t"));
+            left_str.erase(left_str.find_last_not_of(" \t") + 1);
+            right_str.erase(0, right_str.find_first_not_of(" \t"));
+            right_str.erase(right_str.find_last_not_of(" \t") + 1);
+            
+            // Evaluate left and right operands
+            std::string left_value = EvaluateFormatExpression(left_str);
+            std::string right_value = EvaluateFormatExpression(right_str);
+            
+            // Try to perform division
+            try
+            {
+                t_TypedValue left_typed(left_value, DetectType(left_value));
+                t_TypedValue right_typed(right_value, DetectType(right_value));
+                return PerformDivision(left_typed, right_typed);
+            }
+            catch (...)
+            {
+                // If division fails, return the original expression
+                return expr_str;
+            }
+        }
+        
+        // Handle addition
+        if (plus_pos != std::string::npos && plus_pos > 0 && plus_pos < expr_str.length() - 1)
+        {
+            std::string left_str = expr_str.substr(0, plus_pos);
+            std::string right_str = expr_str.substr(plus_pos + 1);
+            
+            // Trim whitespace
+            left_str.erase(0, left_str.find_first_not_of(" \t"));
+            left_str.erase(left_str.find_last_not_of(" \t") + 1);
+            right_str.erase(0, right_str.find_first_not_of(" \t"));
+            right_str.erase(right_str.find_last_not_of(" \t") + 1);
+            
+            // Evaluate left and right operands
+            std::string left_value = EvaluateFormatExpression(left_str);
+            std::string right_value = EvaluateFormatExpression(right_str);
+            
+            // Try to perform addition
+            try
+            {
+                t_TypedValue left_typed(left_value, DetectType(left_value));
+                t_TypedValue right_typed(right_value, DetectType(right_value));
+                return PerformAddition(left_typed, right_typed);
+            }
+            catch (...)
+            {
+                // If addition fails, return the original expression
+                return expr_str;
+            }
+        }
+        
+        // Handle subtraction
+        if (minus_pos != std::string::npos && minus_pos > 0 && minus_pos < expr_str.length() - 1)
+        {
+            std::string left_str = expr_str.substr(0, minus_pos);
+            std::string right_str = expr_str.substr(minus_pos + 1);
+            
+            // Trim whitespace
+            left_str.erase(0, left_str.find_first_not_of(" \t"));
+            left_str.erase(left_str.find_last_not_of(" \t") + 1);
+            right_str.erase(0, right_str.find_first_not_of(" \t"));
+            right_str.erase(right_str.find_last_not_of(" \t") + 1);
+            
+            // Evaluate left and right operands
+            std::string left_value = EvaluateFormatExpression(left_str);
+            std::string right_value = EvaluateFormatExpression(right_str);
+            
+            // Try to perform subtraction
+            try
+            {
+                t_TypedValue left_typed(left_value, DetectType(left_value));
+                t_TypedValue right_typed(right_value, DetectType(right_value));
+                return PerformSubtraction(left_typed, right_typed);
+            }
+            catch (...)
+            {
+                // If subtraction fails, return the original expression
+                return expr_str;
+            }
+        }
+        
+        // For other complex expressions, return the expression as a string
+        return expr_str;
+    }
+    catch (const std::exception& e)
+    {
+        // If parsing fails, treat as literal text
+        return expr_str;
     }
     catch (...)
     {
@@ -998,9 +1125,12 @@ bool t_Interpreter::IsSimpleNumericLoop(t_ForStmt* for_stmt)
     if (!condition_literal) return false;
     
     // Try to convert condition literal to number
-    try {
+    try 
+    {
         std::stod(condition_literal->value);
-    } catch (...) {
+    } 
+    catch (...) 
+    {
         return false;
     }
     
@@ -1009,10 +1139,12 @@ bool t_Interpreter::IsSimpleNumericLoop(t_ForStmt* for_stmt)
     
     // Check for postfix increment: var++
     t_PostfixExpr* postfix_inc = dynamic_cast<t_PostfixExpr*>(for_stmt->increment.get());
-    if (postfix_inc) {
+    if (postfix_inc) 
+    {
         t_VariableExpr* inc_var = dynamic_cast<t_VariableExpr*>(postfix_inc->operand.get());
         if (inc_var && inc_var->name == init_var->name && 
-            postfix_inc->op.type == t_TokenType::PLUS_PLUS) {
+            postfix_inc->op.type == t_TokenType::PLUS_PLUS) 
+        {
             return true;
         }
     }

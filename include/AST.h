@@ -39,7 +39,9 @@ struct t_BinaryExpr : public t_Expr
 struct t_LiteralExpr : public t_Expr
 {
     std::string value;
-    t_LiteralExpr(const std::string &value) : value(value) {}
+    t_TokenType token_type;
+    
+    t_LiteralExpr(const std::string &value, t_TokenType type = t_TokenType::STRING) : value(value), token_type(type) {}
 };
 
 struct t_UnaryExpr : public t_Expr

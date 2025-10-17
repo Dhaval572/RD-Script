@@ -543,28 +543,29 @@ t_Expr *t_Parser::Primary()
     if (Match({t_TokenType::FALSE}))
     {
         t_LiteralExpr* expr_node = static_cast<t_LiteralExpr*>(expr_pool.Allocate());
-        new (expr_node) t_LiteralExpr("false");
+        new (expr_node) t_LiteralExpr("false", t_TokenType::FALSE);
         return expr_node;
     }
 
     if (Match({t_TokenType::TRUE}))
     {
         t_LiteralExpr* expr_node = static_cast<t_LiteralExpr*>(expr_pool.Allocate());
-        new (expr_node) t_LiteralExpr("true");
+        new (expr_node) t_LiteralExpr("true", t_TokenType::TRUE);
         return expr_node;
     }
 
     if (Match({t_TokenType::NIL}))
     {
         t_LiteralExpr* expr_node = static_cast<t_LiteralExpr*>(expr_pool.Allocate());
-        new (expr_node) t_LiteralExpr("nil");
+        new (expr_node) t_LiteralExpr("nil", t_TokenType::NIL);
         return expr_node;
     }
 
     if (Match({t_TokenType::NUMBER, t_TokenType::STRING, t_TokenType::FORMAT_STRING}))
     {
+        t_Token previous = Previous();
         t_LiteralExpr* expr_node = static_cast<t_LiteralExpr*>(expr_pool.Allocate());
-        new (expr_node) t_LiteralExpr(Previous().literal);
+        new (expr_node) t_LiteralExpr(previous.literal, previous.type);
         return expr_node;
     }
 

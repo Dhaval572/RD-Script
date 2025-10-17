@@ -262,7 +262,7 @@ std::string t_Lexer::String()
 
 std::string t_Lexer::FormatString()
 {
-    std::string value = "$"; // Preserve the $ prefix for format string identification
+    std::string value;
     while (Peek() != '"' && !IsAtEnd())
     {
         if (Peek() == '\n') line++;
@@ -314,7 +314,7 @@ std::string t_Lexer::FormatString()
     // The closing ".
     Advance();
 
-    // Return the value including the $ prefix
+    // Return the processed string value (without surrounding quotes)
     return value;
 }
 
