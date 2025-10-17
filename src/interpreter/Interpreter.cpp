@@ -462,13 +462,13 @@ void t_Interpreter::Execute(t_Stmt *stmt)
     else if (t_BenchmarkStmt *benchmark_stmt = dynamic_cast<t_BenchmarkStmt *>(stmt))
     {
         // Record start time
-        auto start_time = std::chrono::high_resolution_clock::now();
+        auto start_time = std::chrono::steady_clock::now();
         
         // Execute the benchmark body
         Execute(benchmark_stmt->body.get());
         
         // Record end time
-        auto end_time = std::chrono::high_resolution_clock::now();
+        auto end_time = std::chrono::steady_clock::now();
         
         // Calculate duration
         auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time);
