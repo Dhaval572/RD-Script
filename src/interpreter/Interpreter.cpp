@@ -20,7 +20,10 @@ t_Interpreter::t_Interpreter()
     PushScope();
 }
 
-t_InterpretationResult t_Interpreter::Interpret(const std::vector<t_Stmt *> &statements)
+t_InterpretationResult t_Interpreter::Interpret
+(
+    const std::vector<t_Stmt *> &statements
+)
 {
     for (t_Stmt *statement : statements)
     {
@@ -53,7 +56,10 @@ void t_Interpreter::PopScope()
     }
 }
 
-t_Expected<int, t_ErrorInfo> t_Interpreter::DeclareVariable(const std::string& name, int line)
+t_Expected<int, t_ErrorInfo> t_Interpreter::DeclareVariable
+(
+    const std::string& name, int line
+)
 {
     // Check if variable is already declared in current scope
     // We do this by checking if it exists in the current environment
@@ -211,111 +217,188 @@ bool t_Interpreter::IsFloat(const std::string& value)
 }
 
 // Optimized arithmetic operations
-t_Expected<std::string, t_ErrorInfo> t_Interpreter::PerformAddition(const t_TypedValue& left, const t_TypedValue& right)
+t_Expected<std::string, t_ErrorInfo> t_Interpreter::PerformAddition
+(
+    const t_TypedValue& left, const t_TypedValue& right
+)
 {
     // If both values have precomputed numeric values, use them directly
     if (left.has_numeric_value && right.has_numeric_value)
     {
-        return t_Expected<std::string, t_ErrorInfo>(FormatNumber(left.numeric_value + right.numeric_value));
+        return t_Expected<std::string, t_ErrorInfo>
+        (
+            FormatNumber(left.numeric_value + right.numeric_value)
+        );
     }
     
     // Fallback to string-based conversion
     try
     {
-        double left_num = left.has_numeric_value ? left.numeric_value : std::stod(left.value);
-        double right_num = right.has_numeric_value ? right.numeric_value : std::stod(right.value);
-        return t_Expected<std::string, t_ErrorInfo>(FormatNumber(left_num + right_num));
+        double left_num = left.has_numeric_value ? 
+        left.numeric_value : std::stod(left.value);
+
+        double right_num = right.has_numeric_value ? 
+        right.numeric_value : std::stod(right.value);
+
+        return t_Expected<std::string, t_ErrorInfo>
+        (
+            FormatNumber(left_num + right_num)
+        );
     }
     catch (...)
     {
-        return t_Expected<std::string, t_ErrorInfo>(
-            t_ErrorInfo(t_ErrorType::RUNTIME_ERROR, "String concatenation with '+' is not allowed. Use comma-separated values in display statements instead.")
+        return t_Expected<std::string, t_ErrorInfo>
+        (
+            t_ErrorInfo
+            (
+                t_ErrorType::RUNTIME_ERROR, 
+                "String concatenation with '+' is not allowed. Use comma-separated values in display statements instead."
+            )
         );
     }
 }
 
-t_Expected<std::string, t_ErrorInfo> t_Interpreter::PerformSubtraction(const t_TypedValue& left, const t_TypedValue& right)
+t_Expected<std::string, t_ErrorInfo> t_Interpreter::PerformSubtraction
+(
+    const t_TypedValue& left, const t_TypedValue& right
+)
 {
     // If both values have precomputed numeric values, use them directly
     if (left.has_numeric_value && right.has_numeric_value)
     {
-        return t_Expected<std::string, t_ErrorInfo>(FormatNumber(left.numeric_value - right.numeric_value));
+        return t_Expected<std::string, t_ErrorInfo>
+        (
+            FormatNumber(left.numeric_value - right.numeric_value)
+        );
     }
     
     // Fallback to string-based conversion
     try
     {
-        double left_num = left.has_numeric_value ? left.numeric_value : std::stod(left.value);
-        double right_num = right.has_numeric_value ? right.numeric_value : std::stod(right.value);
-        return t_Expected<std::string, t_ErrorInfo>(FormatNumber(left_num - right_num));
+        double left_num = left.has_numeric_value ? 
+        left.numeric_value : std::stod(left.value);
+
+        double right_num = right.has_numeric_value ? 
+        right.numeric_value : std::stod(right.value);
+
+        return t_Expected<std::string, t_ErrorInfo>
+        (
+            FormatNumber(left_num - right_num)
+        );
     }
     catch (...)
     {
-        return t_Expected<std::string, t_ErrorInfo>(
-            t_ErrorInfo(t_ErrorType::RUNTIME_ERROR, "Cannot perform arithmetic operation")
+        return t_Expected<std::string, t_ErrorInfo>
+        (
+            t_ErrorInfo
+            (
+                t_ErrorType::RUNTIME_ERROR, 
+                "Cannot perform arithmetic operation"
+            )
         );
     }
 }
 
-t_Expected<std::string, t_ErrorInfo> t_Interpreter::PerformMultiplication(const t_TypedValue& left, const t_TypedValue& right)
+t_Expected<std::string, t_ErrorInfo> t_Interpreter::PerformMultiplication
+(
+    const t_TypedValue& left, const t_TypedValue& right
+)
 {
     // If both values have precomputed numeric values, use them directly
     if (left.has_numeric_value && right.has_numeric_value)
     {
-        return t_Expected<std::string, t_ErrorInfo>(FormatNumber(left.numeric_value * right.numeric_value));
+        return t_Expected<std::string, t_ErrorInfo>
+        (
+            FormatNumber(left.numeric_value * right.numeric_value)
+        );
     }
     
     // Fallback to string-based conversion
     try
     {
-        double left_num = left.has_numeric_value ? left.numeric_value : std::stod(left.value);
-        double right_num = right.has_numeric_value ? right.numeric_value : std::stod(right.value);
-        return t_Expected<std::string, t_ErrorInfo>(FormatNumber(left_num * right_num));
+        double left_num = left.has_numeric_value ? 
+        left.numeric_value : std::stod(left.value);
+
+        double right_num = right.has_numeric_value ? 
+        right.numeric_value : std::stod(right.value);
+
+        return t_Expected<std::string, t_ErrorInfo>
+        (
+            FormatNumber(left_num * right_num)
+        );
     }
     catch (...)
     {
-        return t_Expected<std::string, t_ErrorInfo>(
-            t_ErrorInfo(t_ErrorType::RUNTIME_ERROR, "Cannot perform arithmetic operation")
+        return t_Expected<std::string, t_ErrorInfo>
+        (
+            t_ErrorInfo
+            (
+                t_ErrorType::RUNTIME_ERROR, 
+                "Cannot perform arithmetic operation"
+            )
         );
     }
 }
 
-t_Expected<std::string, t_ErrorInfo> t_Interpreter::PerformDivision(const t_TypedValue& left, const t_TypedValue& right)
+t_Expected<std::string, t_ErrorInfo> t_Interpreter::PerformDivision
+(
+    const t_TypedValue& left, const t_TypedValue& right
+)
 {
     // If both values have precomputed numeric values, use them directly
     if (left.has_numeric_value && right.has_numeric_value)
     {
         if (right.numeric_value == 0)
         {
-            return t_Expected<std::string, t_ErrorInfo>(
+            return t_Expected<std::string, t_ErrorInfo>
+            (
                 t_ErrorInfo(t_ErrorType::RUNTIME_ERROR, "Division by zero")
             );
         }
-        return t_Expected<std::string, t_ErrorInfo>(FormatNumber(left.numeric_value / right.numeric_value));
+        return t_Expected<std::string, t_ErrorInfo>
+        (
+            FormatNumber(left.numeric_value / right.numeric_value)
+        );
     }
     
     // Fallback to string-based conversion
     try
     {
-        double left_num = left.has_numeric_value ? left.numeric_value : std::stod(left.value);
-        double right_num = right.has_numeric_value ? right.numeric_value : std::stod(right.value);
+        double left_num = left.has_numeric_value ? 
+        left.numeric_value : std::stod(left.value);
+
+        double right_num = right.has_numeric_value ? 
+        right.numeric_value : std::stod(right.value);
+
         if (right_num == 0)
         {
-            return t_Expected<std::string, t_ErrorInfo>(
+            return t_Expected<std::string, t_ErrorInfo>
+            (
                 t_ErrorInfo(t_ErrorType::RUNTIME_ERROR, "Division by zero")
             );
         }
-        return t_Expected<std::string, t_ErrorInfo>(FormatNumber(left_num / right_num));
+        return t_Expected<std::string, t_ErrorInfo>
+        (
+            FormatNumber(left_num / right_num)
+        );
     }
     catch (...)
     {
-        return t_Expected<std::string, t_ErrorInfo>(
-            t_ErrorInfo(t_ErrorType::RUNTIME_ERROR, "Cannot perform arithmetic operation")
+        return t_Expected<std::string, t_ErrorInfo>
+        (
+            t_ErrorInfo
+            (
+                t_ErrorType::RUNTIME_ERROR, 
+                "Cannot perform arithmetic operation"
+            )
         );
     }
 }
 
-t_Expected<bool, t_ErrorInfo> t_Interpreter::PerformComparison(const t_TypedValue& left, const t_TokenType op, const t_TypedValue& right)
+t_Expected<bool, t_ErrorInfo> t_Interpreter::PerformComparison
+(
+    const t_TypedValue& left, const t_TokenType op, const t_TypedValue& right
+)
 {
     // If both values have precomputed numeric values, use them directly
     if (left.has_numeric_value && right.has_numeric_value)
@@ -323,27 +406,58 @@ t_Expected<bool, t_ErrorInfo> t_Interpreter::PerformComparison(const t_TypedValu
         switch (op)
         {
         case t_TokenType::GREATER:
-            return t_Expected<bool, t_ErrorInfo>(left.numeric_value > right.numeric_value);
+            return t_Expected<bool, t_ErrorInfo>
+            (
+                left.numeric_value > right.numeric_value
+            );
+        
         case t_TokenType::GREATER_EQUAL:
-            return t_Expected<bool, t_ErrorInfo>(left.numeric_value >= right.numeric_value);
+            return t_Expected<bool, t_ErrorInfo>
+            (
+                left.numeric_value >= right.numeric_value
+            );
+        
         case t_TokenType::LESS:
-            return t_Expected<bool, t_ErrorInfo>(left.numeric_value < right.numeric_value);
+            return t_Expected<bool, t_ErrorInfo>
+            (
+                left.numeric_value < right.numeric_value
+            );
+        
         case t_TokenType::LESS_EQUAL:
-            return t_Expected<bool, t_ErrorInfo>(left.numeric_value <= right.numeric_value);
+            return t_Expected<bool, t_ErrorInfo>
+            (
+                left.numeric_value <= right.numeric_value
+            );
+        
         case t_TokenType::EQUAL_EQUAL:
-            return t_Expected<bool, t_ErrorInfo>(left.numeric_value == right.numeric_value);
+            return t_Expected<bool, t_ErrorInfo>
+            (
+                left.numeric_value == right.numeric_value
+            );
+        
         case t_TokenType::BANG_EQUAL:
-            return t_Expected<bool, t_ErrorInfo>(left.numeric_value != right.numeric_value);
+            return t_Expected<bool, t_ErrorInfo>
+            (
+                left.numeric_value != right.numeric_value
+            );
+        
         default:
-            return t_Expected<bool, t_ErrorInfo>(false);
+            return t_Expected<bool, t_ErrorInfo>
+            (
+                false
+            );
+
         }
     }
     
     // Fallback to string-based conversion
     try
     {
-        double left_num = left.has_numeric_value ? left.numeric_value : std::stod(left.value);
-        double right_num = right.has_numeric_value ? right.numeric_value : std::stod(right.value);
+        double left_num = left.has_numeric_value ? 
+        left.numeric_value : std::stod(left.value);
+
+        double right_num = right.has_numeric_value ? 
+        right.numeric_value : std::stod(right.value);
         
         switch (op)
         {
@@ -373,8 +487,13 @@ t_Expected<bool, t_ErrorInfo> t_Interpreter::PerformComparison(const t_TypedValu
         case t_TokenType::BANG_EQUAL:
             return t_Expected<bool, t_ErrorInfo>(left.value != right.value);
         default:
-            return t_Expected<bool, t_ErrorInfo>(
-                t_ErrorInfo(t_ErrorType::RUNTIME_ERROR, "Cannot compare non-numeric values")
+            return t_Expected<bool, t_ErrorInfo>
+            (
+                t_ErrorInfo
+                (
+                    t_ErrorType::RUNTIME_ERROR, 
+                    "Cannot compare non-numeric values"
+                )
             );
         }
     }
@@ -428,7 +547,9 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
         }
         else if (if_stmt->else_branch)
         {
-            t_Expected<int, t_ErrorInfo> else_result = Execute(if_stmt->else_branch.get());
+            t_Expected<int, t_ErrorInfo> else_result = 
+            Execute(if_stmt->else_branch.get());
+
             if (!else_result.HasValue())
             {
                 return else_result;
@@ -440,7 +561,9 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
         // Check for specialized numeric loop pattern: for (auto i = 0; i < N; i++)
         if (IsSimpleNumericLoop(for_stmt))
         {
-            t_Expected<int, t_ErrorInfo> result = ExecuteSimpleNumericLoop(for_stmt);
+            t_Expected<int, t_ErrorInfo> result = 
+            ExecuteSimpleNumericLoop(for_stmt);
+
             if (!result.HasValue())
             {
                 return result;
@@ -461,7 +584,9 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
             // Execute initializer (if any)
             if (for_stmt->initializer)
             {
-                t_Expected<int, t_ErrorInfo> init_result = Execute(for_stmt->initializer.get());
+                t_Expected<int, t_ErrorInfo> init_result = 
+                Execute(for_stmt->initializer.get());
+
                 if (!init_result.HasValue())
                 {
                     PopScope(); // Clean up scope before returning
@@ -480,7 +605,10 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                     if (!condition_result.HasValue())
                     {
                         PopScope(); // Clean up scope before returning
-                        return t_Expected<int, t_ErrorInfo>(condition_result.Error());
+                        return t_Expected<int, t_ErrorInfo>
+                        (
+                            condition_result.Error()
+                        );
                     }
 
                     if (!IsTruthy(condition_result.Value()))
@@ -491,14 +619,14 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                 else if (!for_stmt->condition && !for_stmt->increment)
                 {
                     // Special case: for (;;) should run forever unless broken
-                    // This is already handled by the infinite loop, but we need to be careful
-                    // about the logic when both condition and increment are missing
                 }
 
                 // Execute body
                 try
                 {
-                    t_Expected<int, t_ErrorInfo> body_result = Execute(for_stmt->body.get());
+                    t_Expected<int, t_ErrorInfo> body_result = 
+                    Execute(for_stmt->body.get());
+
                     if (!body_result.HasValue())
                     {
                         PopScope(); // Clean up scope before returning
@@ -513,12 +641,12 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                     }
                     else if (control_flow == "continue")
                     {
-                        // Continue to next iteration (execute increment then continue loop)
+                        // Continue to next iteration 
                     }
                     else
                     {
-                        PopScope(); // Clean up scope before re-throwing
-                        throw; // Re-throw other exceptions
+                        PopScope(); 
+                        throw; 
                     }
                 }
 
@@ -526,6 +654,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                 if (for_stmt->increment)
                 {
                     t_Expected<std::string, t_ErrorInfo> increment_result = Evaluate(for_stmt->increment.get());
+
                     if (!increment_result.HasValue())
                     {
                         PopScope(); // Clean up scope before returning
@@ -544,7 +673,9 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
     )
     {
         // Check if variable is already declared in current scope
-        t_Expected<int, t_ErrorInfo> declare_result = DeclareVariable(var_stmt->name, 0); // TODO: Get line number
+        t_Expected<int, t_ErrorInfo> declare_result =
+        DeclareVariable(var_stmt->name, 0); 
+
         if (!declare_result.HasValue())
         {
             return t_Expected<int, t_ErrorInfo>(declare_result.Error());
@@ -553,7 +684,9 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
         t_TypedValue typed_value;
         if (var_stmt->initializer)
         {
-            t_Expected<std::string, t_ErrorInfo> value_result = Evaluate(var_stmt->initializer.get());
+            t_Expected<std::string, t_ErrorInfo> value_result = 
+            Evaluate(var_stmt->initializer.get());
+
             if (!value_result.HasValue())
             {
                 return t_Expected<int, t_ErrorInfo>(value_result.Error());
@@ -577,7 +710,9 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
             }
             first = false;
 
-            t_Expected<std::string, t_ErrorInfo> value_result = Evaluate(expr.get());
+            t_Expected<std::string, t_ErrorInfo> value_result = 
+            Evaluate(expr.get());
+
             if (!value_result.HasValue())
             {
                 return t_Expected<int, t_ErrorInfo>(value_result.Error());
@@ -594,7 +729,9 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
         auto start_time = std::chrono::steady_clock::now();
         
         // Execute the benchmark body
-        t_Expected<int, t_ErrorInfo> body_result = Execute(benchmark_stmt->body.get());
+        t_Expected<int, t_ErrorInfo> body_result = 
+        Execute(benchmark_stmt->body.get());
+        
         if (!body_result.HasValue())
         {
             return body_result;
@@ -604,14 +741,30 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
         auto end_time = std::chrono::steady_clock::now();
         
         // Calculate duration
-        auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time);
+        auto duration = 
+        std::chrono::duration_cast<std::chrono::nanoseconds>
+        (
+            end_time - start_time
+        );
         
         // Display benchmark results
         std::cout << "Benchmark Results:\n";
-        std::cout << "  Execution time: " << duration.count() << " nanoseconds\n";
-        std::cout << "  Execution time: " << duration.count() / 1000.0 << " microseconds\n";
-        std::cout << "  Execution time: " << duration.count() / 1000000.0 << " milliseconds\n";
-        std::cout << "  Execution time: " << duration.count() / 1000000000.0 << " seconds\n";
+
+        std::cout << "  Execution time: " 
+                  << duration.count() 
+                  << " nanoseconds\n";
+                  
+        std::cout << "  Execution time: " 
+                  << duration.count() / 1000.0 
+                  << " microseconds\n";
+
+        std::cout << "  Execution time: " 
+                  << duration.count() / 1000000.0 
+                  << " milliseconds\n";
+
+        std::cout << "  Execution time: " 
+                  << duration.count() / 1000000000.0 
+                  << " seconds\n";
     }
     else if (t_EmptyStmt *empty_stmt = dynamic_cast<t_EmptyStmt *>(stmt))
     {
@@ -619,7 +772,9 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
     }
     else if (t_ExpressionStmt *expr_stmt = dynamic_cast<t_ExpressionStmt *>(stmt))
     {
-        t_Expected<std::string, t_ErrorInfo> result = Evaluate(expr_stmt->expression.get());
+        t_Expected<std::string, t_ErrorInfo> result =
+        Evaluate(expr_stmt->expression.get());
+
         if (!result.HasValue())
         {
             return t_Expected<int, t_ErrorInfo>(result.Error());
@@ -664,7 +819,10 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                     EvaluateFormatExpression(expression);
                     if (!expr_result.HasValue())
                     {
-                        return t_Expected<std::string, t_ErrorInfo>(expr_result.Error());
+                        return t_Expected<std::string, t_ErrorInfo>
+                        (
+                            expr_result.Error()
+                        );
                     }
 
                     result.replace(pos, end_pos - pos + 1, expr_result.Value());
@@ -689,7 +847,8 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
 
     if (t_UnaryExpr *unary = dynamic_cast<t_UnaryExpr *>(expr))
     {
-        t_Expected<std::string, t_ErrorInfo> right_result = Evaluate(unary->right.get());
+        t_Expected<std::string, t_ErrorInfo> right_result = 
+        Evaluate(unary->right.get());
         if (!right_result.HasValue())
         {
             return right_result;
@@ -700,7 +859,11 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
         {
         case t_TokenType::MINUS:
             // Optimize unary minus for numeric literals
-            if (t_LiteralExpr* right_literal = dynamic_cast<t_LiteralExpr*>(unary->right.get()))
+            if 
+            (
+                t_LiteralExpr* right_literal = 
+                dynamic_cast<t_LiteralExpr*>(unary->right.get())
+            )
             {
                 t_ValueType type = DetectType(right_literal->value);
                 if (type == t_ValueType::NUMBER)
@@ -716,21 +879,33 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
             return t_Expected<std::string, t_ErrorInfo>("-" + right);
 
         case t_TokenType::BANG:
-            return t_Expected<std::string, t_ErrorInfo>((right == "false" || right == "0") ? "true" : "false");
+            return t_Expected<std::string, t_ErrorInfo>
+            (
+                (right == "false" || right == "0") ? "true" : "false"
+            );
         }
     }
 
     if (t_PrefixExpr *prefix = dynamic_cast<t_PrefixExpr *>(expr))
     {
-        if (t_VariableExpr *var_expr = dynamic_cast<t_VariableExpr *>(prefix->operand.get()))
+        if 
+        (
+            t_VariableExpr *var_expr = 
+            dynamic_cast<t_VariableExpr *>(prefix->operand.get())
+        )
         {
             std::string var_name = var_expr->name;
             auto it = environment.find(var_name);
             
             if (it == environment.end())
             {
-                return t_Expected<std::string, t_ErrorInfo>(
-                    t_ErrorInfo(t_ErrorType::RUNTIME_ERROR, "Undefined variable '" + var_name + "'")
+                return t_Expected<std::string, t_ErrorInfo>
+                (
+                    t_ErrorInfo
+                    (
+                        t_ErrorType::RUNTIME_ERROR, 
+                        "Undefined variable '" + var_name + "'"
+                    )
                 );
             }
             
@@ -743,13 +918,19 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                 {
                     double new_value = current_value.numeric_value + 1.0;
                     environment[var_name] = t_TypedValue(new_value);
-                    return t_Expected<std::string, t_ErrorInfo>(std::to_string(new_value));
+                    return t_Expected<std::string, t_ErrorInfo>
+                    (
+                        std::to_string(new_value)
+                    );
                 }
                 else if (prefix->op.type == t_TokenType::MINUS_MINUS)
                 {
                     double new_value = current_value.numeric_value - 1.0;
                     environment[var_name] = t_TypedValue(new_value);
-                    return t_Expected<std::string, t_ErrorInfo>(std::to_string(new_value));
+                    return t_Expected<std::string, t_ErrorInfo>
+                    (
+                        std::to_string(new_value)
+                    );
                 }
             }
             else
@@ -766,30 +947,55 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                         // Remove trailing zeros and decimal point if not needed
                         new_value.erase(new_value.find_last_not_of('0') + 1, std::string::npos);
                         new_value.erase(new_value.find_last_not_of('.') + 1, std::string::npos);
-                        environment[var_name] = t_TypedValue(new_value, t_ValueType::NUMBER);
+                        environment[var_name] =
+                        t_TypedValue
+                        (
+                            new_value, t_ValueType::NUMBER
+                        );
                         return t_Expected<std::string, t_ErrorInfo>(new_value);
                     }
                     else if (prefix->op.type == t_TokenType::MINUS_MINUS)
                     {
                         num_value -= 1.0;
                         std::string new_value = std::to_string(num_value);
+
                         // Remove trailing zeros and decimal point if not needed
-                        new_value.erase(new_value.find_last_not_of('0') + 1, std::string::npos);
-                        new_value.erase(new_value.find_last_not_of('.') + 1, std::string::npos);
-                        environment[var_name] = t_TypedValue(new_value, t_ValueType::NUMBER);
+                        new_value.erase
+                        (
+                            new_value.find_last_not_of('0') + 1, std::string::npos
+                        );
+                        new_value.erase
+                        (
+                            new_value.find_last_not_of('.') + 1, std::string::npos
+                        );
+                        environment[var_name] = 
+                        t_TypedValue
+                        (
+                            new_value, t_ValueType::NUMBER
+                        );
                         return t_Expected<std::string, t_ErrorInfo>(new_value);
                     }
                 }
                 catch (...)
                 {
-                    return t_Expected<std::string, t_ErrorInfo>(
-                        t_ErrorInfo(t_ErrorType::RUNTIME_ERROR, "Cannot perform increment/decrement on non-numeric value")
+                    return t_Expected<std::string, t_ErrorInfo>
+                    (
+                        t_ErrorInfo
+                        (
+                            t_ErrorType::RUNTIME_ERROR, 
+                            "Cannot perform increment/decrement on non-numeric value"
+                        )
                     );
                 }
             }
         }
-        return t_Expected<std::string, t_ErrorInfo>(
-            t_ErrorInfo(t_ErrorType::RUNTIME_ERROR, "Prefix increment/decrement can only be applied to variables")
+        return t_Expected<std::string, t_ErrorInfo>
+        (
+            t_ErrorInfo
+            (
+                t_ErrorType::RUNTIME_ERROR, 
+                "Prefix increment/decrement can only be applied to variables"
+            )
         );
     }
 
@@ -806,8 +1012,13 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
             
             if (it == environment.end())
             {
-                return t_Expected<std::string, t_ErrorInfo>(
-                    t_ErrorInfo(t_ErrorType::RUNTIME_ERROR, "Undefined variable '" + var_name + "'")
+                return t_Expected<std::string, t_ErrorInfo>
+                (
+                    t_ErrorInfo
+                    (
+                        t_ErrorType::RUNTIME_ERROR, 
+                        "Undefined variable '" + var_name + "'"
+                    )
                 );
             }
             
@@ -821,13 +1032,20 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                 {
                     double new_value = current_value.numeric_value + 1.0;
                     environment[var_name] = t_TypedValue(new_value);
-                    return t_Expected<std::string, t_ErrorInfo>(current_value.value); // Return original value
+                    
+                    return t_Expected<std::string, t_ErrorInfo>
+                    (
+                        current_value.value
+                    ); // Return original value
                 }
                 else if (postfix->op.type == t_TokenType::MINUS_MINUS)
                 {
                     double new_value = current_value.numeric_value - 1.0;
                     environment[var_name] = t_TypedValue(new_value);
-                    return t_Expected<std::string, t_ErrorInfo>(current_value.value); // Return original value
+                    return t_Expected<std::string, t_ErrorInfo>
+                    (
+                        current_value.value
+                    ); // Return original value
                 }
             }
             else
@@ -843,46 +1061,77 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                         std::string new_value = std::to_string(num_value);
 
                         // Remove trailing zeros and decimal point if not needed
-                        new_value.erase(new_value.find_last_not_of('0') + 1, std::string::npos);
-                        new_value.erase(new_value.find_last_not_of('.') + 1, std::string::npos);
-                        environment[var_name] = t_TypedValue(new_value, t_ValueType::NUMBER);
+                        new_value.erase
+                        (
+                            new_value.find_last_not_of('0') + 1, std::string::npos
+                        );
+                        new_value.erase
+                        (
+                            new_value.find_last_not_of('.') + 1, std::string::npos
+                        );
+                        environment[var_name] = 
+                        t_TypedValue(new_value, t_ValueType::NUMBER);
                     }
                     else if (postfix->op.type == t_TokenType::MINUS_MINUS)
                     {
                         num_value -= 1.0;
                         std::string new_value = std::to_string(num_value);
                         // Remove trailing zeros and decimal point if not needed
-                        new_value.erase(new_value.find_last_not_of('0') + 1, std::string::npos);
-                        new_value.erase(new_value.find_last_not_of('.') + 1, std::string::npos);
-                        environment[var_name] = t_TypedValue(new_value, t_ValueType::NUMBER);
+                        new_value.erase
+                        (
+                            new_value.find_last_not_of('0') + 1, std::string::npos
+                        );
+                        new_value.erase
+                        (
+                            new_value.find_last_not_of('.') + 1, std::string::npos
+                        );
+                        environment[var_name] = 
+                        t_TypedValue(new_value, t_ValueType::NUMBER);
                     }
                 }
                 catch (...)
                 {
-                    return t_Expected<std::string, t_ErrorInfo>(
-                        t_ErrorInfo(t_ErrorType::RUNTIME_ERROR, "Cannot perform increment/decrement on non-numeric value")
+                    return t_Expected<std::string, t_ErrorInfo>
+                    (
+                        t_ErrorInfo
+                        (
+                            t_ErrorType::RUNTIME_ERROR, 
+                            "Cannot perform increment/decrement on non-numeric value"
+                        )
                     );
                 }
             }
             
             return t_Expected<std::string, t_ErrorInfo>(return_value);
         }
-        return t_Expected<std::string, t_ErrorInfo>(
-            t_ErrorInfo(t_ErrorType::RUNTIME_ERROR, "Postfix increment/decrement can only be applied to variables")
+        return t_Expected<std::string, t_ErrorInfo>
+        (
+            t_ErrorInfo
+            (
+                t_ErrorType::RUNTIME_ERROR, 
+                "Postfix increment/decrement can only be applied to variables"
+            )
         );
     }
 
     if (t_BinaryExpr *binary = dynamic_cast<t_BinaryExpr *>(expr))
     {
         // Handle assignment expressions
-        if (binary->op.type == t_TokenType::EQUAL || 
-            binary->op.type == t_TokenType::PLUS_EQUAL ||
+        if 
+        (
+            binary->op.type == t_TokenType::EQUAL       || 
+            binary->op.type == t_TokenType::PLUS_EQUAL  ||
             binary->op.type == t_TokenType::MINUS_EQUAL ||
-            binary->op.type == t_TokenType::STAR_EQUAL ||
-            binary->op.type == t_TokenType::SLASH_EQUAL)
+            binary->op.type == t_TokenType::STAR_EQUAL  ||
+            binary->op.type == t_TokenType::SLASH_EQUAL
+        )
         {
             // Left side must be a variable
-            if (t_VariableExpr *var_expr = dynamic_cast<t_VariableExpr *>(binary->left.get()))
+            if 
+            (
+                t_VariableExpr *var_expr = 
+                dynamic_cast<t_VariableExpr *>(binary->left.get())
+            )
             {
                 std::string var_name = var_expr->name;
                 
@@ -890,20 +1139,29 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                 // All variables must be declared before use
                 if (environment.find(var_name) == environment.end())
                 {
-                    return t_Expected<std::string, t_ErrorInfo>(
-                        t_ErrorInfo(t_ErrorType::RUNTIME_ERROR, "Variable '" + var_name + "' must be declared with 'auto' keyword before use")
+                    return t_Expected<std::string, t_ErrorInfo>
+                    (
+                        t_ErrorInfo
+                        (
+                            t_ErrorType::RUNTIME_ERROR, 
+                            "Variable '" + var_name + "' must be declared with 'auto' keyword before use"
+                        )
                     );
                 }
                 
                 // For compound assignments, we need to get the current value first
-                t_Expected<std::string, t_ErrorInfo> left_result = Evaluate(binary->left.get());
+                t_Expected<std::string, t_ErrorInfo> left_result = 
+                Evaluate(binary->left.get());
+
                 if (!left_result.HasValue())
                 {
                     return left_result;
                 }
                 std::string left_value = left_result.Value();
                 
-                t_Expected<std::string, t_ErrorInfo> right_result = Evaluate(binary->right.get());
+                t_Expected<std::string, t_ErrorInfo> right_result = 
+                Evaluate(binary->right.get());
+
                 if (!right_result.HasValue())
                 {
                     return right_result;
@@ -923,10 +1181,22 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                     {
                         // Get typed values for optimized operations
                         auto left_it = environment.find(var_name);
-                        t_TypedValue left_typed = left_it != environment.end() ? left_it->second : t_TypedValue(left_value, DetectType(left_value));
-                        t_TypedValue right_typed(right_value, DetectType(right_value));
                         
-                        final_value_result = PerformAddition(left_typed, right_typed);
+                        t_TypedValue left_typed = 
+                        left_it != environment.end() ? 
+                        left_it->second : 
+                        t_TypedValue
+                        (
+                            left_value, DetectType(left_value)
+                        );
+
+                        t_TypedValue right_typed
+                        (
+                            right_value, DetectType(right_value)
+                        );
+                        
+                        final_value_result = 
+                        PerformAddition(left_typed, right_typed);
                     }
                     break;
                     
@@ -934,10 +1204,23 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                     {
                         // Get typed values for optimized operations
                         auto left_it = environment.find(var_name);
-                        t_TypedValue left_typed = left_it != environment.end() ? left_it->second : t_TypedValue(left_value, DetectType(left_value));
-                        t_TypedValue right_typed(right_value, DetectType(right_value));
+
+                        t_TypedValue left_typed = 
+                        left_it != environment.end() ? 
+                        left_it->second : 
+                        t_TypedValue
+                        (
+                            left_value, DetectType(left_value)
+                        );
+
+                        t_TypedValue right_typed
+                        (
+                            right_value, 
+                            DetectType(right_value)
+                        );
                         
-                        final_value_result = PerformSubtraction(left_typed, right_typed);
+                        final_value_result = 
+                        PerformSubtraction(left_typed, right_typed);
                     }
                     break;
                     
@@ -945,10 +1228,23 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                     {
                         // Get typed values for optimized operations
                         auto left_it = environment.find(var_name);
-                        t_TypedValue left_typed = left_it != environment.end() ? left_it->second : t_TypedValue(left_value, DetectType(left_value));
-                        t_TypedValue right_typed(right_value, DetectType(right_value));
+
+                        t_TypedValue left_typed = 
+                        left_it != environment.end() ? 
+                        left_it->second : 
+                        t_TypedValue
+                        (
+                            left_value, DetectType(left_value)
+                        );
+
+                        t_TypedValue right_typed
+                        (
+                            right_value, 
+                            DetectType(right_value)
+                        );
                         
-                        final_value_result = PerformMultiplication(left_typed, right_typed);
+                        final_value_result = 
+                        PerformMultiplication(left_typed, right_typed);
                     }
                     break;
                     
@@ -956,15 +1252,30 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                     {
                         // Get typed values for optimized operations
                         auto left_it = environment.find(var_name);
-                        t_TypedValue left_typed = left_it != environment.end() ? left_it->second : t_TypedValue(left_value, DetectType(left_value));
-                        t_TypedValue right_typed(right_value, DetectType(right_value));
+
+                        t_TypedValue left_typed = 
+                        left_it != environment.end() ? 
+                        left_it->second : 
+                        t_TypedValue
+                        (
+                            left_value, 
+                            DetectType(left_value)
+                        );
+
+                        t_TypedValue right_typed
+                        (
+                            right_value, 
+                            DetectType(right_value)
+                        );
                         
-                        final_value_result = PerformDivision(left_typed, right_typed);
+                        final_value_result = 
+                        PerformDivision(left_typed, right_typed);
                     }
                     break;
                     
                 default:
-                    final_value_result = t_Expected<std::string, t_ErrorInfo>(right_value);
+                    final_value_result = 
+                    t_Expected<std::string, t_ErrorInfo>(right_value);
                     break;
                 }
                 
@@ -982,7 +1293,11 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                 {
                     t_ValueType declared_type = it->second.type;
                     // Allow assignment only if types match or if assigning to a NIL typed variable (initial assignment)
-                    if (declared_type != t_ValueType::NIL && declared_type != type)
+                    if 
+                    (
+                        declared_type != t_ValueType::NIL && 
+                        declared_type != type
+                    )
                     {
                         std::string type_name;
                         switch (declared_type)
@@ -1018,8 +1333,18 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                             break;
                         }
                         
-                        return t_Expected<std::string, t_ErrorInfo>(
-                            t_ErrorInfo(t_ErrorType::TYPE_ERROR, "Type mismatch: variable '" + var_name + "' is " + type_name + ", cannot assign " + new_type_name)
+                        return t_Expected<std::string, t_ErrorInfo>
+                        (
+                            t_ErrorInfo
+                            (
+                                t_ErrorType::TYPE_ERROR, 
+                                "Type mismatch: variable '" + 
+                                var_name                    + 
+                                "' is "                     + 
+                                type_name                   + 
+                                ", cannot assign "          + 
+                                new_type_name
+                            )
                         );
                     }
                 }
@@ -1032,21 +1357,28 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
             }
             else
             {
-                return t_Expected<std::string, t_ErrorInfo>(
-                    t_ErrorInfo(t_ErrorType::RUNTIME_ERROR, "Left side of assignment must be a variable")
+                return t_Expected<std::string, t_ErrorInfo>
+                (
+                    t_ErrorInfo
+                    (
+                        t_ErrorType::RUNTIME_ERROR, 
+                        "Left side of assignment must be a variable"
+                    )
                 );
             }
         }
         
         // Evaluate operands
-        t_Expected<std::string, t_ErrorInfo> left_result = Evaluate(binary->left.get());
+        t_Expected<std::string, t_ErrorInfo> left_result = 
+        Evaluate(binary->left.get());
         if (!left_result.HasValue())
         {
             return left_result;
         }
         std::string left_str = left_result.Value();
         
-        t_Expected<std::string, t_ErrorInfo> right_result = Evaluate(binary->right.get());
+        t_Expected<std::string, t_ErrorInfo> right_result = 
+        Evaluate(binary->right.get());
         if (!right_result.HasValue())
         {
             return right_result;
@@ -1083,7 +1415,10 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                 {
                     return t_Expected<std::string, t_ErrorInfo>(comparison_result.Error());
                 }
-                return t_Expected<std::string, t_ErrorInfo>(comparison_result.Value() ? "true" : "false");
+                return t_Expected<std::string, t_ErrorInfo>
+                (
+                    comparison_result.Value() ? "true" : "false"
+                );
             }
         }
     }
@@ -1096,8 +1431,15 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
             return t_Expected<std::string, t_ErrorInfo>(it->second.value);
         }
         // Variables must be declared with 'auto' keyword before use
-        return t_Expected<std::string, t_ErrorInfo>(
-            t_ErrorInfo(t_ErrorType::RUNTIME_ERROR, "Variable '" + variable->name + "' must be declared with 'auto' keyword before use")
+        return t_Expected<std::string, t_ErrorInfo>
+        (
+            t_ErrorInfo
+            (
+                t_ErrorType::RUNTIME_ERROR, 
+                "Variable '"   + 
+                variable->name + 
+                "' must be declared with 'auto' keyword before use"
+            )
         );
     }
 
@@ -1110,7 +1452,10 @@ std::string t_Interpreter::Stringify(const std::string &value)
     return value;
 }
 
-t_Expected<std::string, t_ErrorInfo> t_Interpreter::EvaluateFormatExpression(const std::string &expr_str)
+t_Expected<std::string, t_ErrorInfo> t_Interpreter::EvaluateFormatExpression
+(
+    const std::string &expr_str
+)
 {
     try
     {
@@ -1141,7 +1486,12 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::EvaluateFormatExpression(con
         size_t minus_pos = expr_str.find('-');
         
         // Handle multiplication
-        if (mul_pos != std::string::npos && mul_pos > 0 && mul_pos < expr_str.length() - 1)
+        if 
+        (
+            mul_pos != std::string::npos && 
+            mul_pos > 0                  && 
+            mul_pos < expr_str.length() - 1
+        )
         {
             std::string left_str = expr_str.substr(0, mul_pos);
             std::string right_str = expr_str.substr(mul_pos + 1);
@@ -1174,7 +1524,12 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::EvaluateFormatExpression(con
         }
         
         // Handle division
-        if (div_pos != std::string::npos && div_pos > 0 && div_pos < expr_str.length() - 1)
+        if 
+        (
+            div_pos != std::string::npos && 
+            div_pos > 0                  && 
+            div_pos < expr_str.length() - 1
+        )
         {
             std::string left_str = expr_str.substr(0, div_pos);
             std::string right_str = expr_str.substr(div_pos + 1);
@@ -1207,7 +1562,12 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::EvaluateFormatExpression(con
         }
         
         // Handle addition
-        if (plus_pos != std::string::npos && plus_pos > 0 && plus_pos < expr_str.length() - 1)
+        if 
+        (
+            plus_pos != std::string::npos && 
+            plus_pos > 0                  && 
+            plus_pos < expr_str.length() - 1
+        )
         {
             std::string left_str = expr_str.substr(0, plus_pos);
             std::string right_str = expr_str.substr(plus_pos + 1);
@@ -1240,7 +1600,12 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::EvaluateFormatExpression(con
         }
         
         // Handle subtraction
-        if (minus_pos != std::string::npos && minus_pos > 0 && minus_pos < expr_str.length() - 1)
+        if 
+        (
+            minus_pos != std::string::npos && 
+            minus_pos > 0                  && 
+            minus_pos < expr_str.length() - 1
+        )
         {
             std::string left_str = expr_str.substr(0, minus_pos);
             std::string right_str = expr_str.substr(minus_pos + 1);
@@ -1296,19 +1661,26 @@ bool t_Interpreter::IsSimpleNumericLoop(t_ForStmt* for_stmt)
     t_VarStmt* init_var = dynamic_cast<t_VarStmt*>(for_stmt->initializer.get());
     if (!init_var || !init_var->initializer) return false;
     
-    t_LiteralExpr* init_literal = dynamic_cast<t_LiteralExpr*>(init_var->initializer.get());
+    t_LiteralExpr* init_literal = 
+    dynamic_cast<t_LiteralExpr*>(init_var->initializer.get());
     if (!init_literal || init_literal->value != "0") return false;
     
     // Check if condition is: var < number
     if (!for_stmt->condition) return false;
     
-    t_BinaryExpr* condition_binary = dynamic_cast<t_BinaryExpr*>(for_stmt->condition.get());
-    if (!condition_binary || condition_binary->op.type != t_TokenType::LESS) return false;
+    t_BinaryExpr* condition_binary = 
+    dynamic_cast<t_BinaryExpr*>(for_stmt->condition.get());
+    if 
+    (
+        !condition_binary || condition_binary->op.type != t_TokenType::LESS
+    ) return false;
     
-    t_VariableExpr* condition_var = dynamic_cast<t_VariableExpr*>(condition_binary->left.get());
+    t_VariableExpr* condition_var = 
+    dynamic_cast<t_VariableExpr*>(condition_binary->left.get());
     if (!condition_var || condition_var->name != init_var->name) return false;
     
-    t_LiteralExpr* condition_literal = dynamic_cast<t_LiteralExpr*>(condition_binary->right.get());
+    t_LiteralExpr* condition_literal = 
+    dynamic_cast<t_LiteralExpr*>(condition_binary->right.get());
     if (!condition_literal) return false;
     
     // Try to convert condition literal to number
@@ -1325,23 +1697,38 @@ bool t_Interpreter::IsSimpleNumericLoop(t_ForStmt* for_stmt)
     if (!for_stmt->increment) return false;
     
     // Check for postfix increment: var++
-    t_PostfixExpr* postfix_inc = dynamic_cast<t_PostfixExpr*>(for_stmt->increment.get());
+    t_PostfixExpr* postfix_inc = 
+    dynamic_cast<t_PostfixExpr*>(for_stmt->increment.get());
     if (postfix_inc) 
     {
-        t_VariableExpr* inc_var = dynamic_cast<t_VariableExpr*>(postfix_inc->operand.get());
-        if (inc_var && inc_var->name == init_var->name && 
-            postfix_inc->op.type == t_TokenType::PLUS_PLUS) 
+        t_VariableExpr* inc_var = 
+        dynamic_cast<t_VariableExpr*>(postfix_inc->operand.get());
+        if 
+        (
+            inc_var                         && 
+            inc_var->name == init_var->name && 
+            postfix_inc->op.type == t_TokenType::PLUS_PLUS
+        ) 
         {
             return true;
         }
     }
     
     // Check for prefix increment: ++var
-    t_PrefixExpr* prefix_inc = dynamic_cast<t_PrefixExpr*>(for_stmt->increment.get());
-    if (prefix_inc) {
-        t_VariableExpr* inc_var = dynamic_cast<t_VariableExpr*>(prefix_inc->operand.get());
-        if (inc_var && inc_var->name == init_var->name && 
-            prefix_inc->op.type == t_TokenType::PLUS_PLUS) {
+    t_PrefixExpr* prefix_inc = 
+    dynamic_cast<t_PrefixExpr*>(for_stmt->increment.get());
+
+    if (prefix_inc) 
+    {
+        t_VariableExpr* inc_var = 
+        dynamic_cast<t_VariableExpr*>(prefix_inc->operand.get());
+        if 
+        (
+            inc_var                         && 
+            inc_var->name == init_var->name && 
+            prefix_inc->op.type == t_TokenType::PLUS_PLUS
+        )
+        {
             return true;
         }
     }
@@ -1350,15 +1737,21 @@ bool t_Interpreter::IsSimpleNumericLoop(t_ForStmt* for_stmt)
 }
 
 // Optimized execution for simple numeric loops: for (auto i = 0; i < N; i++)
-t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop(t_ForStmt* for_stmt)
+t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
+(
+    t_ForStmt* for_stmt
+)
 {
     // Push a new scope for the loop
     PushScope();
     
     // Extract loop parameters
     t_VarStmt* init_var = dynamic_cast<t_VarStmt*>(for_stmt->initializer.get());
-    t_BinaryExpr* condition_binary = dynamic_cast<t_BinaryExpr*>(for_stmt->condition.get());
-    t_LiteralExpr* condition_literal = dynamic_cast<t_LiteralExpr*>(condition_binary->right.get());
+    t_BinaryExpr* condition_binary = 
+    dynamic_cast<t_BinaryExpr*>(for_stmt->condition.get());
+
+    t_LiteralExpr* condition_literal = 
+    dynamic_cast<t_LiteralExpr*>(condition_binary->right.get());
     
     // Get the loop limit
     int limit = static_cast<int>(std::stod(condition_literal->value));
@@ -1382,7 +1775,8 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop(t_ForStmt* 
         // Execute body
         try
         {
-            t_Expected<int, t_ErrorInfo> body_result = Execute(for_stmt->body.get());
+            t_Expected<int, t_ErrorInfo> body_result = 
+            Execute(for_stmt->body.get());
             if (!body_result.HasValue())
             {
                 PopScope(); // Clean up scope before returning

@@ -23,7 +23,10 @@ private:
     t_Token Peek();
     t_Token Previous();
     bool Match(std::initializer_list<t_TokenType> types);
-    t_Expected<t_Token, t_ErrorInfo> Consume(t_TokenType type, const std::string &message);
+    t_Expected<t_Token, t_ErrorInfo> Consume
+    (
+        t_TokenType type, const std::string &message
+    );
     t_ErrorInfo Error(t_Token token, const std::string &message);
 
     t_Expected<t_Stmt*, t_ErrorInfo> Statement();

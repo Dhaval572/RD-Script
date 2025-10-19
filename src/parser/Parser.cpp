@@ -5,11 +5,18 @@
 
 // Initialize static memory pools with optimized sizes
 // Larger block size for statements since they can contain multiple sub-elements
-t_MemoryPool t_Parser::stmt_pool(sizeof(t_VarStmt) > sizeof(t_DisplayStmt) ? 
-                                 sizeof(t_VarStmt) : sizeof(t_DisplayStmt));
+t_MemoryPool t_Parser::stmt_pool
+(
+    sizeof(t_VarStmt) > sizeof(t_DisplayStmt) ? 
+    sizeof(t_VarStmt) : sizeof(t_DisplayStmt)
+);
+
 // Larger block size for expressions since they can be complex
-t_MemoryPool t_Parser::expr_pool(sizeof(t_BinaryExpr) > sizeof(t_LiteralExpr) ? 
-                                 sizeof(t_BinaryExpr) : sizeof(t_LiteralExpr));
+t_MemoryPool t_Parser::expr_pool
+(
+    sizeof(t_BinaryExpr) > sizeof(t_LiteralExpr) ? 
+    sizeof(t_BinaryExpr) : sizeof(t_LiteralExpr)
+);
 
 t_Parser::t_Parser(const std::vector<t_Token> &tokens)
     : tokens(tokens), current(0) {}
@@ -88,14 +95,18 @@ bool t_Parser::Match(std::initializer_list<t_TokenType> types)
     return false;
 }
 
-t_Expected<t_Token, t_ErrorInfo> t_Parser::Consume(t_TokenType type, const std::string &message)
+t_Expected<t_Token, t_ErrorInfo> t_Parser::Consume
+(
+    t_TokenType type, const std::string &message
+)
 {
     if (Check(type))
     {
         return t_Expected<t_Token, t_ErrorInfo>(Advance());
     }
 
-    return t_Expected<t_Token, t_ErrorInfo>(
+    return t_Expected<t_Token, t_ErrorInfo>
+    (
         t_ErrorInfo(t_ErrorType::PARSING_ERROR, message, Peek().line, 0)
     );
 }
@@ -103,7 +114,11 @@ t_Expected<t_Token, t_ErrorInfo> t_Parser::Consume(t_TokenType type, const std::
 t_ErrorInfo t_Parser::Error(t_Token token, const std::string &message)
 {
     // In a real implementation, we would report the error
-    std::cerr << "Error: " << message << " at line " << token.line << std::endl;
+    std::cerr << "Error: " 
+              << message 
+              << " at line " 
+              << token.line 
+              << std::endl;
     return t_ErrorInfo(t_ErrorType::PARSING_ERROR, message, token.line, 0);
 }
 
@@ -171,21 +186,23 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::BlockStatement()
         statements.push_back(std::unique_ptr<t_Stmt>(result.Value()));
     }
 
-    t_Expected<t_Token, t_ErrorInfo> consume_result = Consume(t_TokenType::RIGHT_BRACE, "Expect '}' after block.");
+    t_Expected<t_Token, t_ErrorInfo> consume_result = 
+    Consume(t_TokenType::RIGHT_BRACE, "Expect '}' after block.");
     if (!consume_result.HasValue())
     {
         return t_Expected<t_Stmt*, t_ErrorInfo>(consume_result.Error());
     }
     
     t_BlockStmt* stmt = static_cast<t_BlockStmt*>(stmt_pool.Allocate());
-    new (stmt) t_BlockStmt(std::move(statements));
+    new (stmt)t_BlockStmt(std::move(statements));
     return t_Expected<t_Stmt*, t_ErrorInfo>(stmt);
 } 
 
 t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::BreakStatement()
 {
     t_Token keyword = Previous();
-    t_Expected<t_Token, t_ErrorInfo> result = Consume(t_TokenType::SEMICOLON, "Expect ';' after 'break'.");
+    t_Expected<t_Token, t_ErrorInfo> result = 
+    Consume(t_TokenType::SEMICOLON, "Expect ';' after 'break'.");
     if (!result.HasValue())
     {
         return t_Expected<t_Stmt*, t_ErrorInfo>(result.Error());
@@ -199,7 +216,8 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::BreakStatement()
 t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ContinueStatement()
 {
     t_Token keyword = Previous();
-    t_Expected<t_Token, t_ErrorInfo> result = Consume(t_TokenType::SEMICOLON, "Expect ';' after 'continue'.");
+    t_Expected<t_Token, t_ErrorInfo> result = 
+    Consume(t_TokenType::SEMICOLON, "Expect ';' after 'continue'.");
     if (!result.HasValue())
     {
         return t_Expected<t_Stmt*, t_ErrorInfo>(result.Error());
@@ -212,7 +230,8 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ContinueStatement()
 
 t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::IfStatement()
 {
-    t_Expected<t_Token, t_ErrorInfo> paren_result = Consume(t_TokenType::LEFT_PAREN, "Expect '(' after 'if'.");
+    t_Expected<t_Token, t_ErrorInfo> paren_result = 
+    Consume(t_TokenType::LEFT_PAREN, "Expect '(' after 'if'.");
     if (!paren_result.HasValue())
     {
         return t_Expected<t_Stmt*, t_ErrorInfo>(paren_result.Error());
@@ -225,7 +244,8 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::IfStatement()
     }
     t_Expr *condition = condition_result.Value();
     
-    t_Expected<t_Token, t_ErrorInfo> close_paren_result = Consume(t_TokenType::RIGHT_PAREN, "Expect ')' after if condition.");
+    t_Expected<t_Token, t_ErrorInfo> close_paren_result = 
+    Consume(t_TokenType::RIGHT_PAREN, "Expect ')' after if condition.");
     if (!close_paren_result.HasValue())
     {
         return t_Expected<t_Stmt*, t_ErrorInfo>(close_paren_result.Error());
@@ -252,7 +272,8 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::IfStatement()
     }
 
     t_IfStmt* stmt = static_cast<t_IfStmt*>(stmt_pool.Allocate());
-    new (stmt) t_IfStmt(
+    new (stmt) t_IfStmt
+    (
         std::unique_ptr<t_Expr>(condition), 
         std::unique_ptr<t_Stmt>(then_branch), 
         std::move(else_branch)
@@ -262,7 +283,8 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::IfStatement()
 
 t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
 {
-    t_Expected<t_Token, t_ErrorInfo> paren_result = Consume(t_TokenType::LEFT_PAREN, "Expect '(' after 'for'.");
+    t_Expected<t_Token, t_ErrorInfo> paren_result = 
+    Consume(t_TokenType::LEFT_PAREN, "Expect '(' after 'for'.");
     if (!paren_result.HasValue())
     {
         return t_Expected<t_Stmt*, t_ErrorInfo>(paren_result.Error());
@@ -328,7 +350,8 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
         increment = std::unique_ptr<t_Expr>(increment_result.Value());
     }
     
-    t_Expected<t_Token, t_ErrorInfo> close_paren_result = Consume(t_TokenType::RIGHT_PAREN, "Expect ')' after for clauses.");
+    t_Expected<t_Token, t_ErrorInfo> close_paren_result = 
+    Consume(t_TokenType::RIGHT_PAREN, "Expect ')' after for clauses.");
     if (!close_paren_result.HasValue())
     {
         return t_Expected<t_Stmt*, t_ErrorInfo>(close_paren_result.Error());
@@ -343,7 +366,8 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
     t_Stmt *body = body_result.Value();
 
     t_ForStmt* stmt = static_cast<t_ForStmt*>(stmt_pool.Allocate());
-    new (stmt) t_ForStmt(
+    new (stmt) t_ForStmt
+    (
         std::move(initializer),
         std::move(condition),
         std::move(increment),
@@ -354,7 +378,8 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
 
 t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::VarDeclaration()
 {
-    t_Expected<t_Token, t_ErrorInfo> name_result = Consume(t_TokenType::IDENTIFIER, "Expect variable name.");
+    t_Expected<t_Token, t_ErrorInfo> name_result = 
+    Consume(t_TokenType::IDENTIFIER, "Expect variable name.");
     if (!name_result.HasValue())
     {
         return t_Expected<t_Stmt*, t_ErrorInfo>(name_result.Error());
@@ -372,7 +397,8 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::VarDeclaration()
         initializer = std::unique_ptr<t_Expr>(init_result.Value());
     }
 
-    t_Expected<t_Token, t_ErrorInfo> semicolon_result = Consume(t_TokenType::SEMICOLON, "Expect ';' after variable declaration.");
+    t_Expected<t_Token, t_ErrorInfo> semicolon_result = 
+    Consume(t_TokenType::SEMICOLON, "Expect ';' after variable declaration.");
     if (!semicolon_result.HasValue())
     {
         return t_Expected<t_Stmt*, t_ErrorInfo>(semicolon_result.Error());
@@ -406,7 +432,8 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::DisplayStatement()
         values.push_back(std::unique_ptr<t_Expr>(expr_result.Value()));
     }
 
-    t_Expected<t_Token, t_ErrorInfo> semicolon_result = Consume(t_TokenType::SEMICOLON, "Expect ';' after value.");
+    t_Expected<t_Token, t_ErrorInfo> semicolon_result = 
+    Consume(t_TokenType::SEMICOLON, "Expect ';' after value.");
     if (!semicolon_result.HasValue())
     {
         return t_Expected<t_Stmt*, t_ErrorInfo>(semicolon_result.Error());
@@ -427,13 +454,15 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ExpressionStatement()
     }
     t_Expr *expr = expr_result.Value();
     
-    t_Expected<t_Token, t_ErrorInfo> semicolon_result = Consume(t_TokenType::SEMICOLON, "Expect ';' after expression.");
+    t_Expected<t_Token, t_ErrorInfo> semicolon_result = 
+    Consume(t_TokenType::SEMICOLON, "Expect ';' after expression.");
     if (!semicolon_result.HasValue())
     {
         return t_Expected<t_Stmt*, t_ErrorInfo>(semicolon_result.Error());
     }
     
-    t_ExpressionStmt* stmt = static_cast<t_ExpressionStmt*>(stmt_pool.Allocate());
+    t_ExpressionStmt* stmt = 
+    static_cast<t_ExpressionStmt*>(stmt_pool.Allocate());
     new (stmt) t_ExpressionStmt(std::unique_ptr<t_Expr>(expr));
     return t_Expected<t_Stmt*, t_ErrorInfo>(stmt);
 }
@@ -448,7 +477,8 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::EmptyStatement()
 
 t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::BenchmarkStatement()
 {
-    t_Expected<t_Token, t_ErrorInfo> open_brace_result = Consume(t_TokenType::LEFT_BRACE, "Expect '{' after 'benchmark'.");
+    t_Expected<t_Token, t_ErrorInfo> open_brace_result = 
+    Consume(t_TokenType::LEFT_BRACE, "Expect '{' after 'benchmark'.");
     if (!open_brace_result.HasValue())
     {
         return t_Expected<t_Stmt*, t_ErrorInfo>(open_brace_result.Error());
@@ -466,7 +496,8 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::BenchmarkStatement()
         statements.push_back(std::unique_ptr<t_Stmt>(stmt_result.Value()));
     }
     
-    t_Expected<t_Token, t_ErrorInfo> close_brace_result = Consume(t_TokenType::RIGHT_BRACE, "Expect '}' after benchmark body.");
+    t_Expected<t_Token, t_ErrorInfo> close_brace_result = 
+    Consume(t_TokenType::RIGHT_BRACE, "Expect '}' after benchmark body.");
     if (!close_brace_result.HasValue())
     {
         return t_Expected<t_Stmt*, t_ErrorInfo>(close_brace_result.Error());
@@ -508,14 +539,28 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Assignment()
         if (t_VariableExpr *var_expr = dynamic_cast<t_VariableExpr *>(expr))
         {
             std::string name = var_expr->name;
-            t_BinaryExpr* expr_node = static_cast<t_BinaryExpr*>(expr_pool.Allocate());
-            new (expr_node) t_BinaryExpr(std::unique_ptr<t_Expr>(expr), equals, std::unique_ptr<t_Expr>(value));
+            t_BinaryExpr* expr_node = 
+            static_cast<t_BinaryExpr*>(expr_pool.Allocate());
+
+            new (expr_node) t_BinaryExpr
+            (
+                std::unique_ptr<t_Expr>(expr), 
+                equals, 
+                std::unique_ptr<t_Expr>(value)
+            );
             return t_Expected<t_Expr*, t_ErrorInfo>(expr_node);
         }
 
         // If we get here, we're trying to assign to a non-variable
-        return t_Expected<t_Expr*, t_ErrorInfo>(
-            t_ErrorInfo(t_ErrorType::PARSING_ERROR, "Invalid assignment target", equals.line, 0)
+        return t_Expected<t_Expr*, t_ErrorInfo>
+        (
+            t_ErrorInfo
+            (
+                t_ErrorType::PARSING_ERROR, 
+                "Invalid assignment target", 
+                equals.line, 
+                0
+            )
         );
     }
 
@@ -541,8 +586,10 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Or()
         }
         t_Expr *right = right_result.Value();
         
-        t_BinaryExpr* expr_node = static_cast<t_BinaryExpr*>(expr_pool.Allocate());
-        new (expr_node) t_BinaryExpr(
+        t_BinaryExpr* expr_node = 
+        static_cast<t_BinaryExpr*>(expr_pool.Allocate());
+        new (expr_node) t_BinaryExpr
+        (
             std::unique_ptr<t_Expr>(expr), 
             op, 
             std::unique_ptr<t_Expr>(right)
@@ -572,8 +619,10 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::And()
         }
         t_Expr *right = right_result.Value();
         
-        t_BinaryExpr* expr_node = static_cast<t_BinaryExpr*>(expr_pool.Allocate());
-        new (expr_node) t_BinaryExpr(
+        t_BinaryExpr* expr_node = 
+        static_cast<t_BinaryExpr*>(expr_pool.Allocate());
+        new (expr_node) t_BinaryExpr
+        (
             std::unique_ptr<t_Expr>(expr), 
             op, 
             std::unique_ptr<t_Expr>(right)
@@ -603,8 +652,10 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Equality()
         }
         t_Expr *right = right_result.Value();
         
-        t_BinaryExpr* expr_node = static_cast<t_BinaryExpr*>(expr_pool.Allocate());
-        new (expr_node) t_BinaryExpr(
+        t_BinaryExpr* expr_node = 
+        static_cast<t_BinaryExpr*>(expr_pool.Allocate());
+        new (expr_node) t_BinaryExpr
+        (
             std::unique_ptr<t_Expr>(expr), 
             op, 
             std::unique_ptr<t_Expr>(right)
@@ -624,7 +675,15 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Comparison()
     }
     t_Expr *expr = expr_result.Value();
     
-    while (Match({t_TokenType::GREATER, t_TokenType::GREATER_EQUAL, t_TokenType::LESS, t_TokenType::LESS_EQUAL}))
+    while 
+    (
+        Match
+        (
+            {
+                t_TokenType::GREATER, t_TokenType::GREATER_EQUAL, t_TokenType::LESS, t_TokenType::LESS_EQUAL
+            }
+        )
+    )
     {
         t_Token op = Previous();
         t_Expected<t_Expr*, t_ErrorInfo> right_result = Term();
@@ -634,8 +693,10 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Comparison()
         }
         t_Expr *right = right_result.Value();
         
-        t_BinaryExpr* expr_node = static_cast<t_BinaryExpr*>(expr_pool.Allocate());
-        new (expr_node) t_BinaryExpr(
+        t_BinaryExpr* expr_node = 
+        static_cast<t_BinaryExpr*>(expr_pool.Allocate());
+        new (expr_node) t_BinaryExpr
+        (
             std::unique_ptr<t_Expr>(expr), 
             op, 
             std::unique_ptr<t_Expr>(right)
@@ -665,8 +726,10 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Term()
         }
         t_Expr *right = right_result.Value();
         
-        t_BinaryExpr* expr_node = static_cast<t_BinaryExpr*>(expr_pool.Allocate());
-        new (expr_node) t_BinaryExpr(
+        t_BinaryExpr* expr_node = 
+        static_cast<t_BinaryExpr*>(expr_pool.Allocate());
+        new (expr_node) t_BinaryExpr
+        (
             std::unique_ptr<t_Expr>(expr), 
             op, 
             std::unique_ptr<t_Expr>(right)
@@ -696,8 +759,10 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Factor()
         }
         t_Expr *right = right_result.Value();
         
-        t_BinaryExpr* expr_node = static_cast<t_BinaryExpr*>(expr_pool.Allocate());
-        new (expr_node) t_BinaryExpr(
+        t_BinaryExpr* expr_node = 
+        static_cast<t_BinaryExpr*>(expr_pool.Allocate());
+        new (expr_node) t_BinaryExpr
+        (
             std::unique_ptr<t_Expr>(expr), 
             op, 
             std::unique_ptr<t_Expr>(right)
@@ -741,7 +806,8 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::FinishUnary()
     while (Match({t_TokenType::PLUS_PLUS, t_TokenType::MINUS_MINUS}))
     {
         t_Token op = Previous();
-        t_PostfixExpr* expr_node = static_cast<t_PostfixExpr*>(expr_pool.Allocate());
+        t_PostfixExpr* expr_node = 
+        static_cast<t_PostfixExpr*>(expr_pool.Allocate());
         new (expr_node) t_PostfixExpr(std::unique_ptr<t_Expr>(expr), op);
         expr = expr_node;
     }
@@ -753,29 +819,43 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Primary()
 {
     if (Match({t_TokenType::FALSE}))
     {
-        t_LiteralExpr* expr_node = static_cast<t_LiteralExpr*>(expr_pool.Allocate());
+        t_LiteralExpr* expr_node = 
+        static_cast<t_LiteralExpr*>(expr_pool.Allocate());
         new (expr_node) t_LiteralExpr("false", t_TokenType::FALSE);
         return t_Expected<t_Expr*, t_ErrorInfo>(expr_node);
     }
 
     if (Match({t_TokenType::TRUE}))
     {
-        t_LiteralExpr* expr_node = static_cast<t_LiteralExpr*>(expr_pool.Allocate());
+        t_LiteralExpr* expr_node = 
+        static_cast<t_LiteralExpr*>(expr_pool.Allocate());
         new (expr_node) t_LiteralExpr("true", t_TokenType::TRUE);
         return t_Expected<t_Expr*, t_ErrorInfo>(expr_node);
     }
 
     if (Match({t_TokenType::NIL}))
     {
-        t_LiteralExpr* expr_node = static_cast<t_LiteralExpr*>(expr_pool.Allocate());
+        t_LiteralExpr* expr_node = 
+        static_cast<t_LiteralExpr*>(expr_pool.Allocate());
         new (expr_node) t_LiteralExpr("nil", t_TokenType::NIL);
         return t_Expected<t_Expr*, t_ErrorInfo>(expr_node);
     }
 
-    if (Match({t_TokenType::NUMBER, t_TokenType::STRING, t_TokenType::FORMAT_STRING}))
+    if 
+    (
+        Match
+        (
+            {
+                t_TokenType::NUMBER, 
+                t_TokenType::STRING, 
+                t_TokenType::FORMAT_STRING
+            }
+        )
+    )
     {
         t_Token previous = Previous();
-        t_LiteralExpr* expr_node = static_cast<t_LiteralExpr*>(expr_pool.Allocate());
+        t_LiteralExpr* expr_node = 
+        static_cast<t_LiteralExpr*>(expr_pool.Allocate());
         new (expr_node) t_LiteralExpr(previous.literal, previous.type);
         return t_Expected<t_Expr*, t_ErrorInfo>(expr_node);
     }
@@ -791,14 +871,16 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Primary()
         }
         t_Expr *operand = operand_result.Value();
         
-        t_PrefixExpr* expr_node = static_cast<t_PrefixExpr*>(expr_pool.Allocate());
+        t_PrefixExpr* expr_node = 
+        static_cast<t_PrefixExpr*>(expr_pool.Allocate());
         new (expr_node) t_PrefixExpr(op, std::unique_ptr<t_Expr>(operand));
         return t_Expected<t_Expr*, t_ErrorInfo>(expr_node);
     }
 
     if (Match({t_TokenType::IDENTIFIER}))
     {
-        t_VariableExpr* expr_node = static_cast<t_VariableExpr*>(expr_pool.Allocate());
+        t_VariableExpr* expr_node = 
+        static_cast<t_VariableExpr*>(expr_pool.Allocate());
         new (expr_node) t_VariableExpr(Previous().lexeme);
         return t_Expected<t_Expr*, t_ErrorInfo>(expr_node);
     }
@@ -812,18 +894,27 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Primary()
         }
         t_Expr *expr = expr_result.Value();
         
-        t_Expected<t_Token, t_ErrorInfo> paren_result = Consume(t_TokenType::RIGHT_PAREN, "Expect ')' after expression.");
+        t_Expected<t_Token, t_ErrorInfo> paren_result = 
+        Consume(t_TokenType::RIGHT_PAREN, "Expect ')' after expression.");
         if (!paren_result.HasValue())
         {
             return t_Expected<t_Expr*, t_ErrorInfo>(paren_result.Error());
         }
         
-        t_GroupingExpr* expr_node = static_cast<t_GroupingExpr*>(expr_pool.Allocate());
+        t_GroupingExpr* expr_node = 
+        static_cast<t_GroupingExpr*>(expr_pool.Allocate());
         new (expr_node) t_GroupingExpr(std::unique_ptr<t_Expr>(expr));
         return t_Expected<t_Expr*, t_ErrorInfo>(expr_node);
     }
 
-    return t_Expected<t_Expr*, t_ErrorInfo>(
-        t_ErrorInfo(t_ErrorType::PARSING_ERROR, "Expect expression", Peek().line, 0)
+    return t_Expected<t_Expr*, t_ErrorInfo>
+    (
+        t_ErrorInfo
+        (
+            t_ErrorType::PARSING_ERROR, 
+            "Expect expression", 
+            Peek().line, 
+            0
+        )
     );
 }

@@ -76,6 +76,15 @@ struct t_Token
     std::string literal;
     int line;
 
-    t_Token(t_TokenType type, const std::string &lexeme, const std::string &literal, int line)
-        : type(type), lexeme(lexeme), literal(literal), line(line) {}
+    t_Token
+    (
+        t_TokenType type, 
+        const std::string &lexeme, 
+        const std::string &literal, 
+        int line
+    ) 
+    : type(type), 
+      lexeme(lexeme), 
+      literal(literal), 
+      line(line) {}
 };

@@ -120,10 +120,16 @@ t_ParsingResult t_Lexer::ScanToken()
         } 
         else 
         {
-            return t_ParsingResult(t_ErrorInfo(t_ErrorType::LEXING_ERROR, 
-                                              "Unexpected character", 
-                                              line, 
-                                              current));
+            return t_ParsingResult
+            (
+                t_ErrorInfo
+                (
+                    t_ErrorType::LEXING_ERROR, 
+                    "Unexpected character", 
+                    line, 
+                    current
+                )
+            );
         }
         break;
     case '<':
@@ -174,10 +180,16 @@ t_ParsingResult t_Lexer::ScanToken()
         }
         else
         {
-            return t_ParsingResult(t_ErrorInfo(t_ErrorType::LEXING_ERROR, 
-                                              "Unexpected character", 
-                                              line, 
-                                              current));
+            return t_ParsingResult
+            (
+                t_ErrorInfo
+                (
+                    t_ErrorType::LEXING_ERROR, 
+                    "Unexpected character", 
+                    line, 
+                    current
+                )
+            );
         }
         break;
     default:
@@ -191,10 +203,16 @@ t_ParsingResult t_Lexer::ScanToken()
         }
         else
         {
-            return t_ParsingResult(t_ErrorInfo(t_ErrorType::LEXING_ERROR, 
-                                              "Unexpected character", 
-                                              line, 
-                                              current));
+            return t_ParsingResult
+            (
+                t_ErrorInfo
+                (
+                    t_ErrorType::LEXING_ERROR, 
+                    "Unexpected character", 
+                    line, 
+                    current
+                )
+            );
         }
         break;
     }
@@ -270,8 +288,15 @@ t_Expected<std::string, t_ErrorInfo> t_Lexer::String()
 
     if (IsAtEnd())
     {
-        return t_Expected<std::string, t_ErrorInfo>(
-            t_ErrorInfo(t_ErrorType::LEXING_ERROR, "Unterminated string", line, current)
+        return t_Expected<std::string, t_ErrorInfo>
+        (
+            t_ErrorInfo
+            (
+                t_ErrorType::LEXING_ERROR, 
+                "Unterminated string", 
+                line, 
+                current
+            )
         );
     }
 
@@ -327,8 +352,15 @@ t_Expected<std::string, t_ErrorInfo> t_Lexer::FormatString()
 
     if (IsAtEnd())
     {
-        return t_Expected<std::string, t_ErrorInfo>(
-            t_ErrorInfo(t_ErrorType::LEXING_ERROR, "Unterminated format string", line, current)
+        return t_Expected<std::string, t_ErrorInfo>
+        (
+            t_ErrorInfo
+            (
+                t_ErrorType::LEXING_ERROR, 
+                "Unterminated format string", 
+                line, 
+                current
+            )
         );
     }
 

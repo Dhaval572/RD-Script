@@ -43,7 +43,10 @@ private:
         size_t available = chunk_size - offsetof(t_Chunk, data);
         
         // Align the data pointer
-        uintptr_t align_offset = (ALIGNMENT - (reinterpret_cast<uintptr_t>(data) % ALIGNMENT)) % ALIGNMENT;
+        uintptr_t align_offset = 
+        (
+            ALIGNMENT - (reinterpret_cast<uintptr_t>(data) % ALIGNMENT)
+        ) % ALIGNMENT;
         data += align_offset;
         available -= align_offset;
         
@@ -62,7 +65,9 @@ public:
     t_MemoryPool(size_t block_size_) : chunks(nullptr), free_blocks(nullptr)
     {
         // Ensure block size is at least as large as a pointer and properly aligned
-        block_size = (block_size_ > sizeof(t_Block)) ? block_size_ : sizeof(t_Block);
+        block_size = (block_size_ > sizeof(t_Block)) ? 
+                      block_size_ : sizeof(t_Block);
+
         block_size = (block_size + ALIGNMENT - 1) & ~(ALIGNMENT - 1);
     }
     
@@ -111,7 +116,10 @@ public:
             size_t available = chunk_size - offsetof(t_Chunk, data);
             
             // Align the data pointer
-            uintptr_t align_offset = (ALIGNMENT - (reinterpret_cast<uintptr_t>(data) % ALIGNMENT)) % ALIGNMENT;
+            uintptr_t align_offset = 
+            (
+                ALIGNMENT - (reinterpret_cast<uintptr_t>(data) % ALIGNMENT)
+            ) % ALIGNMENT;
             data += align_offset;
             available -= align_offset;
             
@@ -152,10 +160,12 @@ public:
         typedef t_PoolAllocator<U> other;
     };
 
-    t_PoolAllocator(t_MemoryPool* pool_) noexcept : pool(pool_) {}
+    t_PoolAllocator(t_MemoryPool* pool_) noexcept : 
+        pool(pool_) {}
     
     template<typename U>
-    t_PoolAllocator(const t_PoolAllocator<U>& other) noexcept : pool(other.pool) {}
+    t_PoolAllocator(const t_PoolAllocator<U>& other) noexcept : 
+        pool(other.pool) {}
 
     pointer allocate(size_type n)
     {

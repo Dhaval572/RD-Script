@@ -22,10 +22,23 @@ struct t_ErrorInfo
     int line;
     int column;
 
-    t_ErrorInfo() : type(t_ErrorType::RUNTIME_ERROR), message(""), line(0), column(0) {}
+    t_ErrorInfo() 
+        : type(t_ErrorType::RUNTIME_ERROR), 
+          message(""), 
+          line(0), 
+          column(0) {}
     
-    t_ErrorInfo(t_ErrorType type, const std::string& message, int line = 0, int column = 0)
-        : type(type), message(message), line(line), column(column) {}
+    t_ErrorInfo
+    (
+        t_ErrorType type, 
+        const std::string& message, 
+        int line = 0, 
+        int column = 0
+    )
+        : type(type), 
+          message(message), 
+          line(line), 
+          column(column) {}
 };
 
 // Expected type for error handling - similar to C++23's std::expected

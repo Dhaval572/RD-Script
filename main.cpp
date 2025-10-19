@@ -48,7 +48,8 @@ int main(int argc, char* argv[])
 
     // Parsing with memory pool optimization
     t_Parser parser(tokens);
-    t_Expected<std::vector<t_Stmt*>, t_ErrorInfo> statements_result = parser.Parse();
+    t_Expected<std::vector<t_Stmt*>, t_ErrorInfo> statements_result = 
+    parser.Parse();
     if (!statements_result.HasValue())
     {
         ReportError(statements_result.Error());
