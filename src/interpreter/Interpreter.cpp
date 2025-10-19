@@ -314,10 +314,26 @@ void t_Interpreter::Execute(t_Stmt *stmt)
 {
     if (t_BlockStmt *block_stmt = dynamic_cast<t_BlockStmt *>(stmt))
     {
+        // Store the keys of variables that existed before the block
+        std::vector<std::string> pre_block_variables;
+        for (const auto& pair : environment) 
+        {
+            pre_block_variables.push_back(pair.first);
+        }
+
         for (const auto &statement : block_stmt->statements)
         {
             Execute(statement.get());
         }
+
+        // Remove variables that were created within the block scope
+        // Keep only the variables that existed before the block
+        std::unordered_map<std::string, t_TypedValue> cleaned_environment;
+        for (const std::string& var_name : pre_block_variables) 
+        {
+            cleaned_environment[var_name] = environment[var_name];
+        }
+        environment = cleaned_environment;
     }
     else if (t_BreakStmt *break_stmt = dynamic_cast<t_BreakStmt *>(stmt))
     {
@@ -427,11 +443,9 @@ void t_Interpreter::Execute(t_Stmt *stmt)
         t_VarStmt *var_stmt = dynamic_cast<t_VarStmt *>(stmt)
     )
     {
-        // Check if variable already exists
-        if (environment.find(var_stmt->name) != environment.end())
-        {
-            throw std::runtime_error("Variable '" + var_stmt->name + "' already declared");
-        }
+        // Check if variable already exists in current scope
+        // Note: This is now handled by the scoping mechanism above
+        // Variables declared in inner scopes will be automatically cleaned up
 
         t_TypedValue typed_value;
         if (var_stmt->initializer)

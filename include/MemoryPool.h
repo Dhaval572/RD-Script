@@ -20,7 +20,7 @@ private:
         char data[1];
     };
 
-    static const size_t BLOCK_SIZE = 1024 * 64; // 64KB chunks
+    static const size_t BLOCK_SIZE = 1024 * 256; // 64KB chunks
     static const size_t ALIGNMENT = alignof(std::max_align_t);
     
     t_Chunk* chunks;
