@@ -3,7 +3,7 @@
 
 void ReportError(const t_ErrorInfo& error)
 {
-    std::string error_type;
+    std::string_view error_type;
     switch (error.type)
     {
         case t_ErrorType::LEXING_ERROR:

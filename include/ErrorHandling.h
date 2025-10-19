@@ -75,7 +75,7 @@ public:
 
 // Convenience type aliases
 using t_ParsingResult = t_Expected<std::vector<t_Token>, t_ErrorInfo>;
-using t_InterpretationResult = t_Expected<int, t_ErrorInfo>; // Use int instead of void
+using t_InterpretationResult = t_Expected<int, t_ErrorInfo>; 
 
 // Error reporting function
 void ReportError(const t_ErrorInfo& error);
