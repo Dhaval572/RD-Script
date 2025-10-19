@@ -10,6 +10,7 @@ include_directories(include)
 # Source files
 set(SOURCES
     src/core/Lexer.cpp
+    src/core/ErrorHandling.cpp
     src/parser/Parser.cpp
     src/interpreter/Interpreter.cpp
     main.cpp

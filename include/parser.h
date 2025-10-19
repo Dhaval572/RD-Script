@@ -5,6 +5,7 @@
 #include "Token.h"
 #include "AST.h"
 #include "MemoryPool.h"
+#include "ErrorHandling.h"
 
 class t_Parser
 {
@@ -22,36 +23,36 @@ private:
     t_Token Peek();
     t_Token Previous();
     bool Match(std::initializer_list<t_TokenType> types);
-    t_Token Consume(t_TokenType type, const std::string &message);
-    std::string Error(t_Token token, const std::string &message);
+    t_Expected<t_Token, t_ErrorInfo> Consume(t_TokenType type, const std::string &message);
+    t_ErrorInfo Error(t_Token token, const std::string &message);
 
-    t_Stmt *Statement();
-    t_Stmt *BlockStatement();
-    t_Stmt *BreakStatement();
-    t_Stmt *ContinueStatement();
-    t_Stmt *IfStatement();
-    t_Stmt *ForStatement();
-    t_Stmt *VarDeclaration();
-    t_Stmt *DisplayStatement();
-    t_Stmt *ExpressionStatement();
-    t_Stmt *EmptyStatement();
-    t_Stmt *BenchmarkStatement();
+    t_Expected<t_Stmt*, t_ErrorInfo> Statement();
+    t_Expected<t_Stmt*, t_ErrorInfo> BlockStatement();
+    t_Expected<t_Stmt*, t_ErrorInfo> BreakStatement();
+    t_Expected<t_Stmt*, t_ErrorInfo> ContinueStatement();
+    t_Expected<t_Stmt*, t_ErrorInfo> IfStatement();
+    t_Expected<t_Stmt*, t_ErrorInfo> ForStatement();
+    t_Expected<t_Stmt*, t_ErrorInfo> VarDeclaration();
+    t_Expected<t_Stmt*, t_ErrorInfo> DisplayStatement();
+    t_Expected<t_Stmt*, t_ErrorInfo> ExpressionStatement();
+    t_Expected<t_Stmt*, t_ErrorInfo> EmptyStatement();
+    t_Expected<t_Stmt*, t_ErrorInfo> BenchmarkStatement();
 
-    t_Expr *Assignment();
-    t_Expr *Or();
-    t_Expr *And();
-    t_Expr *Equality();
-    t_Expr *Comparison();
-    t_Expr *Term();
-    t_Expr *Factor();
-    t_Expr *Unary();
-    t_Expr *FinishUnary();
-    t_Expr *Primary();
+    t_Expected<t_Expr*, t_ErrorInfo> Assignment();
+    t_Expected<t_Expr*, t_ErrorInfo> Or();
+    t_Expected<t_Expr*, t_ErrorInfo> And();
+    t_Expected<t_Expr*, t_ErrorInfo> Equality();
+    t_Expected<t_Expr*, t_ErrorInfo> Comparison();
+    t_Expected<t_Expr*, t_ErrorInfo> Term();
+    t_Expected<t_Expr*, t_ErrorInfo> Factor();
+    t_Expected<t_Expr*, t_ErrorInfo> Unary();
+    t_Expected<t_Expr*, t_ErrorInfo> FinishUnary();
+    t_Expected<t_Expr*, t_ErrorInfo> Primary();
 
 public:
-    t_Expr *Expression();  // Moved from private to public section
+    t_Expected<t_Expr*, t_ErrorInfo> Expression();  // Moved from private to public section
     explicit t_Parser(const std::vector<t_Token> &tokens);
-    std::vector<t_Stmt *> Parse();
+    t_Expected<std::vector<t_Stmt*>, t_ErrorInfo> Parse();
     
     // Reset the memory pools
     static void ResetPools();

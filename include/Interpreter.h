@@ -5,6 +5,7 @@
 #include <string>
 #include <chrono>
 #include "AST.h"
+#include "ErrorHandling.h"
 
 // Type enumeration for RD Script values
 enum class t_ValueType
@@ -70,11 +71,11 @@ class t_Interpreter
 private:
     std::unordered_map<std::string, t_TypedValue> environment;
 
-    std::string Evaluate(t_Expr *expr);
-    void Execute(t_Stmt *stmt);
+    t_Expected<std::string, t_ErrorInfo> Evaluate(t_Expr *expr);
+    t_Expected<int, t_ErrorInfo> Execute(t_Stmt *stmt); // Use int instead of void
     bool IsTruthy(const std::string &value);
     std::string Stringify(const std::string &value);
-    std::string EvaluateFormatExpression(const std::string &expr_str);
+    t_Expected<std::string, t_ErrorInfo> EvaluateFormatExpression(const std::string &expr_str);
     
     // Helper function to detect the type of a value
     t_ValueType DetectType(const std::string& value);
@@ -86,16 +87,16 @@ private:
     
     // Optimized loop execution methods
     bool IsSimpleNumericLoop(t_ForStmt* for_stmt);
-    void ExecuteSimpleNumericLoop(t_ForStmt* for_stmt);
+    t_Expected<int, t_ErrorInfo> ExecuteSimpleNumericLoop(t_ForStmt* for_stmt); // Use int instead of void
     
     // Optimized arithmetic operations
-    std::string PerformAddition(const t_TypedValue& left, const t_TypedValue& right);
-    std::string PerformSubtraction(const t_TypedValue& left, const t_TypedValue& right);
-    std::string PerformMultiplication(const t_TypedValue& left, const t_TypedValue& right);
-    std::string PerformDivision(const t_TypedValue& left, const t_TypedValue& right);
-    bool PerformComparison(const t_TypedValue& left, const t_TokenType op, const t_TypedValue& right);
+    t_Expected<std::string, t_ErrorInfo> PerformAddition(const t_TypedValue& left, const t_TypedValue& right);
+    t_Expected<std::string, t_ErrorInfo> PerformSubtraction(const t_TypedValue& left, const t_TypedValue& right);
+    t_Expected<std::string, t_ErrorInfo> PerformMultiplication(const t_TypedValue& left, const t_TypedValue& right);
+    t_Expected<std::string, t_ErrorInfo> PerformDivision(const t_TypedValue& left, const t_TypedValue& right);
+    t_Expected<bool, t_ErrorInfo> PerformComparison(const t_TypedValue& left, const t_TokenType op, const t_TypedValue& right);
 
 public:
     t_Interpreter();
-    void Interpret(const std::vector<t_Stmt *> &statements);
+    t_InterpretationResult Interpret(const std::vector<t_Stmt *> &statements);
 };

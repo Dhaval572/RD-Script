@@ -1,7 +1,7 @@
 #include "Lexer.h"
 #include <unordered_map>
 #include <cctype>
-#include <stdexcept>
+#include "ErrorHandling.h"
 
 static const std::unordered_map<std::string, t_TokenType> keywords =
 {
@@ -29,16 +29,20 @@ static const std::unordered_map<std::string, t_TokenType> keywords =
 t_Lexer::t_Lexer(const std::string &source)
     : source(source), start(0), current(0), line(1) {}
 
-std::vector<t_Token> t_Lexer::ScanTokens()
+t_ParsingResult t_Lexer::ScanTokens()
 {
     while (!IsAtEnd())
     {
         start = current;
-        ScanToken();
+        t_ParsingResult result = ScanToken();
+        if (!result.HasValue())
+        {
+            return result; // Propagate error
+        }
     }
 
     tokens.emplace_back(t_TokenType::EOF_TOKEN, "", "", line);
-    return tokens;
+    return t_ParsingResult(tokens);
 }
 
 bool t_Lexer::IsAtEnd()
@@ -46,7 +50,7 @@ bool t_Lexer::IsAtEnd()
     return current >= static_cast<int>(source.length());
 }
 
-void t_Lexer::ScanToken()
+t_ParsingResult t_Lexer::ScanToken()
 {
     char c = Advance();
     switch (c)
@@ -116,7 +120,10 @@ void t_Lexer::ScanToken()
         } 
         else 
         {
-            throw std::runtime_error("Unexpected character at line " + std::to_string(line));
+            return t_ParsingResult(t_ErrorInfo(t_ErrorType::LEXING_ERROR, 
+                                              "Unexpected character", 
+                                              line, 
+                                              current));
         }
         break;
     case '<':
@@ -146,20 +153,31 @@ void t_Lexer::ScanToken()
         break;
     case '"':
         {
-            std::string value = String();
-            AddToken(t_TokenType::STRING, value);
+            t_Expected<std::string, t_ErrorInfo> result = String();
+            if (!result.HasValue())
+            {
+                return t_ParsingResult(result.Error());
+            }
+            AddToken(t_TokenType::STRING, result.Value());
         }
         break;
     case '$':
         if (Peek() == '"') 
         {
             Advance(); // Consume the '"'
-            std::string value = FormatString();
-            AddToken(t_TokenType::FORMAT_STRING, value);
+            t_Expected<std::string, t_ErrorInfo> result = FormatString();
+            if (!result.HasValue())
+            {
+                return t_ParsingResult(result.Error());
+            }
+            AddToken(t_TokenType::FORMAT_STRING, result.Value());
         }
         else
         {
-            throw std::runtime_error("Unexpected character at line " + std::to_string(line));
+            return t_ParsingResult(t_ErrorInfo(t_ErrorType::LEXING_ERROR, 
+                                              "Unexpected character", 
+                                              line, 
+                                              current));
         }
         break;
     default:
@@ -173,10 +191,15 @@ void t_Lexer::ScanToken()
         }
         else
         {
-            throw std::runtime_error("Unexpected character at line " + std::to_string(line));
+            return t_ParsingResult(t_ErrorInfo(t_ErrorType::LEXING_ERROR, 
+                                              "Unexpected character", 
+                                              line, 
+                                              current));
         }
         break;
     }
+    
+    return t_ParsingResult(tokens);
 }
 
 bool t_Lexer::Match(char expected)
@@ -202,7 +225,7 @@ char t_Lexer::PeekNext()
     ) ? source[current + 1] : '\0';
 }
 
-std::string t_Lexer::String()
+t_Expected<std::string, t_ErrorInfo> t_Lexer::String()
 {
     std::string value;
     while (Peek() != '"' && !IsAtEnd())
@@ -247,9 +270,8 @@ std::string t_Lexer::String()
 
     if (IsAtEnd())
     {
-        throw std::runtime_error
-        (
-            "Unterminated string at line " + std::to_string(line)
+        return t_Expected<std::string, t_ErrorInfo>(
+            t_ErrorInfo(t_ErrorType::LEXING_ERROR, "Unterminated string", line, current)
         );
     }
 
@@ -257,10 +279,10 @@ std::string t_Lexer::String()
     Advance();
 
     // Return the processed string value (without surrounding quotes)
-    return value;
+    return t_Expected<std::string, t_ErrorInfo>(value);
 }
 
-std::string t_Lexer::FormatString()
+t_Expected<std::string, t_ErrorInfo> t_Lexer::FormatString()
 {
     std::string value;
     while (Peek() != '"' && !IsAtEnd())
@@ -305,9 +327,8 @@ std::string t_Lexer::FormatString()
 
     if (IsAtEnd())
     {
-        throw std::runtime_error
-        (
-            "Unterminated format string at line " + std::to_string(line)
+        return t_Expected<std::string, t_ErrorInfo>(
+            t_ErrorInfo(t_ErrorType::LEXING_ERROR, "Unterminated format string", line, current)
         );
     }
 
@@ -315,7 +336,7 @@ std::string t_Lexer::FormatString()
     Advance();
 
     // Return the processed string value (without surrounding quotes)
-    return value;
+    return t_Expected<std::string, t_ErrorInfo>(value);
 }
 
 void t_Lexer::Number()

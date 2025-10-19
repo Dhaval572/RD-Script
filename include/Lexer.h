@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include "Token.h"
+#include "ErrorHandling.h"
 
 class t_Lexer
 {
@@ -14,7 +15,7 @@ private:
     int line;
 
     bool IsAtEnd();
-    void ScanToken();
+    t_ParsingResult ScanToken();
     char Advance();
     void AddToken(t_TokenType type);
     void AddToken(t_TokenType type, const std::string &literal);
@@ -23,8 +24,8 @@ private:
     char PeekNext();
 
     // Helpers for literals
-    std::string String();
-    std::string FormatString(); 
+    t_Expected<std::string, t_ErrorInfo> String();
+    t_Expected<std::string, t_ErrorInfo> FormatString(); 
     void Number();
     void Identifier();
 
@@ -33,5 +34,5 @@ private:
 
 public:
     t_Lexer(const std::string &source);
-    std::vector<t_Token> ScanTokens();
+    t_ParsingResult ScanTokens();
 };

@@ -5,6 +5,7 @@
 #include "../include/Lexer.h"
 #include "../include/Parser.h"
 #include "../include/Interpreter.h"
+#include "../include/ErrorHandling.h"
 
 std::string ReadFile(const std::string &filename)
 {
@@ -35,29 +36,40 @@ int main(int argc, char* argv[])
         return 1; 
     }
 
-    try 
+    // Lexical analysis
+    t_Lexer lexer(source);
+    t_ParsingResult tokens_result = lexer.ScanTokens();
+    if (!tokens_result.HasValue())
     {
-        // Lexical analysis
-        t_Lexer lexer(source);
-        std::vector<t_Token> tokens = lexer.ScanTokens();
+        ReportError(tokens_result.Error());
+        return 1;
+    }
+    std::vector<t_Token> tokens = tokens_result.Value();
 
-        // Parsing with memory pool optimization
-        t_Parser parser(tokens);
-        std::vector<t_Stmt*> statements = parser.Parse();
-
-        // Interpretation
-        t_Interpreter interpreter;
-        interpreter.Interpret(statements);
-
-        // No need to manually delete statements - they're managed by the memory pool
-        // Reset the pools for the next run
+    // Parsing with memory pool optimization
+    t_Parser parser(tokens);
+    t_Expected<std::vector<t_Stmt*>, t_ErrorInfo> statements_result = parser.Parse();
+    if (!statements_result.HasValue())
+    {
+        ReportError(statements_result.Error());
         t_Parser::ResetPools();
-    } 
-    catch (const std::exception& e) 
+        return 1;
+    }
+    std::vector<t_Stmt*> statements = statements_result.Value();
+
+    // Interpretation
+    t_Interpreter interpreter;
+    t_InterpretationResult interpret_result = interpreter.Interpret(statements);
+    if (!interpret_result.HasValue())
     {
-        std::cerr << "Error: " << e.what() << std::endl;
+        // Error already reported in Interpret method
+        t_Parser::ResetPools();
         return 1;
     }
 
+    // No need to manually delete statements - they're managed by the memory pool
+    // Reset the pools for the next run
+    t_Parser::ResetPools();
+    
     return 0;
 }
