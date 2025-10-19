@@ -60,37 +60,6 @@ public:
     }
 };
 
-// Specialization for bool type
-template<>
-class t_Expected<bool, t_ErrorInfo>
-{
-private:
-    std::variant<bool, t_ErrorInfo> m_Value;
-
-public:
-    // Constructors
-    t_Expected(bool value) : m_Value(value) {}
-    t_Expected(const t_ErrorInfo& error) : m_Value(error) {}
-    t_Expected(t_ErrorInfo&& error) : m_Value(std::move(error)) {}
-
-    // Check if the result is a value or an error
-    bool HasValue() const { return std::holds_alternative<bool>(m_Value); }
-    
-    // Access the value (undefined behavior if HasValue() is false)
-    const bool& Value() const { return std::get<bool>(m_Value); }
-    bool& Value() { return std::get<bool>(m_Value); }
-    
-    // Access the error (undefined behavior if HasValue() is true)
-    const t_ErrorInfo& Error() const { return std::get<t_ErrorInfo>(m_Value); }
-    t_ErrorInfo& Error() { return std::get<t_ErrorInfo>(m_Value); }
-    
-    // Value or default
-    bool ValueOr(const bool& default_value) const
-    {
-        return HasValue() ? Value() : default_value;
-    }
-};
-
 // Convenience type aliases
 using t_ParsingResult = t_Expected<std::vector<t_Token>, t_ErrorInfo>;
 using t_InterpretationResult = t_Expected<int, t_ErrorInfo>; // Use int instead of void

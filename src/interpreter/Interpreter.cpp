@@ -15,6 +15,9 @@ t_Interpreter::t_Interpreter()
     // and untieing cin from cout
     std::ios::sync_with_stdio(false);
     std::cin.tie(nullptr);
+    
+    // Initialize with global scope
+    PushScope();
 }
 
 t_InterpretationResult t_Interpreter::Interpret(const std::vector<t_Stmt *> &statements)
@@ -31,6 +34,57 @@ t_InterpretationResult t_Interpreter::Interpret(const std::vector<t_Stmt *> &sta
     }
     
     return t_InterpretationResult(0); // Success represented by 0
+}
+
+// Scope management functions
+void t_Interpreter::PushScope()
+{
+    // Save the current state of the environment
+    scope_stack.emplace_back(environment);
+}
+
+void t_Interpreter::PopScope()
+{
+    if (!scope_stack.empty()) 
+    {
+        // Restore the environment to its previous state
+        environment = std::move(scope_stack.back());
+        scope_stack.pop_back();
+    }
+}
+
+t_Expected<int, t_ErrorInfo> t_Interpreter::DeclareVariable(const std::string& name, int line)
+{
+    // Check if variable is already declared in current scope
+    // We do this by checking if it exists in the current environment
+    // and comparing with the previous scope's environment if it exists
+    if (!environment.count(name)) 
+    {
+        // Variable not declared yet, this is fine
+        return t_Expected<int, t_ErrorInfo>(0); // Success
+    }
+    
+    // Variable already exists, check if it was declared in current scope
+    if (!scope_stack.empty()) 
+    {
+        const auto& previous_scope = scope_stack.back();
+        if (previous_scope.find(name) == previous_scope.end()) 
+        {
+            // Variable exists but was declared in current scope - this is an error
+            return t_Expected<int, t_ErrorInfo>
+            (
+                t_ErrorInfo
+                (
+                    t_ErrorType::RUNTIME_ERROR, 
+                    "Variable '" + name + "' has already been declared in this scope", 
+                    line
+                )
+            );
+        }
+    }
+    
+    // Variable exists but was declared in a previous scope - this is shadowing, which is allowed
+    return t_Expected<int, t_ErrorInfo>(0); // Success
 }
 
 // Helper function to format numeric values properly (remove unnecessary decimal places)
@@ -330,30 +384,21 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
 {
     if (t_BlockStmt *block_stmt = dynamic_cast<t_BlockStmt *>(stmt))
     {
-        // Store the keys of variables that existed before the block
-        std::vector<std::string> pre_block_variables;
-        for (const auto& pair : environment) 
-        {
-            pre_block_variables.push_back(pair.first);
-        }
-
+        // Push a new scope for the block
+        PushScope();
+        
         for (const auto &statement : block_stmt->statements)
         {
             t_Expected<int, t_ErrorInfo> result = Execute(statement.get());
             if (!result.HasValue())
             {
+                PopScope(); // Clean up scope before returning
                 return t_Expected<int, t_ErrorInfo>(result.Error());
             }
         }
 
-        // Remove variables that were created within the block scope
-        // Keep only the variables that existed before the block
-        std::unordered_map<std::string, t_TypedValue> cleaned_environment;
-        for (const std::string& var_name : pre_block_variables) 
-        {
-            cleaned_environment[var_name] = environment[var_name];
-        }
-        environment = cleaned_environment;
+        // Pop the block scope, which will automatically clean up variables declared in this scope
+        PopScope();
     }
     else if (t_BreakStmt *break_stmt = dynamic_cast<t_BreakStmt *>(stmt))
     {
@@ -403,6 +448,9 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
         }
         else
         {
+            // Push a new scope for the loop
+            PushScope();
+            
             // Store the keys of variables that existed before the loop
             std::vector<std::string> pre_loop_variables;
             for (const auto& pair : environment) 
@@ -416,6 +464,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                 t_Expected<int, t_ErrorInfo> init_result = Execute(for_stmt->initializer.get());
                 if (!init_result.HasValue())
                 {
+                    PopScope(); // Clean up scope before returning
                     return init_result;
                 }
             }
@@ -430,6 +479,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                     Evaluate(for_stmt->condition.get());
                     if (!condition_result.HasValue())
                     {
+                        PopScope(); // Clean up scope before returning
                         return t_Expected<int, t_ErrorInfo>(condition_result.Error());
                     }
 
@@ -451,6 +501,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                     t_Expected<int, t_ErrorInfo> body_result = Execute(for_stmt->body.get());
                     if (!body_result.HasValue())
                     {
+                        PopScope(); // Clean up scope before returning
                         return body_result;
                     }
                 }
@@ -466,6 +517,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                     }
                     else
                     {
+                        PopScope(); // Clean up scope before re-throwing
                         throw; // Re-throw other exceptions
                     }
                 }
@@ -476,19 +528,14 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                     t_Expected<std::string, t_ErrorInfo> increment_result = Evaluate(for_stmt->increment.get());
                     if (!increment_result.HasValue())
                     {
+                        PopScope(); // Clean up scope before returning
                         return t_Expected<int, t_ErrorInfo>(increment_result.Error());
                     }
                 }
             }
 
-            // Remove variables that were created within the loop scope
-            // Keep only the variables that existed before the loop
-            std::unordered_map<std::string, t_TypedValue> cleaned_environment;
-            for (const std::string& var_name : pre_loop_variables) 
-            {
-                cleaned_environment[var_name] = environment[var_name];
-            }
-            environment = cleaned_environment;
+            // Pop the loop scope, which will automatically clean up variables declared in this scope
+            PopScope();
         }
     }
     else if 
@@ -496,9 +543,12 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
         t_VarStmt *var_stmt = dynamic_cast<t_VarStmt *>(stmt)
     )
     {
-        // Check if variable already exists in current scope
-        // Note: This is now handled by the scoping mechanism above
-        // Variables declared in inner scopes will be automatically cleaned up
+        // Check if variable is already declared in current scope
+        t_Expected<int, t_ErrorInfo> declare_result = DeclareVariable(var_stmt->name, 0); // TODO: Get line number
+        if (!declare_result.HasValue())
+        {
+            return t_Expected<int, t_ErrorInfo>(declare_result.Error());
+        }
 
         t_TypedValue typed_value;
         if (var_stmt->initializer)
@@ -1302,6 +1352,9 @@ bool t_Interpreter::IsSimpleNumericLoop(t_ForStmt* for_stmt)
 // Optimized execution for simple numeric loops: for (auto i = 0; i < N; i++)
 t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop(t_ForStmt* for_stmt)
 {
+    // Push a new scope for the loop
+    PushScope();
+    
     // Extract loop parameters
     t_VarStmt* init_var = dynamic_cast<t_VarStmt*>(for_stmt->initializer.get());
     t_BinaryExpr* condition_binary = dynamic_cast<t_BinaryExpr*>(for_stmt->condition.get());
@@ -1332,6 +1385,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop(t_ForStmt* 
             t_Expected<int, t_ErrorInfo> body_result = Execute(for_stmt->body.get());
             if (!body_result.HasValue())
             {
+                PopScope(); // Clean up scope before returning
                 return body_result;
             }
         }
@@ -1348,19 +1402,14 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop(t_ForStmt* 
             }
             else
             {
+                PopScope(); // Clean up scope before re-throwing
                 throw; // Re-throw other exceptions
             }
         }
     }
     
-    // Remove variables that were created within the loop scope
-    // Keep only the variables that existed before the loop
-    std::unordered_map<std::string, t_TypedValue> cleaned_environment;
-    for (const std::string& var_name : pre_loop_variables) 
-    {
-        cleaned_environment[var_name] = environment[var_name];
-    }
-    environment = cleaned_environment;
+    // Pop the loop scope, which will automatically clean up variables declared in this scope
+    PopScope();
     
     return t_Expected<int, t_ErrorInfo>(0); // Success represented by 0
 }

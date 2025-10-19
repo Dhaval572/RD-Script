@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <unordered_map>
+#include <unordered_set>
 #include <string>
 #include <chrono>
 #include "AST.h"
@@ -70,6 +71,7 @@ class t_Interpreter
 {
 private:
     std::unordered_map<std::string, t_TypedValue> environment;
+    std::vector<std::unordered_map<std::string, t_TypedValue>> scope_stack; // Track environment state per scope
 
     t_Expected<std::string, t_ErrorInfo> Evaluate(t_Expr *expr);
     t_Expected<int, t_ErrorInfo> Execute(t_Stmt *stmt); // Use int instead of void
@@ -95,6 +97,11 @@ private:
     t_Expected<std::string, t_ErrorInfo> PerformMultiplication(const t_TypedValue& left, const t_TypedValue& right);
     t_Expected<std::string, t_ErrorInfo> PerformDivision(const t_TypedValue& left, const t_TypedValue& right);
     t_Expected<bool, t_ErrorInfo> PerformComparison(const t_TypedValue& left, const t_TokenType op, const t_TypedValue& right);
+
+    // Scope management
+    void PushScope();
+    void PopScope();
+    t_Expected<int, t_ErrorInfo> DeclareVariable(const std::string& name, int line); // Use int instead of void
 
 public:
     t_Interpreter();
