@@ -11,6 +11,9 @@
 3. **Function Names**: Use PascalCase
    - Example: `ScanTokens`, `ParseExpression`, `EvaluateNode`
 
+4. **Private Member Variables**: Use `m_` prefix followed by PascalCase
+   - Example: `m_CurrentLine`, `m_FileContent`
+
 4. **Constants**: Use UPPER_SNAKE_CASE
    - Example: `MAX_TOKENS`, `DEFAULT_BUFFER_SIZE`
 
