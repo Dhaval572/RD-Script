@@ -59,19 +59,19 @@ cmake --build .
 ## Language Examples
 
 ### Hello World
-```rubberduck
+```cpp
 display("Hello, Rubber Duck!");
 ```
 
 ### Variables
-```rubberduck
+```cpp
 auto name = "Rubber Duck";
 auto age = 5;
 display(name, "is", age, "years old");
 ```
 
 ### Expressions
-```rubberduck
+```cpp
 auto a = 10;
 auto b = 20;
 auto difference = a - b;
@@ -81,7 +81,7 @@ display("Product:", product);
 ```
 
 ### String Escape Sequences
-```rubberduck
+```cpp
 // Escape sequences in regular strings
 auto multiline = "Line 1\nLine 2\nLine 3";
 auto tabbed = "Column 1\tColumn 2\tColumn 3";
@@ -101,7 +101,7 @@ display(formatted);
 ```
 
 ### For Loop
-```rubberduck
+```cpp
 // Simple for loop counting from 0 to 9
 for (auto i = 0; i < 10; i = i + 1) {
     display "Number: ", i;
@@ -119,7 +119,7 @@ for (;;) {
 ```
 
 ### If-Else Statements
-```rubberduck
+```cpp
 auto x = 10;
 auto y = 20;
 
