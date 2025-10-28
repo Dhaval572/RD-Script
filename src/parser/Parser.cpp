@@ -3,20 +3,50 @@
 #include "ErrorHandling.h"
 #include <iostream>
 
-// Initialize static memory pools with optimized sizes
-// Larger block size for statements since they can contain multiple sub-elements
-t_MemoryPool t_Parser::stmt_pool
-(
-    sizeof(t_VarStmt) > sizeof(t_DisplayStmt) ? 
-    sizeof(t_VarStmt) : sizeof(t_DisplayStmt)
-);
+// Initialize static memory pools with sizes large enough for all node types
+namespace 
+{
+    static size_t MaxStmtSize()
+    {
+        size_t sizes[] = 
+        {
+            sizeof(t_BlockStmt),
+            sizeof(t_IfStmt),
+            sizeof(t_ForStmt),
+            sizeof(t_BreakStmt),
+            sizeof(t_ContinueStmt),
+            sizeof(t_VarStmt),
+            sizeof(t_DisplayStmt),
+            sizeof(t_BenchmarkStmt),
+            sizeof(t_EmptyStmt),
+            sizeof(t_ExpressionStmt)
+        };
+        size_t max_size = 0;
+        for (size_t s : sizes) if (s > max_size) max_size = s;
+        return max_size;
+    }
 
-// Larger block size for expressions since they can be complex
-t_MemoryPool t_Parser::expr_pool
-(
-    sizeof(t_BinaryExpr) > sizeof(t_LiteralExpr) ? 
-    sizeof(t_BinaryExpr) : sizeof(t_LiteralExpr)
-);
+    static size_t MaxExprSize()
+    {
+        size_t sizes[] = 
+        {
+            sizeof(t_BinaryExpr),
+            sizeof(t_LiteralExpr),
+            sizeof(t_UnaryExpr),
+            sizeof(t_GroupingExpr),
+            sizeof(t_VariableExpr),
+            sizeof(t_PrefixExpr),
+            sizeof(t_PostfixExpr)
+        };
+        size_t max_size = 0;
+        for (size_t s : sizes) if (s > max_size) max_size = s;
+        return max_size;
+    }
+}
+
+// Larger block size for statements and expressions to prevent overflow
+t_MemoryPool t_Parser::stmt_pool(MaxStmtSize());
+t_MemoryPool t_Parser::expr_pool(MaxExprSize());
 
 t_Parser::t_Parser(const std::vector<t_Token> &tokens)
     : tokens(tokens), current(0) {}

@@ -27,12 +27,60 @@ t_InterpretationResult t_Interpreter::Interpret
 {
     for (t_Stmt *statement : statements)
     {
-        t_Expected<int, t_ErrorInfo> result = Execute(statement);
-        if (!result.HasValue())
+        try
         {
-            // Report the error and stop execution
-            ReportError(result.Error());
-            return t_InterpretationResult(result.Error());
+            t_Expected<int, t_ErrorInfo> result = Execute(statement);
+            if (!result.HasValue())
+            {
+                // Report the error and stop execution
+                ReportError(result.Error());
+                return t_InterpretationResult(result.Error());
+            }
+        }
+        catch (const std::string &control_flow)
+        {
+            // Handle misuse of break/continue outside of loops
+            if (control_flow == "break" || 
+                control_flow == "continue")
+            {
+                t_ErrorInfo err
+                (
+                    t_ErrorType::RUNTIME_ERROR,
+                    control_flow == "break" ?
+                        "'break' used outside of a loop" :
+                        "'continue' used outside of a loop"
+                );
+                ReportError(err);
+                return t_InterpretationResult(err);
+            }
+            // Convert to runtime error
+            t_ErrorInfo err
+            (
+                t_ErrorType::RUNTIME_ERROR,
+                "Unhandled control-flow exception"
+            );
+            ReportError(err);
+            return t_InterpretationResult(err);
+        }
+        catch (const std::exception& ex)
+        {
+            t_ErrorInfo err
+            (
+                t_ErrorType::RUNTIME_ERROR,
+                std::string("Unhandled std::exception: ") + ex.what()
+            );
+            ReportError(err);
+            return t_InterpretationResult(err);
+        }
+        catch (...)
+        {
+            t_ErrorInfo err
+            (
+                t_ErrorType::RUNTIME_ERROR,
+                "Unhandled unknown exception during execution"
+            );
+            ReportError(err);
+            return t_InterpretationResult(err);
         }
     }
     
@@ -505,29 +553,78 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
     {
         // Push a new scope for the block
         PushScope();
-        
-        for (const auto &statement : block_stmt->statements)
-        {
-            t_Expected<int, t_ErrorInfo> result = Execute(statement.get());
-            if (!result.HasValue())
-            {
-                PopScope(); // Clean up scope before returning
-                return t_Expected<int, t_ErrorInfo>(result.Error());
-            }
-        }
+		try
+		{
+			for (const auto &statement : block_stmt->statements)
+			{
+				t_Expected<int, t_ErrorInfo> result = Execute(statement.get());
+				if (!result.HasValue())
+				{
+					PopScope(); // Clean up scope before returning
+					return t_Expected<int, t_ErrorInfo>(result.Error());
+				}
 
-        // Pop the block scope, which will automatically clean up variables declared in this scope
-        PopScope();
+                // If a control signal was raised inside this block (break/continue),
+                // stop executing further statements in this block and propagate upward.
+                if (!control_signal.empty())
+                {
+                    PopScope();
+                    return t_Expected<int, t_ErrorInfo>(0);
+                }
+			}
+
+			// Pop the block scope, which will automatically clean up variables declared in this scope
+			PopScope();
+		}
+		catch (...)
+		{
+			// Ensure scope is popped and convert to runtime error
+			PopScope();
+			return t_Expected<int, t_ErrorInfo>
+			(
+				t_ErrorInfo
+				(
+					t_ErrorType::RUNTIME_ERROR,
+					"Unhandled exception in block"
+				)
+			);
+		}
     }
     else if (t_BreakStmt *break_stmt = dynamic_cast<t_BreakStmt *>(stmt))
     {
-        // Throw a special exception to break out of loops
-        throw std::string("break");
+        // Validate that we're inside a loop
+        if (loop_depth <= 0)
+        {
+            return t_Expected<int, t_ErrorInfo>
+            (
+                t_ErrorInfo
+                (
+                    t_ErrorType::RUNTIME_ERROR,
+                    "'break' used outside of a loop"
+                )
+            );
+        }
+        // Signal break without throwing
+        control_signal = "break";
+        return t_Expected<int, t_ErrorInfo>(0);
     }
     else if (t_ContinueStmt *continue_stmt = dynamic_cast<t_ContinueStmt *>(stmt))
     {
-        // Throw a special exception to continue to next iteration
-        throw std::string("continue");
+        // Validate that we're inside a loop
+        if (loop_depth <= 0)
+        {
+            return t_Expected<int, t_ErrorInfo>
+            (
+                t_ErrorInfo
+                (
+                    t_ErrorType::RUNTIME_ERROR,
+                    "'continue' used outside of a loop"
+                )
+            );
+        }
+        // Signal continue without throwing
+        control_signal = "continue";
+        return t_Expected<int, t_ErrorInfo>(0);
     }
     else if (t_IfStmt *if_stmt = dynamic_cast<t_IfStmt *>(stmt))
     {
@@ -573,98 +670,111 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
         {
             // Push a new scope for the loop
             PushScope();
-            
-            // Store the keys of variables that existed before the loop
-            std::vector<std::string> pre_loop_variables;
-            for (const auto& pair : environment) 
+            loop_depth++;
+            try
             {
-                pre_loop_variables.push_back(pair.first);
-            }
-
-            // Execute initializer (if any)
-            if (for_stmt->initializer)
-            {
-                t_Expected<int, t_ErrorInfo> init_result = 
-                Execute(for_stmt->initializer.get());
-
-                if (!init_result.HasValue())
+                // Store the keys of variables that existed before the loop
+                std::vector<std::string> pre_loop_variables;
+                for (const auto& pair : environment) 
                 {
-                    PopScope(); // Clean up scope before returning
-                    return init_result;
+                    pre_loop_variables.push_back(pair.first);
                 }
-            }
 
-            // Loop while condition is true (or forever if no condition)
-            while (true)
-            {
-                // Check condition (if any)
-                if (for_stmt->condition)
+                // Execute initializer (if any)
+                if (for_stmt->initializer)
                 {
-                    t_Expected<std::string, t_ErrorInfo> condition_result = 
-                    Evaluate(for_stmt->condition.get());
-                    if (!condition_result.HasValue())
+                    t_Expected<int, t_ErrorInfo> init_result = 
+                    Execute(for_stmt->initializer.get());
+
+                    if (!init_result.HasValue())
                     {
                         PopScope(); // Clean up scope before returning
-                        return t_Expected<int, t_ErrorInfo>
-                        (
-                            condition_result.Error()
-                        );
-                    }
-
-                    if (!IsTruthy(condition_result.Value()))
-                    {
-                        break; // Exit loop if condition is false
+                        return init_result;
                     }
                 }
-                else if (!for_stmt->condition && !for_stmt->increment)
+
+                // Loop while condition is true (or forever if no condition)
+                while (true)
                 {
-                    // Special case: for (;;) should run forever unless broken
+                    // Check condition (if any)
+                    if (for_stmt->condition)
+                    {
+                        t_Expected<std::string, t_ErrorInfo> condition_result = 
+                        Evaluate(for_stmt->condition.get());
+                        if (!condition_result.HasValue())
+                        {
+                            PopScope(); // Clean up scope before returning
+                            return t_Expected<int, t_ErrorInfo>
+                            (
+                                condition_result.Error()
+                            );
+                        }
+
+                        if (!IsTruthy(condition_result.Value()))
+                        {
+                            break; // Exit loop if condition is false
+                        }
+                    }
+                    else if (!for_stmt->condition && !for_stmt->increment)
+                    {
+                        // Special case: for (;;) should run forever unless broken
+                    }
+
+                    // Execute body
+                    {
+                        control_signal.clear();
+                        t_Expected<int, t_ErrorInfo> body_result = 
+                        Execute(for_stmt->body.get());
+
+                        if (!body_result.HasValue())
+                        {
+                            PopScope(); // Clean up scope before returning
+                            return body_result;
+                        }
+                        if (control_signal == "break")
+                        {
+                            control_signal.clear();
+                            break;
+                        }
+						if (control_signal == "continue")
+						{
+							// Skip increment and start next iteration
+							control_signal.clear();
+							continue;
+						}
+                    }
+
+                    // Execute increment (if any)
+                    if (for_stmt->increment && control_signal.empty())
+                    {
+                        t_Expected<std::string, t_ErrorInfo> increment_result = Evaluate(for_stmt->increment.get());
+
+                        if (!increment_result.HasValue())
+                        {
+                            PopScope(); // Clean up scope before returning
+                            return t_Expected<int, t_ErrorInfo>(increment_result.Error());
+                        }
+                    }
                 }
 
-                // Execute body
-                try
-                {
-                    t_Expected<int, t_ErrorInfo> body_result = 
-                    Execute(for_stmt->body.get());
-
-                    if (!body_result.HasValue())
-                    {
-                        PopScope(); // Clean up scope before returning
-                        return body_result;
-                    }
-                }
-                catch (const std::string &control_flow)
-                {
-                    if (control_flow == "break")
-                    {
-                        break; 
-                    }
-                    else if (control_flow == "continue")
-                    {
-                        // Continue to next iteration 
-                    }
-                    else
-                    {
-                        PopScope(); 
-                        throw; 
-                    }
-                }
-
-                // Execute increment (if any)
-                if (for_stmt->increment)
-                {
-                    t_Expected<std::string, t_ErrorInfo> increment_result = Evaluate(for_stmt->increment.get());
-
-                    if (!increment_result.HasValue())
-                    {
-                        PopScope(); // Clean up scope before returning
-                        return t_Expected<int, t_ErrorInfo>(increment_result.Error());
-                    }
-                }
+                // Pop the loop scope, which will automatically clean up variables declared in this scope
+                PopScope();
+                loop_depth--;
             }
-
-            // Pop the loop scope, which will automatically clean up variables declared in this scope
-            PopScope();
+			catch (...)
+			{
+				// Ensure scope is cleaned and convert to runtime error
+				PopScope();
+				loop_depth--;
+				return t_Expected<int, t_ErrorInfo>
+				(
+					t_ErrorInfo
+					(
+						t_ErrorType::RUNTIME_ERROR,
+						"Unhandled exception in for-loop"
+					)
+				);
+			}
         }
     }
     else if 
@@ -1744,6 +1854,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
 {
     // Push a new scope for the loop
     PushScope();
+    loop_depth++;
     
     // Extract loop parameters
     t_VarStmt* init_var = dynamic_cast<t_VarStmt*>(for_stmt->initializer.get());
@@ -1773,37 +1884,30 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
         environment[loop_var_name] = t_TypedValue(static_cast<double>(i));
         
         // Execute body
-        try
+        control_signal.clear();
+        t_Expected<int, t_ErrorInfo> body_result = 
+        Execute(for_stmt->body.get());
+        if (!body_result.HasValue())
         {
-            t_Expected<int, t_ErrorInfo> body_result = 
-            Execute(for_stmt->body.get());
-            if (!body_result.HasValue())
-            {
-                PopScope(); // Clean up scope before returning
-                return body_result;
-            }
+            PopScope(); // Clean up scope before returning
+            loop_depth--;
+            return body_result;
         }
-        catch (const std::string &control_flow)
+        if (control_signal == "break")
         {
-            if (control_flow == "break")
-            {
-                break; 
-            }
-            else if (control_flow == "continue")
-            {
-                // Continue to next iteration
-                continue;
-            }
-            else
-            {
-                PopScope(); // Clean up scope before re-throwing
-                throw; // Re-throw other exceptions
-            }
+            control_signal.clear();
+            break;
+        }
+        if (control_signal == "continue")
+        {
+            control_signal.clear();
+            continue;
         }
     }
     
     // Pop the loop scope, which will automatically clean up variables declared in this scope
     PopScope();
+    loop_depth--;
     
     return t_Expected<int, t_ErrorInfo>(0); // Success represented by 0
 }

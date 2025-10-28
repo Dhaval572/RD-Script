@@ -6,8 +6,8 @@ setlocal
 
 REM Check if script file is provided
 if "%1"=="" (
-    echo Usage: run_rd.bat ^<script_file.rd^>
-    echo Example: run_rd.bat test.rd
+    echo Usage: rd.bat ^<script_file.rd^>
+    echo Example: rd.bat test.rd
     exit /b 1
 )
 
