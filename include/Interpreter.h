@@ -90,7 +90,7 @@ class t_Interpreter
 {
 private:
     std::unordered_map<std::string, t_TypedValue> environment;
-    std::vector<std::unordered_map<std::string, t_TypedValue>> scope_stack; // Track environment state per scope
+    std::vector<std::unordered_map<std::string, t_TypedValue>> scope_stack; 
     int loop_depth = 0; // Track active loop nesting for break/continue validation
     std::string control_signal; // "break" | "continue" | ""
 

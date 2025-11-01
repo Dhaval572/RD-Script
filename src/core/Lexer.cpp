@@ -170,7 +170,7 @@ t_ParsingResult t_Lexer::ScanToken()
     case '$':
         if (Peek() == '"') 
         {
-            Advance(); // Consume the '"'
+            Advance(); 
             t_Expected<std::string, t_ErrorInfo> result = FormatString();
             if (!result.HasValue())
             {
@@ -358,13 +358,12 @@ t_Expected<std::string, t_ErrorInfo> t_Lexer::FormatString()
             (
                 t_ErrorType::LEXING_ERROR, 
                 "Unterminated format string", 
-                line, 
+                line,
                 current
             )
         );
     }
 
-    // The closing ".
     Advance();
 
     // Return the processed string value (without surrounding quotes)
@@ -378,9 +377,7 @@ void t_Lexer::Number()
     // Look for a fractional part.
     if (Peek() == '.' && std::isdigit(PeekNext()))
     {
-        // Consume the "."
         Advance();
-
         while (std::isdigit(Peek())) Advance();
     }
 

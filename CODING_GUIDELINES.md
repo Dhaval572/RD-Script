@@ -166,7 +166,8 @@ for (initialization; condition; increment) {
 
 Example:
 ```rubberduck
-for (auto i = 0; i < 10; i++) {
+for (auto i = 0; i < 10; i++) 
+{
     display "Number: ", i;
 }
 ```

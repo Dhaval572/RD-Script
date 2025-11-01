@@ -6,7 +6,7 @@
 // Initialize static memory pools with sizes large enough for all node types
 namespace 
 {
-    static size_t MaxStmtSize()
+    size_t MaxStmtSize()
     {
         size_t sizes[] = 
         {
@@ -26,7 +26,7 @@ namespace
         return max_size;
     }
 
-    static size_t MaxExprSize()
+    size_t MaxExprSize()
     {
         size_t sizes[] = 
         {
