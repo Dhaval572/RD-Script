@@ -5,9 +5,26 @@
 #include <stack>
 #include <cctype>
 #include <iomanip>
+#include <unordered_set>
 #include "../include/Lexer.h"
 #include "../include/Parser.h"
 #include "../include/ErrorHandling.h"
+
+// Helper: Assigns variable to its visible scope.
+static void AssignToVisibleVariable(const std::string& name, const t_TypedValue& value, std::unordered_map<std::string, t_TypedValue>& environment, std::vector<std::unordered_map<std::string, t_TypedValue>>& scope_stack)
+{
+    for (auto scope_it = scope_stack.rbegin(); scope_it != scope_stack.rend(); ++scope_it)
+    {
+        auto& scope = *scope_it;
+        if (scope.find(name) != scope.end())
+        {
+            scope[name] = value;
+            return;
+        }
+    }
+    // Not found in stack: update current environment
+    environment[name] = value;
+}
 
 t_Interpreter::t_Interpreter()
 {
@@ -668,18 +685,18 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
         }
         else
         {
+            // Store variables that existed before the loop
+            std::unordered_set<std::string> pre_loop_variables;
+            for (const auto& pair : environment) 
+            {
+                pre_loop_variables.insert(pair.first);
+            }
+
             // Push a new scope for the loop
             PushScope();
             loop_depth++;
             try
             {
-                // Store the keys of variables that existed before the loop
-                std::vector<std::string> pre_loop_variables;
-                for (const auto& pair : environment) 
-                {
-                    pre_loop_variables.push_back(pair.first);
-                }
-
                 // Execute initializer (if any)
                 if (for_stmt->initializer)
                 {
@@ -689,6 +706,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                     if (!init_result.HasValue())
                     {
                         PopScope(); // Clean up scope before returning
+                        loop_depth--;
                         return init_result;
                     }
                 }
@@ -704,6 +722,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                         if (!condition_result.HasValue())
                         {
                             PopScope(); // Clean up scope before returning
+                            loop_depth--;
                             return t_Expected<int, t_ErrorInfo>
                             (
                                 condition_result.Error()
@@ -729,6 +748,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                         if (!body_result.HasValue())
                         {
                             PopScope(); // Clean up scope before returning
+                            loop_depth--;
                             return body_result;
                         }
                         if (control_signal == "break")
@@ -752,13 +772,31 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                         if (!increment_result.HasValue())
                         {
                             PopScope(); // Clean up scope before returning
+                            loop_depth--;
                             return t_Expected<int, t_ErrorInfo>(increment_result.Error());
                         }
                     }
                 }
 
-                // Pop the loop scope, which will automatically clean up variables declared in this scope
+                // Before popping scope, preserve modifications to pre-existing variables
+                std::unordered_map<std::string, t_TypedValue> modified_pre_existing;
+                for (const auto& pair : environment)
+                {
+                    if (pre_loop_variables.count(pair.first) > 0)
+                    {
+                        modified_pre_existing[pair.first] = pair.second;
+                    }
+                }
+
+                // Pop the loop scope
                 PopScope();
+                
+                // Restore the modified values of pre-existing variables
+                for (const auto& pair : modified_pre_existing)
+                {
+                    environment[pair.first] = pair.second;
+                }
+                
                 loop_depth--;
             }
 			catch (...)
@@ -1278,7 +1316,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                 }
                 std::string right_value = right_result.Value();
                 
-                t_Expected<std::string, t_ErrorInfo> final_value_result(right_value); // Fix the constructor call
+                t_Expected<std::string, t_ErrorInfo> final_value_result(right_value);
                 
                 // Handle compound assignments by converting them to regular operations
                 switch (binary->op.type)
@@ -1460,7 +1498,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                 }
                 
                 // Update the variable in the environment
-                environment[var_name] = t_TypedValue(final_value, type);
+                AssignToVisibleVariable(var_name, t_TypedValue(final_value, type), environment, scope_stack);
                 
                 // Return the assigned value
                 return t_Expected<std::string, t_ErrorInfo>(final_value);
@@ -1852,6 +1890,13 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
     t_ForStmt* for_stmt
 )
 {
+    // Store variables that existed before the loop
+    std::unordered_set<std::string> pre_loop_variables;
+    for (const auto& pair : environment) 
+    {
+        pre_loop_variables.insert(pair.first);
+    }
+    
     // Push a new scope for the loop
     PushScope();
     loop_depth++;
@@ -1869,13 +1914,6 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
     
     // Store the variable name
     std::string loop_var_name = init_var->name;
-    
-    // Store the keys of variables that existed before the loop
-    std::vector<std::string> pre_loop_variables;
-    for (const auto& pair : environment) 
-    {
-        pre_loop_variables.push_back(pair.first);
-    }
     
     // Execute the loop with direct numeric operations
     for (int i = 0; i < limit; i++)
@@ -1905,8 +1943,25 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
         }
     }
     
-    // Pop the loop scope, which will automatically clean up variables declared in this scope
+    // Before popping scope, preserve modifications to pre-existing variables
+    std::unordered_map<std::string, t_TypedValue> modified_pre_existing;
+    for (const auto& pair : environment)
+    {
+        if (pre_loop_variables.count(pair.first) > 0)
+        {
+            modified_pre_existing[pair.first] = pair.second;
+        }
+    }
+    
+    // Pop the loop scope
     PopScope();
+    
+    // Restore the modified values of pre-existing variables
+    for (const auto& pair : modified_pre_existing)
+    {
+        environment[pair.first] = pair.second;
+    }
+    
     loop_depth--;
     
     return t_Expected<int, t_ErrorInfo>(0); // Success represented by 0

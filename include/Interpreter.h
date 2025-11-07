@@ -75,7 +75,7 @@ struct t_TypedValue
     // Assignment operator
     t_TypedValue& operator=(const t_TypedValue& other) 
     {
-        if (this != &other) 
+        if (this != &other)
         {
             value = other.value;
             type = other.type;
@@ -91,11 +91,11 @@ class t_Interpreter
 private:
     std::unordered_map<std::string, t_TypedValue> environment;
     std::vector<std::unordered_map<std::string, t_TypedValue>> scope_stack; 
-    int loop_depth = 0; // Track active loop nesting for break/continue validation
+    int loop_depth = 0; 
     std::string control_signal; // "break" | "continue" | ""
 
     t_Expected<std::string, t_ErrorInfo> Evaluate(t_Expr *expr);
-    t_Expected<int, t_ErrorInfo> Execute(t_Stmt *stmt); // Use int instead of void
+    t_Expected<int, t_ErrorInfo> Execute(t_Stmt *stmt);
     bool IsTruthy(const std::string &value);
     std::string Stringify(const std::string &value);
     t_Expected<std::string, t_ErrorInfo> EvaluateFormatExpression
@@ -103,9 +103,8 @@ private:
         const std::string &expr_str
     );
     
-    // Helper function to detect the type of a value
     t_ValueType DetectType(const std::string& value);
-    
+
     // Helper functions for number formatting and type checking
     static std::string FormatNumber(double value);
     bool IsInteger(const std::string& value);
