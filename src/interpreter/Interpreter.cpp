@@ -11,7 +11,11 @@
 #include "../include/ErrorHandling.h"
 
 // Helper: Assigns variable to its visible scope.
-static void AssignToVisibleVariable(const std::string& name, const t_TypedValue& value, std::unordered_map<std::string, t_TypedValue>& environment, std::vector<std::unordered_map<std::string, t_TypedValue>>& scope_stack)
+static void AssignToVisibleVariable
+(
+    const std::string& name, 
+    const t_TypedValue& value, std::unordered_map<std::string, t_TypedValue>& environment, std::vector<std::unordered_map<std::string, t_TypedValue>>& scope_stack
+)
 {
     for (auto scope_it = scope_stack.rbegin(); scope_it != scope_stack.rend(); ++scope_it)
     {
