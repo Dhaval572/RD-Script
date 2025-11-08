@@ -13,13 +13,22 @@
 // Helper: Assigns variable to its visible scope.
 static void AssignToVisibleVariable
 (
-    const std::string& name, 
-    const t_TypedValue& value, std::unordered_map<std::string, t_TypedValue>& environment, std::vector<std::unordered_map<std::string, t_TypedValue>>& scope_stack
+    const std::string &name, 
+    const t_TypedValue &value, 
+    std::unordered_map<std::string, 
+    t_TypedValue> &environment, 
+    std::vector<std::unordered_map<std::string, 
+    t_TypedValue>> &scope_stack
 )
 {
-    for (auto scope_it = scope_stack.rbegin(); scope_it != scope_stack.rend(); ++scope_it)
+    for 
+    (
+        auto scope_it = scope_stack.rbegin(); 
+        scope_it != scope_stack.rend(); 
+        ++scope_it
+    )
     {
-        auto& scope = *scope_it;
+        auto &scope = *scope_it;
         if (scope.find(name) != scope.end())
         {
             scope[name] = value;
@@ -32,8 +41,6 @@ static void AssignToVisibleVariable
 
 t_Interpreter::t_Interpreter()
 {
-    // Optimize std::cout performance by disabling synchronization with C stdio
-    // and untieing cin from cout
     std::ios::sync_with_stdio(false);
     std::cin.tie(nullptr);
     
@@ -68,8 +75,8 @@ t_InterpretationResult t_Interpreter::Interpret
                 (
                     t_ErrorType::RUNTIME_ERROR,
                     control_flow == "break" ?
-                        "'break' used outside of a loop" :
-                        "'continue' used outside of a loop"
+                    "'break' used outside of a loop" :
+                    "'continue' used outside of a loop"
                 );
                 ReportError(err);
                 return t_InterpretationResult(err);
