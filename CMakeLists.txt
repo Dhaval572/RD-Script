@@ -4,10 +4,14 @@ project(RubberDuck)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Include directories
-include_directories(include)
+find_package(LLVM REQUIRED CONFIG)
 
-# Source files
+message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
+message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
+
+include_directories(include ${LLVM_INCLUDE_DIRS})
+add_definitions(${LLVM_DEFINITIONS})
+
 set(SOURCES
     src/core/Lexer.cpp
     src/core/ErrorHandling.cpp
@@ -16,12 +20,14 @@ set(SOURCES
     main.cpp
 )
 
-# Create executable
 add_executable(rubberduck ${SOURCES})
 
-# Compiler-specific options
-if(MSVC)
-    target_compile_options(rubberduck PRIVATE /W4)
-else()
-    target_compile_options(rubberduck PRIVATE -Wall -Wextra -pedantic)
-endif()
+llvm_map_components_to_libnames(LLVM_LIBS
+    core
+    orcjit
+    native
+    mcjit
+    support
+)
+
+target_link_libraries(rubberduck ${LLVM_LIBS})
