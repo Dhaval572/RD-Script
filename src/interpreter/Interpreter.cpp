@@ -882,7 +882,8 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
         }
         std::cout << '\n'; // Use char instead of std::endl for better performance
     }
-    else if (t_BenchmarkStmt *benchmark_stmt = dynamic_cast<t_BenchmarkStmt *>(stmt))
+    else if (t_BenchmarkStmt *benchmark_stmt = 
+        dynamic_cast<t_BenchmarkStmt *>(stmt))
     {
         // Record start time
         auto start_time = std::chrono::steady_clock::now();
@@ -925,11 +926,13 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                   << duration.count() / 1000000000.0 
                   << " seconds\n";
     }
-    else if (t_EmptyStmt *empty_stmt = dynamic_cast<t_EmptyStmt *>(stmt))
+    else if (t_EmptyStmt *empty_stmt = 
+        dynamic_cast<t_EmptyStmt *>(stmt))
     {
         // Do nothing for empty statements
     }
-    else if (t_ExpressionStmt *expr_stmt = dynamic_cast<t_ExpressionStmt *>(stmt))
+    else if (t_ExpressionStmt *expr_stmt = 
+        dynamic_cast<t_ExpressionStmt *>(stmt))
     {
         t_Expected<std::string, t_ErrorInfo> result =
         Evaluate(expr_stmt->expression.get());
@@ -984,7 +987,10 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                         );
                     }
 
-                    result.replace(pos, end_pos - pos + 1, expr_result.Value());
+                    result.replace
+                    (
+                        pos, end_pos - pos + 1, expr_result.Value()
+                    );
                 }
                 else
                 {
