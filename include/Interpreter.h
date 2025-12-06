@@ -22,7 +22,7 @@ struct t_TypedValue
 {
     std::string value;
     t_ValueType type;
-    double numeric_value;  // Direct numeric storage for faster operations
+    double numeric_value;  
     bool has_numeric_value;
 
     t_TypedValue() 

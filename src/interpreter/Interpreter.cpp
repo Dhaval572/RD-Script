@@ -596,6 +596,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                 // stop executing further statements in this block and propagate upward.
                 if (!control_signal.empty())
                 {
+                    // Pop the scope to clean up variables declared in this block
                     PopScope();
                     return t_Expected<int, t_ErrorInfo>(0);
                 }
@@ -767,12 +768,12 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                             control_signal.clear();
                             break;
                         }
-						if (control_signal == "continue")
-						{
-							// Skip increment and start next iteration
-							control_signal.clear();
-							continue;
-						}
+                        if (control_signal == "continue")
+                        {
+                            // Skip increment and start next iteration
+                            control_signal.clear();
+                            continue; // Continue to the next loop iteration without incrementing
+                        }
                     }
 
                     // Execute increment (if any)
@@ -1053,7 +1054,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
 
     if (t_PrefixExpr *prefix = dynamic_cast<t_PrefixExpr *>(expr))
     {
-        if 
+        if
         (
             t_VariableExpr *var_expr = 
             dynamic_cast<t_VariableExpr *>(prefix->operand.get())

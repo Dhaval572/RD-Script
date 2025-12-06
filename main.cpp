@@ -9,6 +9,12 @@
 
 std::string ReadFile(const std::string &filename)
 {
+    if (filename.find(".rd") == std::string::npos)
+    {
+        std::cerr << "Error: File name must contain .rd extension.\n";
+        return "";
+    }
+
     std::ifstream file(filename, std::ios::binary);
     if (!file.is_open())
     {

@@ -27,7 +27,7 @@ See [MEMORY_MANAGEMENT.md](MEMORY_MANAGEMENT.md) for a detailed explanation of h
 
 The interpreter currently supports:
 * Variable declarations (`auto name = value;`)
-* Expressions with arithmetic operations (`-`, `*`, `/`)
+* Expressions with arithmetic operations (`+`,`-`, `*`, `/`)
 * Comparison operations (`==`, `!=`, `<`, `>`, `<=`, `>=`)
 * Logical operations (`!`)
 * Display statements with comma-separated values (`display(value1, value2, ...);`)
@@ -83,7 +83,7 @@ display "Product:", product;
 ### For Loop
 ```cpp
 // Simple for loop counting from 0 to 9
-for (auto i = 0; i < 10; i = i + 1)
+for (auto i = 0; i < 10; ++i)
 {
     display "Number: ", i;
 }
