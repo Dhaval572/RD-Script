@@ -118,22 +118,6 @@ private:
     ); 
     
     // Optimized arithmetic operations
-    t_Expected<std::string, t_ErrorInfo> PerformAddition
-    (
-        const t_TypedValue& left, const t_TypedValue& right
-    );
-    t_Expected<std::string, t_ErrorInfo> PerformSubtraction
-    (
-        const t_TypedValue& left, const t_TypedValue& right
-    );
-    t_Expected<std::string, t_ErrorInfo> PerformMultiplication
-    (
-        const t_TypedValue& left, const t_TypedValue& right
-    );
-    t_Expected<std::string, t_ErrorInfo> PerformDivision
-    (
-        const t_TypedValue& left, const t_TypedValue& right
-    );
     t_Expected<bool, t_ErrorInfo> PerformComparison
     (
         const t_TypedValue& left, const t_TokenType op, const t_TypedValue& right

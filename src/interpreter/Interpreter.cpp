@@ -169,16 +169,15 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::DeclareVariable
     return t_Expected<int, t_ErrorInfo>(0); // Success
 }
 
-// Helper function to format numeric values properly (remove unnecessary decimal places)
+// Helper function to format numbers (removes trailing zeros)
 std::string t_Interpreter::FormatNumber(double value)
 {
-    // Convert to string with high precision first
-    std::string str = std::to_string(value);
+    std::ostringstream oss;
+    oss << std::fixed << std::setprecision(15) << value;
+    std::string str = oss.str();
     
-    // Remove trailing zeros
+    // Remove trailing zeros and decimal point if not needed
     str.erase(str.find_last_not_of('0') + 1, std::string::npos);
-    
-    // Remove trailing decimal point if no decimal places
     str.erase(str.find_last_not_of('.') + 1, std::string::npos);
     
     return str;
@@ -268,7 +267,7 @@ bool t_Interpreter::IsFloat(const std::string& value)
 {
     if (value.empty()) return false;
     
-    size_t start = 0;
+    int start = 0;
     if (value[0] == '-' || value[0] == '+') 
     {
         if (value.length() == 1) return false;
@@ -276,7 +275,7 @@ bool t_Interpreter::IsFloat(const std::string& value)
     }
     
     bool has_decimal = false;
-    for (size_t i = start; i < value.length(); i++) 
+    for (int i = start; i < value.length(); i++) 
     {
         if (value[i] == '.') 
         {
@@ -292,185 +291,7 @@ bool t_Interpreter::IsFloat(const std::string& value)
     return has_decimal && (value.length() > start + 1);
 }
 
-// Optimized arithmetic operations
-t_Expected<std::string, t_ErrorInfo> t_Interpreter::PerformAddition
-(
-    const t_TypedValue& left, const t_TypedValue& right
-)
-{
-    // If both values have precomputed numeric values, use them directly
-    if (left.has_numeric_value && right.has_numeric_value)
-    {
-        return t_Expected<std::string, t_ErrorInfo>
-        (
-            FormatNumber(left.numeric_value + right.numeric_value)
-        );
-    }
-    
-    // Fallback to string-based conversion
-    try
-    {
-        double left_num = left.has_numeric_value ? 
-        left.numeric_value : std::stod(left.value);
-
-        double right_num = right.has_numeric_value ? 
-        right.numeric_value : std::stod(right.value);
-
-        return t_Expected<std::string, t_ErrorInfo>
-        (
-            FormatNumber(left_num + right_num)
-        );
-    }
-    catch (...)
-    {
-        return t_Expected<std::string, t_ErrorInfo>
-        (
-            t_ErrorInfo
-            (
-                t_ErrorType::RUNTIME_ERROR, 
-                "String concatenation with '+' is not allowed. Use comma-separated values in display statements instead."
-            )
-        );
-    }
-}
-
-t_Expected<std::string, t_ErrorInfo> t_Interpreter::PerformSubtraction
-(
-    const t_TypedValue& left, const t_TypedValue& right
-)
-{
-    // If both values have precomputed numeric values, use them directly
-    if (left.has_numeric_value && right.has_numeric_value)
-    {
-        return t_Expected<std::string, t_ErrorInfo>
-        (
-            FormatNumber(left.numeric_value - right.numeric_value)
-        );
-    }
-    
-    // Fallback to string-based conversion
-    try
-    {
-        double left_num = left.has_numeric_value ? 
-        left.numeric_value : std::stod(left.value);
-
-        double right_num = right.has_numeric_value ? 
-        right.numeric_value : std::stod(right.value);
-
-        return t_Expected<std::string, t_ErrorInfo>
-        (
-            FormatNumber(left_num - right_num)
-        );
-    }
-    catch (...)
-    {
-        return t_Expected<std::string, t_ErrorInfo>
-        (
-            t_ErrorInfo
-            (
-                t_ErrorType::RUNTIME_ERROR, 
-                "Cannot perform arithmetic operation"
-            )
-        );
-    }
-}
-
-t_Expected<std::string, t_ErrorInfo> t_Interpreter::PerformMultiplication
-(
-    const t_TypedValue& left, const t_TypedValue& right
-)
-{
-    // If both values have precomputed numeric values, use them directly
-    if (left.has_numeric_value && right.has_numeric_value)
-    {
-        return t_Expected<std::string, t_ErrorInfo>
-        (
-            FormatNumber(left.numeric_value * right.numeric_value)
-        );
-    }
-    
-    // Fallback to string-based conversion
-    try
-    {
-        double left_num = left.has_numeric_value ? 
-        left.numeric_value : std::stod(left.value);
-
-        double right_num = right.has_numeric_value ? 
-        right.numeric_value : std::stod(right.value);
-
-        return t_Expected<std::string, t_ErrorInfo>
-        (
-            FormatNumber(left_num * right_num)
-        );
-    }
-    catch (...)
-    {
-        return t_Expected<std::string, t_ErrorInfo>
-        (
-            t_ErrorInfo
-            (
-                t_ErrorType::RUNTIME_ERROR, 
-                "Cannot perform arithmetic operation"
-            )
-        );
-    }
-}
-
-t_Expected<std::string, t_ErrorInfo> t_Interpreter::PerformDivision
-(
-    const t_TypedValue& left, const t_TypedValue& right
-)
-{
-    // If both values have precomputed numeric values, use them directly
-    if (left.has_numeric_value && right.has_numeric_value)
-    {
-        if (right.numeric_value == 0)
-        {
-            return t_Expected<std::string, t_ErrorInfo>
-            (
-                t_ErrorInfo(t_ErrorType::RUNTIME_ERROR, "Division by zero")
-            );
-        }
-        return t_Expected<std::string, t_ErrorInfo>
-        (
-            FormatNumber(left.numeric_value / right.numeric_value)
-        );
-    }
-    
-    // Fallback to string-based conversion
-    try
-    {
-        double left_num = left.has_numeric_value ? 
-        left.numeric_value : std::stod(left.value);
-
-        double right_num = right.has_numeric_value ? 
-        right.numeric_value : std::stod(right.value);
-
-        if (right_num == 0)
-        {
-            return t_Expected<std::string, t_ErrorInfo>
-            (
-                t_ErrorInfo(t_ErrorType::RUNTIME_ERROR, "Division by zero")
-            );
-        }
-        return t_Expected<std::string, t_ErrorInfo>
-        (
-            FormatNumber(left_num / right_num)
-        );
-    }
-    catch (...)
-    {
-        return t_Expected<std::string, t_ErrorInfo>
-        (
-            t_ErrorInfo
-            (
-                t_ErrorType::RUNTIME_ERROR, 
-                "Cannot perform arithmetic operation"
-            )
-        );
-    }
-}
-
+// Comparison operations are kept as they are more complex
 t_Expected<bool, t_ErrorInfo> t_Interpreter::PerformComparison
 (
     const t_TypedValue& left, const t_TokenType op, const t_TypedValue& right
@@ -1345,103 +1166,105 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                     
                 case t_TokenType::PLUS_EQUAL:
                     {
-                        // Get typed values for optimized operations
-                        auto left_it = environment.find(var_name);
-                        
-                        t_TypedValue left_typed = 
-                        left_it != environment.end() ? 
-                        left_it->second : 
-                        t_TypedValue
-                        (
-                            left_value, DetectType(left_value)
-                        );
-
-                        t_TypedValue right_typed
-                        (
-                            right_value, DetectType(right_value)
-                        );
-                        
-                        final_value_result = 
-                        PerformAddition(left_typed, right_typed);
+                        try 
+                        {
+                            double left_val = std::stod(left_value);
+                            double right_val = std::stod(right_value);
+                            final_value_result = t_Expected<std::string, t_ErrorInfo>(FormatNumber(left_val + right_val));
+                        }
+                        catch (...)
+                        {
+                            final_value_result = t_Expected<std::string, t_ErrorInfo>
+                            (
+                                t_ErrorInfo
+                                (
+                                    t_ErrorType::RUNTIME_ERROR, 
+                                    "Cannot perform arithmetic operation"
+                                )
+                            );
+                        }
                     }
                     break;
                     
                 case t_TokenType::MINUS_EQUAL:
                     {
-                        // Get typed values for optimized operations
-                        auto left_it = environment.find(var_name);
-
-                        t_TypedValue left_typed = 
-                        left_it != environment.end() ? 
-                        left_it->second : 
-                        t_TypedValue
-                        (
-                            left_value, DetectType(left_value)
-                        );
-
-                        t_TypedValue right_typed
-                        (
-                            right_value, 
-                            DetectType(right_value)
-                        );
-                        
-                        final_value_result = 
-                        PerformSubtraction(left_typed, right_typed);
+                        try 
+                        {
+                            double left_val = std::stod(left_value);
+                            double right_val = std::stod(right_value);
+                            final_value_result = t_Expected<std::string, t_ErrorInfo>(FormatNumber(left_val - right_val));
+                        }
+                        catch (...)
+                        {
+                            final_value_result = t_Expected<std::string, t_ErrorInfo>
+                            (
+                                t_ErrorInfo
+                                (
+                                    t_ErrorType::RUNTIME_ERROR, 
+                                    "Cannot perform arithmetic operation"
+                                )
+                            );
+                        }
                     }
                     break;
                     
                 case t_TokenType::STAR_EQUAL:
                     {
-                        // Get typed values for optimized operations
-                        auto left_it = environment.find(var_name);
-
-                        t_TypedValue left_typed = 
-                        left_it != environment.end() ? 
-                        left_it->second : 
-                        t_TypedValue
-                        (
-                            left_value, DetectType(left_value)
-                        );
-
-                        t_TypedValue right_typed
-                        (
-                            right_value, 
-                            DetectType(right_value)
-                        );
-                        
-                        final_value_result = 
-                        PerformMultiplication(left_typed, right_typed);
+                        try 
+                        {
+                            double left_val = std::stod(left_value);
+                            double right_val = std::stod(right_value);
+                            final_value_result = t_Expected<std::string, t_ErrorInfo>(FormatNumber(left_val * right_val));
+                        }
+                        catch (...)
+                        {
+                            final_value_result = t_Expected<std::string, t_ErrorInfo>
+                            (
+                                t_ErrorInfo
+                                (
+                                    t_ErrorType::RUNTIME_ERROR, 
+                                    "Cannot perform arithmetic operation"
+                                )
+                            );
+                        }
                     }
                     break;
                     
                 case t_TokenType::SLASH_EQUAL:
                     {
-                        // Get typed values for optimized operations
-                        auto left_it = environment.find(var_name);
-
-                        t_TypedValue left_typed = 
-                        left_it != environment.end() ? 
-                        left_it->second : 
-                        t_TypedValue
-                        (
-                            left_value, 
-                            DetectType(left_value)
-                        );
-
-                        t_TypedValue right_typed
-                        (
-                            right_value, 
-                            DetectType(right_value)
-                        );
-                        
-                        final_value_result = 
-                        PerformDivision(left_typed, right_typed);
+                        try 
+                        {
+                            double left_val = std::stod(left_value);
+                            double right_val = std::stod(right_value);
+                            
+                            if (right_val == 0)
+                            {
+                                final_value_result = t_Expected<std::string, t_ErrorInfo>
+                                (
+                                    t_ErrorInfo(t_ErrorType::RUNTIME_ERROR, "Division by zero")
+                                );
+                            }
+                            else
+                            {
+                                final_value_result = t_Expected<std::string, t_ErrorInfo>(FormatNumber(left_val / right_val));
+                            }
+                        }
+                        catch (...)
+                        {
+                            final_value_result = t_Expected<std::string, t_ErrorInfo>
+                            (
+                                t_ErrorInfo
+                                (
+                                    t_ErrorType::RUNTIME_ERROR, 
+                                    "Cannot perform arithmetic operation"
+                                )
+                            );
+                        }
                     }
                     break;
                     
                 default:
-                    final_value_result = 
-                    t_Expected<std::string, t_ErrorInfo>(right_value);
+                    final_value_result = t_Expected<std::string, t_ErrorInfo>(right_value);
                     break;
                 }
                 
@@ -1558,16 +1381,101 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
         switch (binary->op.type)
         {
         case t_TokenType::PLUS:
-            return PerformAddition(left_typed, right_typed);
+            {
+                // Simple addition implementation
+                try 
+                {
+                    double left_val = std::stod(left_str);
+                    double right_val = std::stod(right_str);
+                    return t_Expected<std::string, t_ErrorInfo>(FormatNumber(left_val + right_val));
+                }
+                catch (...)
+                {
+                    return t_Expected<std::string, t_ErrorInfo>
+                    (
+                        t_ErrorInfo
+                        (
+                            t_ErrorType::RUNTIME_ERROR, 
+                            "String concatenation with '+' is not allowed. Use comma-separated values in display statements instead."
+                        )
+                    );
+                }
+            }
 
         case t_TokenType::MINUS:
-            return PerformSubtraction(left_typed, right_typed);
+            {
+                // Simple subtraction implementation
+                try 
+                {
+                    double left_val = std::stod(left_str);
+                    double right_val = std::stod(right_str);
+                    return t_Expected<std::string, t_ErrorInfo>(FormatNumber(left_val - right_val));
+                }
+                catch (...)
+                {
+                    return t_Expected<std::string, t_ErrorInfo>
+                    (
+                        t_ErrorInfo
+                        (
+                            t_ErrorType::RUNTIME_ERROR, 
+                            "Cannot perform arithmetic operation"
+                        )
+                    );
+                }
+            }
 
         case t_TokenType::STAR:
-            return PerformMultiplication(left_typed, right_typed);
+            {
+                // Simple multiplication implementation
+                try 
+                {
+                    double left_val = std::stod(left_str);
+                    double right_val = std::stod(right_str);
+                    return t_Expected<std::string, t_ErrorInfo>(FormatNumber(left_val * right_val));
+                }
+                catch (...)
+                {
+                    return t_Expected<std::string, t_ErrorInfo>
+                    (
+                        t_ErrorInfo
+                        (
+                            t_ErrorType::RUNTIME_ERROR, 
+                            "Cannot perform arithmetic operation"
+                        )
+                    );
+                }
+            }
             
         case t_TokenType::SLASH:
-            return PerformDivision(left_typed, right_typed);
+            {
+                // Simple division implementation
+                try 
+                {
+                    double left_val = std::stod(left_str);
+                    double right_val = std::stod(right_str);
+                    
+                    if (right_val == 0)
+                    {
+                        return t_Expected<std::string, t_ErrorInfo>
+                        (
+                            t_ErrorInfo(t_ErrorType::RUNTIME_ERROR, "Division by zero")
+                        );
+                    }
+                    
+                    return t_Expected<std::string, t_ErrorInfo>(FormatNumber(left_val / right_val));
+                }
+                catch (...)
+                {
+                    return t_Expected<std::string, t_ErrorInfo>
+                    (
+                        t_ErrorInfo
+                        (
+                            t_ErrorType::RUNTIME_ERROR, 
+                            "Cannot perform arithmetic operation"
+                        )
+                    );
+                }
+            }
             
         case t_TokenType::BANG_EQUAL:
         case t_TokenType::EQUAL_EQUAL:
@@ -1674,19 +1582,34 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::EvaluateFormatExpression
             {
                 return left_result;
             }
-            std::string left_value = left_result.Value();
-            
             t_Expected<std::string, t_ErrorInfo> right_result = EvaluateFormatExpression(right_str);
             if (!right_result.HasValue())
             {
                 return right_result;
             }
-            std::string right_value = right_result.Value();
             
             // Try to perform multiplication
-            t_TypedValue left_typed(left_value, DetectType(left_value));
-            t_TypedValue right_typed(right_value, DetectType(right_value));
-            return PerformMultiplication(left_typed, right_typed);
+            std::string left_value = left_result.Value();
+            std::string right_value = right_result.Value();
+            
+            try 
+            {
+                double left_val = std::stod(left_value);
+                double right_val = std::stod(right_value);
+                return t_Expected<std::string, t_ErrorInfo>(FormatNumber(left_val * right_val));
+            }
+            catch (...)
+            {
+                return t_Expected<std::string, t_ErrorInfo>
+                (
+                    t_ErrorInfo
+                    (
+                        t_ErrorType::RUNTIME_ERROR, 
+                        "Cannot perform arithmetic operation"
+                    )
+                );
+            }
+
         }
         
         // Handle division
@@ -1712,19 +1635,43 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::EvaluateFormatExpression
             {
                 return left_result;
             }
-            std::string left_value = left_result.Value();
-            
             t_Expected<std::string, t_ErrorInfo> right_result = EvaluateFormatExpression(right_str);
             if (!right_result.HasValue())
             {
                 return right_result;
             }
-            std::string right_value = right_result.Value();
             
             // Try to perform division
-            t_TypedValue left_typed(left_value, DetectType(left_value));
-            t_TypedValue right_typed(right_value, DetectType(right_value));
-            return PerformDivision(left_typed, right_typed);
+            std::string left_value = left_result.Value();
+            std::string right_value = right_result.Value();
+            
+            try 
+            {
+                double left_val = std::stod(left_value);
+                double right_val = std::stod(right_value);
+                
+                if (right_val == 0)
+                {
+                    return t_Expected<std::string, t_ErrorInfo>
+                    (
+                        t_ErrorInfo(t_ErrorType::RUNTIME_ERROR, "Division by zero")
+                    );
+                }
+                
+                return t_Expected<std::string, t_ErrorInfo>(FormatNumber(left_val / right_val));
+            }
+            catch (...)
+            {
+                return t_Expected<std::string, t_ErrorInfo>
+                (
+                    t_ErrorInfo
+                    (
+                        t_ErrorType::RUNTIME_ERROR, 
+                        "Cannot perform arithmetic operation"
+                    )
+                );
+            }
+
         }
         
         // Handle addition
@@ -1750,19 +1697,34 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::EvaluateFormatExpression
             {
                 return left_result;
             }
-            std::string left_value = left_result.Value();
-            
             t_Expected<std::string, t_ErrorInfo> right_result = EvaluateFormatExpression(right_str);
             if (!right_result.HasValue())
             {
                 return right_result;
             }
-            std::string right_value = right_result.Value();
             
             // Try to perform addition
-            t_TypedValue left_typed(left_value, DetectType(left_value));
-            t_TypedValue right_typed(right_value, DetectType(right_value));
-            return PerformAddition(left_typed, right_typed);
+            std::string left_value = left_result.Value();
+            std::string right_value = right_result.Value();
+            
+            try 
+            {
+                double left_val = std::stod(left_value);
+                double right_val = std::stod(right_value);
+                return t_Expected<std::string, t_ErrorInfo>(FormatNumber(left_val + right_val));
+            }
+            catch (...)
+            {
+                return t_Expected<std::string, t_ErrorInfo>
+                (
+                    t_ErrorInfo
+                    (
+                        t_ErrorType::RUNTIME_ERROR, 
+                        "String concatenation with '+' is not allowed. Use comma-separated values in display statements instead."
+                    )
+                );
+            }
+
         }
         
         // Handle subtraction
@@ -1788,19 +1750,34 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::EvaluateFormatExpression
             {
                 return left_result;
             }
-            std::string left_value = left_result.Value();
-            
             t_Expected<std::string, t_ErrorInfo> right_result = EvaluateFormatExpression(right_str);
             if (!right_result.HasValue())
             {
                 return right_result;
             }
-            std::string right_value = right_result.Value();
             
             // Try to perform subtraction
-            t_TypedValue left_typed(left_value, DetectType(left_value));
-            t_TypedValue right_typed(right_value, DetectType(right_value));
-            return PerformSubtraction(left_typed, right_typed);
+            std::string left_value = left_result.Value();
+            std::string right_value = right_result.Value();
+            
+            try 
+            {
+                double left_val = std::stod(left_value);
+                double right_val = std::stod(right_value);
+                return t_Expected<std::string, t_ErrorInfo>(FormatNumber(left_val - right_val));
+            }
+            catch (...)
+            {
+                return t_Expected<std::string, t_ErrorInfo>
+                (
+                    t_ErrorInfo
+                    (
+                        t_ErrorType::RUNTIME_ERROR, 
+                        "Cannot perform arithmetic operation"
+                    )
+                );
+            }
+
         }
         
         // For other complex expressions, return the expression as a string
