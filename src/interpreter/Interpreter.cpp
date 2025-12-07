@@ -478,6 +478,22 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
     }
     else if (t_IfStmt *if_stmt = dynamic_cast<t_IfStmt *>(stmt))
     {
+        // Check if condition uses assignment operator (=) instead of equality (==)
+        if (t_BinaryExpr *condition_binary = dynamic_cast<t_BinaryExpr *>(if_stmt->condition.get()))
+        {
+            if (condition_binary->op.type == t_TokenType::EQUAL)
+            {
+                return t_Expected<int, t_ErrorInfo>
+                (
+                    t_ErrorInfo
+                    (
+                        t_ErrorType::RUNTIME_ERROR,
+                        "Use '==' for comparison in conditions, not '='. Did you mean to compare instead of assign?"
+                    )
+                );
+            }
+        }
+        
         t_Expected<std::string, t_ErrorInfo> condition_result = Evaluate(if_stmt->condition.get());
         if (!condition_result.HasValue())
         {
@@ -562,6 +578,24 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                     // Check condition (if any)
                     if (for_stmt->condition)
                     {
+                        // Check if condition uses assignment operator (=) instead of equality (==)
+                        if (t_BinaryExpr *condition_binary = dynamic_cast<t_BinaryExpr *>(for_stmt->condition.get()))
+                        {
+                            if (condition_binary->op.type == t_TokenType::EQUAL)
+                            {
+                                PopScope();
+                                loop_depth--;
+                                return t_Expected<int, t_ErrorInfo>
+                                (
+                                    t_ErrorInfo
+                                    (
+                                        t_ErrorType::RUNTIME_ERROR,
+                                        "Use '==' for comparison in loop conditions, not '='. Did you mean to compare instead of assign?"
+                                    )
+                                );
+                            }
+                        }
+                        
                         t_Expected<std::string, t_ErrorInfo> condition_result = 
                         Evaluate(for_stmt->condition.get());
                         if (!condition_result.HasValue())
@@ -1409,6 +1443,22 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
         {
         case t_TokenType::PLUS:
             {
+                // Type safety: Both operands must be numbers
+                if (left_typed.type != t_ValueType::NUMBER || 
+                    right_typed.type != t_ValueType::NUMBER)
+                {
+                    std::string left_type_str = (left_typed.type == t_ValueType::STRING ? std::string("string") : std::string("non-number"));
+                    std::string right_type_str = (right_typed.type == t_ValueType::STRING ? std::string("string") : std::string("non-number"));
+                    return t_Expected<std::string, t_ErrorInfo>
+                    (
+                        t_ErrorInfo
+                        (
+                            t_ErrorType::TYPE_ERROR, 
+                            "Cannot add " + left_type_str + " and " + right_type_str + ". Both operands must be numbers."
+                        )
+                    );
+                }
+                
                 // Simple addition implementation
                 try 
                 {
@@ -1431,6 +1481,22 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
 
         case t_TokenType::MINUS:
             {
+                // Type safety: Both operands must be numbers
+                if (left_typed.type != t_ValueType::NUMBER || 
+                    right_typed.type != t_ValueType::NUMBER)
+                {
+                    std::string left_type_str = (left_typed.type == t_ValueType::STRING ? std::string("string") : std::string("non-number"));
+                    std::string right_type_str = (right_typed.type == t_ValueType::STRING ? std::string("string") : std::string("non-number"));
+                    return t_Expected<std::string, t_ErrorInfo>
+                    (
+                        t_ErrorInfo
+                        (
+                            t_ErrorType::TYPE_ERROR, 
+                            "Cannot subtract " + right_type_str + " from " + left_type_str + ". Both operands must be numbers."
+                        )
+                    );
+                }
+                
                 // Simple subtraction implementation
                 try 
                 {
@@ -1453,6 +1519,22 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
 
         case t_TokenType::STAR:
             {
+                // Type safety: Both operands must be numbers
+                if (left_typed.type != t_ValueType::NUMBER || 
+                    right_typed.type != t_ValueType::NUMBER)
+                {
+                    std::string left_type_str = (left_typed.type == t_ValueType::STRING ? std::string("string") : std::string("non-number"));
+                    std::string right_type_str = (right_typed.type == t_ValueType::STRING ? std::string("string") : std::string("non-number"));
+                    return t_Expected<std::string, t_ErrorInfo>
+                    (
+                        t_ErrorInfo
+                        (
+                            t_ErrorType::TYPE_ERROR, 
+                            "Cannot multiply " + left_type_str + " and " + right_type_str + ". Both operands must be numbers."
+                        )
+                    );
+                }
+                
                 // Simple multiplication implementation
                 try 
                 {
@@ -1475,6 +1557,22 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
             
         case t_TokenType::SLASH:
             {
+                // Type safety: Both operands must be numbers
+                if (left_typed.type != t_ValueType::NUMBER || 
+                    right_typed.type != t_ValueType::NUMBER)
+                {
+                    std::string left_type_str = (left_typed.type == t_ValueType::STRING ? std::string("string") : std::string("non-number"));
+                    std::string right_type_str = (right_typed.type == t_ValueType::STRING ? std::string("string") : std::string("non-number"));
+                    return t_Expected<std::string, t_ErrorInfo>
+                    (
+                        t_ErrorInfo
+                        (
+                            t_ErrorType::TYPE_ERROR, 
+                            "Cannot divide " + left_type_str + " by " + right_type_str + ". Both operands must be numbers."
+                        )
+                    );
+                }
+                
                 // Simple division implementation
                 try 
                 {
