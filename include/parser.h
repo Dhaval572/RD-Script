@@ -19,14 +19,14 @@ private:
 
     bool IsAtEnd();
     t_Token Advance();
-    bool Check(t_TokenType type);
+    bool Check(e_TOKEN_TYPE type);
     t_Token Peek();
     t_Token Previous();
-    bool Match(std::initializer_list<t_TokenType> types);
+    bool Match(std::initializer_list<e_TOKEN_TYPE> types);
     
     t_Expected<t_Token, t_ErrorInfo> Consume
     (
-        t_TokenType type, const std::string &message
+        e_TOKEN_TYPE type, const std::string &message
     );
     t_ErrorInfo Error(t_Token token, const std::string &message);
 

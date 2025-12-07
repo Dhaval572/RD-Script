@@ -6,7 +6,7 @@
 #include "Token.h"
 
 // Error types for RD Script
-enum class t_ErrorType
+enum class e_ERROR_TYPE
 {
     LEXING_ERROR,
     PARSING_ERROR,
@@ -17,20 +17,20 @@ enum class t_ErrorType
 // Error information structure
 struct t_ErrorInfo
 {
-    t_ErrorType type;
+    e_ERROR_TYPE type;
     std::string message;
     int line;
     int column;
 
     t_ErrorInfo() 
-        : type(t_ErrorType::RUNTIME_ERROR), 
+        : type(e_ERROR_TYPE::RUNTIME_ERROR), 
           message(""), 
           line(0), 
           column(0) {}
     
     t_ErrorInfo
     (
-        t_ErrorType type, 
+        e_ERROR_TYPE type, 
         const std::string& message, 
         int line = 0, 
         int column = 0

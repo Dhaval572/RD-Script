@@ -3,27 +3,27 @@
 #include <cctype>
 #include "ErrorHandling.h"
 
-static const std::unordered_map<std::string, t_TokenType> keywords =
+static const std::unordered_map<std::string, e_TOKEN_TYPE> keywords =
 {
-    {"and", t_TokenType::AND},
-    {"break", t_TokenType::BREAK},
-    {"class", t_TokenType::CLASS},
-    {"continue", t_TokenType::CONTINUE},
-    {"else", t_TokenType::ELSE},
-    {"false", t_TokenType::FALSE},
-    {"for", t_TokenType::FOR},
-    {"fun", t_TokenType::FUN},
-    {"if", t_TokenType::IF},
-    {"nil", t_TokenType::NIL},
-    {"or", t_TokenType::OR},
-    {"display", t_TokenType::DISPLAY},
-    {"return", t_TokenType::RETURN},
-    {"super", t_TokenType::SUPER},
-    {"this", t_TokenType::THIS},
-    {"true", t_TokenType::TRUE},
-    {"while", t_TokenType::WHILE},
-    {"auto", t_TokenType::AUTO},
-    {"benchmark", t_TokenType::BENCHMARK}  // Add benchmark keyword
+    {"and", e_TOKEN_TYPE::AND},
+    {"break", e_TOKEN_TYPE::BREAK},
+    {"class", e_TOKEN_TYPE::CLASS},
+    {"continue", e_TOKEN_TYPE::CONTINUE},
+    {"else", e_TOKEN_TYPE::ELSE},
+    {"false", e_TOKEN_TYPE::FALSE},
+    {"for", e_TOKEN_TYPE::FOR},
+    {"fun", e_TOKEN_TYPE::FUN},
+    {"if", e_TOKEN_TYPE::IF},
+    {"nil", e_TOKEN_TYPE::NIL},
+    {"or", e_TOKEN_TYPE::OR},
+    {"display", e_TOKEN_TYPE::DISPLAY},
+    {"return", e_TOKEN_TYPE::RETURN},
+    {"super", e_TOKEN_TYPE::SUPER},
+    {"this", e_TOKEN_TYPE::THIS},
+    {"true", e_TOKEN_TYPE::TRUE},
+    {"while", e_TOKEN_TYPE::WHILE},
+    {"auto", e_TOKEN_TYPE::AUTO},
+    {"benchmark", e_TOKEN_TYPE::BENCHMARK} 
 };
 
 t_Lexer::t_Lexer(const std::string &source)
@@ -37,11 +37,11 @@ t_ParsingResult t_Lexer::ScanTokens()
         t_ParsingResult result = ScanToken();
         if (!result.HasValue())
         {
-            return result; // Propagate error
+            return result; 
         }
     }
 
-    tokens.emplace_back(t_TokenType::EOF_TOKEN, "", "", line);
+    tokens.emplace_back(e_TOKEN_TYPE::EOF_TOKEN, "", "", line);
     return t_ParsingResult(tokens);
 }
 
@@ -56,67 +56,67 @@ t_ParsingResult t_Lexer::ScanToken()
     switch (c)
     {
     case '(':
-        AddToken(t_TokenType::LEFT_PAREN);
+        AddToken(e_TOKEN_TYPE::LEFT_PAREN);
         break;
     case ')':
-        AddToken(t_TokenType::RIGHT_PAREN);
+        AddToken(e_TOKEN_TYPE::RIGHT_PAREN);
         break;
     case '{':
-        AddToken(t_TokenType::LEFT_BRACE);
+        AddToken(e_TOKEN_TYPE::LEFT_BRACE);
         break;
     case '}':
-        AddToken(t_TokenType::RIGHT_BRACE);
+        AddToken(e_TOKEN_TYPE::RIGHT_BRACE);
         break;
     case ',':
-        AddToken(t_TokenType::COMMA);
+        AddToken(e_TOKEN_TYPE::COMMA);
         break;
     case '.':
-        AddToken(t_TokenType::DOT);
+        AddToken(e_TOKEN_TYPE::DOT);
         break;
     case '-':
         if (Match('-')) 
         {
-            AddToken(t_TokenType::MINUS_MINUS);
+            AddToken(e_TOKEN_TYPE::MINUS_MINUS);
         } 
         else if (Match('='))
         {
-            AddToken(t_TokenType::MINUS_EQUAL);
+            AddToken(e_TOKEN_TYPE::MINUS_EQUAL);
         }
         else 
         {
-            AddToken(t_TokenType::MINUS);
+            AddToken(e_TOKEN_TYPE::MINUS);
         }
         break;
     case '+':
         if (Match('+')) 
         {
-            AddToken(t_TokenType::PLUS_PLUS);
+            AddToken(e_TOKEN_TYPE::PLUS_PLUS);
         } 
         else if (Match('='))
         {
-            AddToken(t_TokenType::PLUS_EQUAL);
+            AddToken(e_TOKEN_TYPE::PLUS_EQUAL);
         }
         else 
         {
-            AddToken(t_TokenType::PLUS);
+            AddToken(e_TOKEN_TYPE::PLUS);
         }
         break;
     case ';':
-        AddToken(t_TokenType::SEMICOLON);
+        AddToken(e_TOKEN_TYPE::SEMICOLON);
         break;
     case '*':
-        AddToken(Match('=') ? t_TokenType::STAR_EQUAL : t_TokenType::STAR);
+        AddToken(Match('=') ? e_TOKEN_TYPE::STAR_EQUAL : e_TOKEN_TYPE::STAR);
         break;
     case '!':
-        AddToken(Match('=') ? t_TokenType::BANG_EQUAL : t_TokenType::BANG);
+        AddToken(Match('=') ? e_TOKEN_TYPE::BANG_EQUAL : e_TOKEN_TYPE::BANG);
         break;
     case '=':
-        AddToken(Match('=') ? t_TokenType::EQUAL_EQUAL : t_TokenType::EQUAL);
+        AddToken(Match('=') ? e_TOKEN_TYPE::EQUAL_EQUAL : e_TOKEN_TYPE::EQUAL);
         break;
     case '&':
         if (Match('&')) 
         {
-            AddToken(t_TokenType::AND);
+            AddToken(e_TOKEN_TYPE::AND);
         } 
         else 
         {
@@ -124,7 +124,7 @@ t_ParsingResult t_Lexer::ScanToken()
             (
                 t_ErrorInfo
                 (
-                    t_ErrorType::LEXING_ERROR, 
+                    e_ERROR_TYPE::LEXING_ERROR, 
                     "Unexpected character", 
                     line, 
                     current
@@ -133,10 +133,10 @@ t_ParsingResult t_Lexer::ScanToken()
         }
         break;
     case '<':
-        AddToken(Match('=') ? t_TokenType::LESS_EQUAL : t_TokenType::LESS);
+        AddToken(Match('=') ? e_TOKEN_TYPE::LESS_EQUAL : e_TOKEN_TYPE::LESS);
         break;
     case '>':
-        AddToken(Match('=') ? t_TokenType::GREATER_EQUAL : t_TokenType::GREATER);
+        AddToken(Match('=') ? e_TOKEN_TYPE::GREATER_EQUAL : e_TOKEN_TYPE::GREATER);
         break;
     case '/':
         if (Match('/')) 
@@ -146,7 +146,7 @@ t_ParsingResult t_Lexer::ScanToken()
         } 
         else
         {
-            AddToken(Match('=') ? t_TokenType::SLASH_EQUAL : t_TokenType::SLASH);
+            AddToken(Match('=') ? e_TOKEN_TYPE::SLASH_EQUAL : e_TOKEN_TYPE::SLASH);
         }
         break;
 
@@ -164,7 +164,7 @@ t_ParsingResult t_Lexer::ScanToken()
             {
                 return t_ParsingResult(result.Error());
             }
-            AddToken(t_TokenType::STRING, result.Value());
+            AddToken(e_TOKEN_TYPE::STRING, result.Value());
         }
         break;
     case '$':
@@ -176,7 +176,7 @@ t_ParsingResult t_Lexer::ScanToken()
             {
                 return t_ParsingResult(result.Error());
             }
-            AddToken(t_TokenType::FORMAT_STRING, result.Value());
+            AddToken(e_TOKEN_TYPE::FORMAT_STRING, result.Value());
         }
         else
         {
@@ -184,7 +184,7 @@ t_ParsingResult t_Lexer::ScanToken()
             (
                 t_ErrorInfo
                 (
-                    t_ErrorType::LEXING_ERROR, 
+                    e_ERROR_TYPE::LEXING_ERROR, 
                     "Unexpected character", 
                     line, 
                     current
@@ -207,7 +207,7 @@ t_ParsingResult t_Lexer::ScanToken()
             (
                 t_ErrorInfo
                 (
-                    t_ErrorType::LEXING_ERROR, 
+                    e_ERROR_TYPE::LEXING_ERROR, 
                     "Unexpected character", 
                     line, 
                     current
@@ -292,7 +292,7 @@ t_Expected<std::string, t_ErrorInfo> t_Lexer::String()
         (
             t_ErrorInfo
             (
-                t_ErrorType::LEXING_ERROR, 
+                e_ERROR_TYPE::LEXING_ERROR, 
                 "Unterminated string", 
                 line, 
                 current
@@ -356,7 +356,7 @@ t_Expected<std::string, t_ErrorInfo> t_Lexer::FormatString()
         (
             t_ErrorInfo
             (
-                t_ErrorType::LEXING_ERROR, 
+                e_ERROR_TYPE::LEXING_ERROR, 
                 "Unterminated format string", 
                 line,
                 current
@@ -381,7 +381,7 @@ void t_Lexer::Number()
         while (std::isdigit(Peek())) Advance();
     }
 
-    AddToken(t_TokenType::NUMBER, source.substr(start, current - start));
+    AddToken(e_TOKEN_TYPE::NUMBER, source.substr(start, current - start));
 }
 
 void t_Lexer::Identifier()
@@ -389,16 +389,16 @@ void t_Lexer::Identifier()
     while (std::isalnum(Peek()) || Peek() == '_') Advance();
 
     std::string text = source.substr(start, current - start);
-    t_TokenType type = IdentifierType();
+    e_TOKEN_TYPE type = IdentifierType();
     AddToken(type, text);
 }
 
-t_TokenType t_Lexer::IdentifierType()
+e_TOKEN_TYPE t_Lexer::IdentifierType()
 {
     std::string text = source.substr(start, current - start);
     
     auto it = keywords.find(text);
-    return (it != keywords.end()) ? it->second : t_TokenType::IDENTIFIER;
+    return (it != keywords.end()) ? it->second : e_TOKEN_TYPE::IDENTIFIER;
 }
 
 char t_Lexer::Advance()
@@ -406,12 +406,12 @@ char t_Lexer::Advance()
     return source[current++];
 }
 
-void t_Lexer::AddToken(t_TokenType type)
+void t_Lexer::AddToken(e_TOKEN_TYPE type)
 {
     AddToken(type, "");
 }
 
-void t_Lexer::AddToken(t_TokenType type, const std::string &literal)
+void t_Lexer::AddToken(e_TOKEN_TYPE type, const std::string &literal)
 {
     std::string text = source.substr(start, current - start);
     tokens.emplace_back(type, text, literal, line);

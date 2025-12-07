@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 
-enum class t_TokenType
+enum class e_TOKEN_TYPE
 {
     // Single-character tokens
     LEFT_PAREN,
@@ -69,7 +69,7 @@ enum class t_TokenType
 
 struct t_Token
 {
-    t_TokenType type;
+    e_TOKEN_TYPE type;
     std::string lexeme;
     // For literals, we could use a variant or void* to store the value
     // For simplicity in this example, we'll just store as string
@@ -78,7 +78,7 @@ struct t_Token
 
     t_Token
     (
-        t_TokenType type, 
+        e_TOKEN_TYPE type, 
         const std::string &lexeme, 
         const std::string &literal, 
         int line

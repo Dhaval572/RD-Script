@@ -21,7 +21,7 @@
    - Example: `TokenType`, `ParserState`
 
 6. **Enum Values**: Use UPPER_SNAKE_CASE
-   - Example: `TOKEN_EOF`, `PARSER_ERROR`
+   - Example: `e_TOKEN_EOF`, `e_PARSER_ERROR`
 
 ## Formatting Style
 
@@ -40,17 +40,6 @@
 2. **Indentation**: Use 4 spaces (no tabs)
 
 3. **Line Length**: Maximum 100 characters per line
-
-4. **Spacing**:
-   - No space between function name and opening parenthesis: `FunctionName()`
-   - Space after keywords: `if (condition)`, `for (int i = 0; i < 10; i++)`
-   - Space around operators: `a = b + c;`
-
-5. **Pointer and Reference Declarations**:
-   ```cpp
-   int* pointer;
-   int& reference;
-   ```
 
 ## File Organization
 
@@ -71,12 +60,6 @@
 2. **Function Comments**: Describe what the function does, its parameters, and return value
 3. **Inline Comments**: Use sparingly and only when code is not self-explanatory
 4. **TODO Comments**: Mark incomplete implementations with `// TODO:`
-
-## Error Handling
-
-1. Use exceptions for error reporting
-2. Provide meaningful error messages with context
-3. Clean up resources in destructors or use RAII
 
 ## Language Design Principles
 

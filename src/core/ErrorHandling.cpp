@@ -6,16 +6,16 @@ void ReportError(const t_ErrorInfo& error)
     std::string_view error_type;
     switch (error.type)
     {
-        case t_ErrorType::LEXING_ERROR:
+        case e_ERROR_TYPE::LEXING_ERROR:
             error_type = "Lexing Error";
             break;
-        case t_ErrorType::PARSING_ERROR:
+        case e_ERROR_TYPE::PARSING_ERROR:
             error_type = "Parsing Error";
             break;
-        case t_ErrorType::RUNTIME_ERROR:
+        case e_ERROR_TYPE::RUNTIME_ERROR:
             error_type = "Runtime Error";
             break;
-        case t_ErrorType::TYPE_ERROR:
+        case e_ERROR_TYPE::TYPE_ERROR:
             error_type = "Type Error";
             break;
         default:
