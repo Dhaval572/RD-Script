@@ -118,7 +118,6 @@ t_InterpretationResult t_Interpreter::Interpret
 // Scope management functions
 void t_Interpreter::PushScope()
 {
-    // Save the current state of the environment
     scope_stack.emplace_back(environment);
 }
 
@@ -137,9 +136,9 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::DeclareVariable
     const std::string& name, int line
 )
 {
-    // Check if variable is already declared in current scope
-    // We do this by checking if it exists in the current environment
-    // and comparing with the previous scope's environment if it exists
+    /*  Check if variable is already declared in current scope
+        We do this by checking if it exists in the current environment
+        and comparing with the previous scope's environment if it exists */
     if (!environment.count(name)) 
     {
         // Variable not declared yet, this is fine
@@ -473,7 +472,8 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
             );
         }
         // Signal continue without throwing
-        control_signal = "continue";
+        // Use explicit string assignment to ensure exact match
+        control_signal = std::string("continue");
         return t_Expected<int, t_ErrorInfo>(0);
     }
     else if (t_IfStmt *if_stmt = dynamic_cast<t_IfStmt *>(stmt))
@@ -491,6 +491,12 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
             {
                 return then_result;
             }
+            
+            // Check if a control signal (break/continue) was raised in the then branch
+            if (!control_signal.empty())
+            {
+                return t_Expected<int, t_ErrorInfo>(0);
+            }
         }
         else if (if_stmt->else_branch)
         {
@@ -500,6 +506,12 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
             if (!else_result.HasValue())
             {
                 return else_result;
+            }
+            
+            // Check if a control signal (break/continue) was raised in the else branch
+            if (!control_signal.empty())
+            {
+                return t_Expected<int, t_ErrorInfo>(0);
             }
         }
     }
@@ -573,28 +585,43 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                     }
 
                     // Execute body
+                    control_signal.clear();
+                    t_Expected<int, t_ErrorInfo> body_result = 
+                    Execute(for_stmt->body.get());
+
+                    // CRITICAL: Check for control signals IMMEDIATELY after Execute returns
+                    // This must happen before any other checks to ensure break/continue work
+                    std::string signal = control_signal; // Capture signal value
+                    
+                    if (signal == "break")
                     {
                         control_signal.clear();
-                        t_Expected<int, t_ErrorInfo> body_result = 
-                        Execute(for_stmt->body.get());
-
                         if (!body_result.HasValue())
                         {
-                            PopScope(); // Clean up scope before returning
+                            PopScope();
                             loop_depth--;
-                            return body_result;
                         }
-                        if (control_signal == "break")
+                        break;
+                    }
+                    
+                    if (signal == "continue")
+                    {
+                        // Skip increment and start next iteration
+                        control_signal.clear();
+                        if (!body_result.HasValue())
                         {
-                            control_signal.clear();
-                            break;
+                            PopScope();
+                            loop_depth--;
                         }
-                        if (control_signal == "continue")
-                        {
-                            // Skip increment and start next iteration
-                            control_signal.clear();
-                            continue; // Continue to the next loop iteration without incrementing
-                        }
+                        continue; // Continue to the next loop iteration without incrementing
+                    }
+                    
+                    // Only check for errors if no control signal was set
+                    if (!body_result.HasValue())
+                    {
+                        PopScope(); // Clean up scope before returning
+                        loop_depth--;
+                        return body_result;
                     }
 
                     // Execute increment (if any)
@@ -1911,6 +1938,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
     std::string loop_var_name = init_var->name;
     
     // Execute the loop with direct numeric operations
+    // Manually control the loop to properly handle continue statements
     for (int i = 0; i < limit; i++)
     {
         // Set loop variable directly as integer
@@ -1920,21 +1948,41 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
         control_signal.clear();
         t_Expected<int, t_ErrorInfo> body_result = 
         Execute(for_stmt->body.get());
+        
+        // CRITICAL: Check for control signals IMMEDIATELY after Execute returns
+        // This must happen before any other checks to ensure break/continue work
+        std::string signal = control_signal; // Capture signal value
+        
+        if (signal == "break")
+        {
+            control_signal.clear();
+            if (!body_result.HasValue())
+            {
+                PopScope();
+                loop_depth--;
+            }
+            break;
+        }
+        
+        if (signal == "continue")
+        {
+            control_signal.clear();
+            if (!body_result.HasValue())
+            {
+                PopScope();
+                loop_depth--;
+            }
+            // Continue to the next iteration
+            // The i++ at the end of the for loop will handle incrementing
+            continue;
+        }
+        
+        // Only check for errors if no control signal was set
         if (!body_result.HasValue())
         {
             PopScope(); // Clean up scope before returning
             loop_depth--;
             return body_result;
-        }
-        if (control_signal == "break")
-        {
-            control_signal.clear();
-            break;
-        }
-        if (control_signal == "continue")
-        {
-            control_signal.clear();
-            continue;
         }
     }
     
