@@ -814,13 +814,17 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                   << duration.count() / 1000000000.0 
                   << " seconds\n";
     }
-    else if (t_EmptyStmt *empty_stmt = 
-        dynamic_cast<t_EmptyStmt *>(stmt))
+    else if 
+    (
+        t_EmptyStmt *empty_stmt = dynamic_cast<t_EmptyStmt *>(stmt)
+    )
     {
-        // Do nothing for empty statements
+        // Eat five star, do nothing
     }
-    else if (t_ExpressionStmt *expr_stmt = 
-        dynamic_cast<t_ExpressionStmt *>(stmt))
+    else if 
+    (
+        t_ExpressionStmt *expr_stmt = dynamic_cast<t_ExpressionStmt *>(stmt)
+    )
     {
         t_Expected<std::string, t_ErrorInfo> result =
         Evaluate(expr_stmt->expression.get());
@@ -831,7 +835,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
         }
     }
     
-    return t_Expected<int, t_ErrorInfo>(0); // Success represented by 0
+    return t_Expected<int, t_ErrorInfo>(0); 
 }
 
 bool t_Interpreter::IsTruthy(const std::string &value)
@@ -1267,7 +1271,11 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                         {
                             double left_val = std::stod(left_value);
                             double right_val = std::stod(right_value);
-                            final_value_result = t_Expected<std::string, t_ErrorInfo>(FormatNumber(left_val - right_val));
+                            final_value_result = 
+                            t_Expected<std::string, t_ErrorInfo>
+                            (
+                                FormatNumber(left_val - right_val)
+                            );
                         }
                         catch (...)
                         {
@@ -1675,23 +1683,23 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                 }
             }
             
-        case e_TOKEN_TYPE::BANG_EQUAL:
-        case e_TOKEN_TYPE::EQUAL_EQUAL:
-        case e_TOKEN_TYPE::GREATER:
-        case e_TOKEN_TYPE::GREATER_EQUAL:
-        case e_TOKEN_TYPE::LESS:
-        case e_TOKEN_TYPE::LESS_EQUAL:
-            {
-                t_Expected<bool, t_ErrorInfo> comparison_result = PerformComparison(left_typed, binary->op.type, right_typed);
-                if (!comparison_result.HasValue())
-                {
-                    return t_Expected<std::string, t_ErrorInfo>(comparison_result.Error());
-                }
-                return t_Expected<std::string, t_ErrorInfo>
-                (
-                    comparison_result.Value() ? "true" : "false"
-                );
-            }
+        // case e_TOKEN_TYPE::BANG_EQUAL:
+        // case e_TOKEN_TYPE::EQUAL_EQUAL:
+        // case e_TOKEN_TYPE::GREATER:
+        // case e_TOKEN_TYPE::GREATER_EQUAL:
+        // case e_TOKEN_TYPE::LESS:
+        // case e_TOKEN_TYPE::LESS_EQUAL:
+        //     {
+        //         t_Expected<bool, t_ErrorInfo> comparison_result = PerformComparison(left_typed, binary->op.type, right_typed);
+        //         if (!comparison_result.HasValue())
+        //         {
+        //             return t_Expected<std::string, t_ErrorInfo>(comparison_result.Error());
+        //         }
+        //         return t_Expected<std::string, t_ErrorInfo>
+        //         (
+        //             comparison_result.Value() ? "true" : "false"
+        //         );
+        //     }
         }
     }
 

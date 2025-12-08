@@ -555,8 +555,19 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Assignment()
     }
     t_Expr *expr = expr_result.Value();
 
-    if (Match({e_TOKEN_TYPE::EQUAL, e_TOKEN_TYPE::PLUS_EQUAL, e_TOKEN_TYPE::MINUS_EQUAL, 
-               e_TOKEN_TYPE::STAR_EQUAL, e_TOKEN_TYPE::SLASH_EQUAL}))
+    if 
+    (
+        Match
+        (
+            {
+                e_TOKEN_TYPE::EQUAL, 
+                e_TOKEN_TYPE::PLUS_EQUAL, 
+                e_TOKEN_TYPE::MINUS_EQUAL, 
+                e_TOKEN_TYPE::STAR_EQUAL, 
+                e_TOKEN_TYPE::SLASH_EQUAL
+            }
+        )
+    )
     {
         t_Token equals = Previous();
         t_Expected<t_Expr*, t_ErrorInfo> value_result = Assignment();
