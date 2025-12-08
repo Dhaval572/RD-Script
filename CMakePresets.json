@@ -1,0 +1,29 @@
+{
+	"version": 8,
+	"configurePresets": [
+		{
+			"name": "Debug",
+			"displayName": "Debug",
+			"description": "Using compilers: C = C:\\Program Files\\LLVM\\bin\\clang.exe, CXX = C:\\Program Files\\LLVM\\bin\\clang++.exe",
+			"binaryDir": "${sourceDir}/out/build/Debug",
+			"cacheVariables": {
+				"CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/Debug",
+				"CMAKE_C_COMPILER": "C:/Program Files/LLVM/bin/clang.exe",
+				"CMAKE_CXX_COMPILER": "C:/Program Files/LLVM/bin/clang++.exe",
+				"CMAKE_BUILD_TYPE": "Debug"
+			}
+		},
+		{
+			"name": "Release",
+			"displayName": "Release",
+			"description": "Using compilers: C = C:\\Program Files\\LLVM\\bin\\clang.exe, CXX = C:\\Program Files\\LLVM\\bin\\clang++.exe",
+			"binaryDir": "${sourceDir}/out/build/Release",
+			"cacheVariables": {
+				"CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/Release",
+				"CMAKE_C_COMPILER": "C:/Program Files/LLVM/bin/clang.exe",
+				"CMAKE_CXX_COMPILER": "C:/Program Files/LLVM/bin/clang++.exe",
+				"CMAKE_BUILD_TYPE": "Release"
+			}
+		}
+	]
+}

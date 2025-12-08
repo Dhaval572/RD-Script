@@ -1909,11 +1909,6 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::EvaluateFormatExpression
         // For other complex expressions, return the expression as a string
         return t_Expected<std::string, t_ErrorInfo>(expr_str);
     }
-    catch (const std::exception& e)
-    {
-        // If parsing fails, treat as literal text
-        return t_Expected<std::string, t_ErrorInfo>(expr_str);
-    }
     catch (...)
     {
         // If parsing fails, treat as literal text
@@ -1951,16 +1946,6 @@ bool t_Interpreter::IsSimpleNumericLoop(t_ForStmt* for_stmt)
     t_LiteralExpr* condition_literal = 
     dynamic_cast<t_LiteralExpr*>(condition_binary->right.get());
     if (!condition_literal) return false;
-    
-    // Try to convert condition literal to number
-    try 
-    {
-        std::stod(condition_literal->value);
-    } 
-    catch (...) 
-    {
-        return false;
-    }
     
     // Check if increment is: var++ or ++var
     if (!for_stmt->increment) return false;
