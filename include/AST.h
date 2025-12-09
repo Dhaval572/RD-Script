@@ -6,13 +6,13 @@
 #include "Token.h"
 
 // Abstract base classes for expressions and statements
-class t_Expr
+struct t_Expr
 {
 public:
     virtual ~t_Expr() = default;
 };
 
-class t_Stmt
+struct t_Stmt
 {
 public:
     virtual ~t_Stmt() = default;
@@ -41,7 +41,11 @@ struct t_LiteralExpr : public t_Expr
     std::string value;
     e_TOKEN_TYPE token_type;
     
-    t_LiteralExpr(const std::string &value, e_TOKEN_TYPE type = e_TOKEN_TYPE::STRING) : value(value), token_type(type) {}
+    t_LiteralExpr
+    (
+        const std::string &value, 
+        e_TOKEN_TYPE type = e_TOKEN_TYPE::STRING
+    ) : value(value), token_type(type) {}
 };
 
 struct t_UnaryExpr : public t_Expr
@@ -162,7 +166,8 @@ struct t_ForStmt : public t_Stmt
     std::unique_ptr<t_Stmt> body;
 
     t_ForStmt
-    (   std::unique_ptr<t_Stmt> initializer,
+    (   
+        std::unique_ptr<t_Stmt> initializer,
         std::unique_ptr<t_Expr> condition,
         std::unique_ptr<t_Expr> increment,
         std::unique_ptr<t_Stmt> body
