@@ -1,52 +1,11 @@
-#include "../include/Parser.h"
-#include "AST.h"
-#include "ErrorHandling.h"
+#include "../include/parser.h"
+#include "../include/AST.h"
+#include "../include/ErrorHandling.h"
+#include "../include/ASTContext.h"  // Include ASTContext
 #include <iostream>
 
-// Initialize static memory pools with sizes large enough for all node types
-namespace 
-{
-    size_t MaxStmtSize()
-    {
-        size_t sizes[] = 
-        {
-            sizeof(t_BlockStmt),
-            sizeof(t_IfStmt),
-            sizeof(t_ForStmt),
-            sizeof(t_BreakStmt),
-            sizeof(t_ContinueStmt),
-            sizeof(t_VarStmt),
-            sizeof(t_DisplayStmt),
-            sizeof(t_BenchmarkStmt),
-            sizeof(t_EmptyStmt),
-            sizeof(t_ExpressionStmt)
-        };
-        size_t max_size = 0;
-        for (size_t s : sizes) if (s > max_size) max_size = s;
-        return max_size;
-    }
-
-    size_t MaxExprSize()
-    {
-        size_t sizes[] = 
-        {
-            sizeof(t_BinaryExpr),
-            sizeof(t_LiteralExpr),
-            sizeof(t_UnaryExpr),
-            sizeof(t_GroupingExpr),
-            sizeof(t_VariableExpr),
-            sizeof(t_PrefixExpr),
-            sizeof(t_PostfixExpr)
-        };
-        size_t max_size = 0;
-        for (size_t s : sizes) if (s > max_size) max_size = s;
-        return max_size;
-    }
-}
-
-// Larger block size for statements and expressions to prevent overflow
-t_MemoryPool t_Parser::stmt_pool(MaxStmtSize());
-t_MemoryPool t_Parser::expr_pool(MaxExprSize());
+// Create a static instance of ASTContext to manage the lifecycle
+static t_ASTContext ast_context;
 
 t_Parser::t_Parser(const std::vector<t_Token> &tokens)
     : tokens(tokens), current(0) {}
@@ -67,11 +26,10 @@ t_Expected<std::vector<t_Stmt*>, t_ErrorInfo> t_Parser::Parse()
     return t_Expected<std::vector<t_Stmt*>, t_ErrorInfo>(statements);
 }
 
-// Reset the memory pools
+// Reset the memory pools (now delegated to ASTContext)
 void t_Parser::ResetPools()
 {
-    stmt_pool.Reset();
-    expr_pool.Reset();
+    t_ASTContext::Reset();
 }
 
 bool t_Parser::IsAtEnd()
@@ -143,12 +101,12 @@ t_Expected<t_Token, t_ErrorInfo> t_Parser::Consume
 
 t_ErrorInfo t_Parser::Error(t_Token token, const std::string &message)
 {
-    // In a real implementation, we would report the error
     std::cerr << "Error: " 
               << message 
               << " at line " 
               << token.line 
               << std::endl;
+
     return t_ErrorInfo(e_ERROR_TYPE::PARSING_ERROR, message, token.line, 0);
 }
 
@@ -223,7 +181,10 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::BlockStatement()
         return t_Expected<t_Stmt*, t_ErrorInfo>(consume_result.Error());
     }
     
-    t_BlockStmt* stmt = static_cast<t_BlockStmt*>(stmt_pool.Allocate());
+    t_BlockStmt* stmt = static_cast<t_BlockStmt*>
+    (
+        t_ASTContext::GetStmtPool().Allocate()
+    );
     new (stmt)t_BlockStmt(std::move(statements));
     return t_Expected<t_Stmt*, t_ErrorInfo>(stmt);
 } 
@@ -238,7 +199,10 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::BreakStatement()
         return t_Expected<t_Stmt*, t_ErrorInfo>(result.Error());
     }
     
-    t_BreakStmt* stmt = static_cast<t_BreakStmt*>(stmt_pool.Allocate());
+    t_BreakStmt* stmt = static_cast<t_BreakStmt*>
+    (
+        t_ASTContext::GetStmtPool().Allocate()
+    );
     new (stmt) t_BreakStmt(keyword);
     return t_Expected<t_Stmt*, t_ErrorInfo>(stmt);
 }
@@ -253,7 +217,10 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ContinueStatement()
         return t_Expected<t_Stmt*, t_ErrorInfo>(result.Error());
     }
     
-    t_ContinueStmt* stmt = static_cast<t_ContinueStmt*>(stmt_pool.Allocate());
+    t_ContinueStmt* stmt = static_cast<t_ContinueStmt*>
+    (
+        t_ASTContext::GetStmtPool().Allocate()
+    );
     new (stmt) t_ContinueStmt(keyword);
     return t_Expected<t_Stmt*, t_ErrorInfo>(stmt);
 }
@@ -301,7 +268,10 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::IfStatement()
         else_branch = std::unique_ptr<t_Stmt>(else_result.Value());
     }
 
-    t_IfStmt* stmt = static_cast<t_IfStmt*>(stmt_pool.Allocate());
+    t_IfStmt* stmt = static_cast<t_IfStmt*>
+    (
+        t_ASTContext::GetStmtPool().Allocate()
+    );
     new (stmt) t_IfStmt
     (
         std::unique_ptr<t_Expr>(condition), 
@@ -395,7 +365,10 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
     }
     t_Stmt *body = body_result.Value();
 
-    t_ForStmt* stmt = static_cast<t_ForStmt*>(stmt_pool.Allocate());
+    t_ForStmt* stmt = static_cast<t_ForStmt*>
+    (
+        t_ASTContext::GetStmtPool().Allocate()
+    );
     new (stmt) t_ForStmt
     (
         std::move(initializer),
@@ -434,7 +407,10 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::VarDeclaration()
         return t_Expected<t_Stmt*, t_ErrorInfo>(semicolon_result.Error());
     }
     
-    t_VarStmt* stmt = static_cast<t_VarStmt*>(stmt_pool.Allocate());
+    t_VarStmt* stmt = static_cast<t_VarStmt*>
+    (
+        t_ASTContext::GetStmtPool().Allocate()
+    );
     new (stmt) t_VarStmt(name.lexeme, std::move(initializer));
     return t_Expected<t_Stmt*, t_ErrorInfo>(stmt);
 }
@@ -470,7 +446,10 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::DisplayStatement()
     }
 
     // Use the new t_DisplayStmt instead of t_PrintStmt
-    t_DisplayStmt* stmt = static_cast<t_DisplayStmt*>(stmt_pool.Allocate());
+    t_DisplayStmt* stmt = static_cast<t_DisplayStmt*>
+    (
+        t_ASTContext::GetStmtPool().Allocate()
+    );
     new (stmt) t_DisplayStmt(std::move(values));
     return t_Expected<t_Stmt*, t_ErrorInfo>(stmt);
 }
@@ -492,7 +471,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ExpressionStatement()
     }
     
     t_ExpressionStmt* stmt = 
-    static_cast<t_ExpressionStmt*>(stmt_pool.Allocate());
+    static_cast<t_ExpressionStmt*>(t_ASTContext::GetStmtPool().Allocate());
     new (stmt) t_ExpressionStmt(std::unique_ptr<t_Expr>(expr));
     return t_Expected<t_Stmt*, t_ErrorInfo>(stmt);
 }
@@ -500,7 +479,10 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ExpressionStatement()
 t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::EmptyStatement()
 {
     t_Token semicolon = Previous();
-    t_EmptyStmt* stmt = static_cast<t_EmptyStmt*>(stmt_pool.Allocate());
+    t_EmptyStmt* stmt = static_cast<t_EmptyStmt*>
+    (
+        t_ASTContext::GetStmtPool().Allocate()
+    );
     new (stmt) t_EmptyStmt(semicolon);
     return t_Expected<t_Stmt*, t_ErrorInfo>(stmt);
 }
@@ -536,7 +518,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::BenchmarkStatement()
     // Create a block statement for the body
     t_Stmt *body = new t_BlockStmt(std::move(statements));
     
-    t_BenchmarkStmt* stmt = static_cast<t_BenchmarkStmt*>(stmt_pool.Allocate());
+    t_BenchmarkStmt* stmt = static_cast<t_BenchmarkStmt*>(t_ASTContext::GetStmtPool().Allocate());
     new (stmt) t_BenchmarkStmt(std::unique_ptr<t_Stmt>(body));
     return t_Expected<t_Stmt*, t_ErrorInfo>(stmt);
 }
@@ -581,7 +563,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Assignment()
         {
             std::string name = var_expr->name;
             t_BinaryExpr* expr_node = 
-            static_cast<t_BinaryExpr*>(expr_pool.Allocate());
+            static_cast<t_BinaryExpr*>(t_ASTContext::GetExprPool().Allocate());
 
             new (expr_node) t_BinaryExpr
             (
@@ -628,7 +610,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Or()
         t_Expr *right = right_result.Value();
         
         t_BinaryExpr* expr_node = 
-        static_cast<t_BinaryExpr*>(expr_pool.Allocate());
+        static_cast<t_BinaryExpr*>(t_ASTContext::GetExprPool().Allocate());
         new (expr_node) t_BinaryExpr
         (
             std::unique_ptr<t_Expr>(expr), 
@@ -661,7 +643,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::And()
         t_Expr *right = right_result.Value();
         
         t_BinaryExpr* expr_node = 
-        static_cast<t_BinaryExpr*>(expr_pool.Allocate());
+        static_cast<t_BinaryExpr*>(t_ASTContext::GetExprPool().Allocate());
         new (expr_node) t_BinaryExpr
         (
             std::unique_ptr<t_Expr>(expr), 
@@ -694,7 +676,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Equality()
         t_Expr *right = right_result.Value();
         
         t_BinaryExpr* expr_node = 
-        static_cast<t_BinaryExpr*>(expr_pool.Allocate());
+        static_cast<t_BinaryExpr*>(t_ASTContext::GetExprPool().Allocate());
         new (expr_node) t_BinaryExpr
         (
             std::unique_ptr<t_Expr>(expr), 
@@ -721,7 +703,10 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Comparison()
         Match
         (
             {
-                e_TOKEN_TYPE::GREATER, e_TOKEN_TYPE::GREATER_EQUAL, e_TOKEN_TYPE::LESS, e_TOKEN_TYPE::LESS_EQUAL
+                e_TOKEN_TYPE::GREATER, 
+                e_TOKEN_TYPE::GREATER_EQUAL, 
+                e_TOKEN_TYPE::LESS, 
+                e_TOKEN_TYPE::LESS_EQUAL
             }
         )
     )
@@ -735,7 +720,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Comparison()
         t_Expr *right = right_result.Value();
         
         t_BinaryExpr* expr_node = 
-        static_cast<t_BinaryExpr*>(expr_pool.Allocate());
+        static_cast<t_BinaryExpr*>(t_ASTContext::GetExprPool().Allocate());
         new (expr_node) t_BinaryExpr
         (
             std::unique_ptr<t_Expr>(expr), 
@@ -768,7 +753,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Term()
         t_Expr *right = right_result.Value();
         
         t_BinaryExpr* expr_node = 
-        static_cast<t_BinaryExpr*>(expr_pool.Allocate());
+        static_cast<t_BinaryExpr*>(t_ASTContext::GetExprPool().Allocate());
         new (expr_node) t_BinaryExpr
         (
             std::unique_ptr<t_Expr>(expr), 
@@ -801,7 +786,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Factor()
         t_Expr *right = right_result.Value();
         
         t_BinaryExpr* expr_node = 
-        static_cast<t_BinaryExpr*>(expr_pool.Allocate());
+        static_cast<t_BinaryExpr*>(t_ASTContext::GetExprPool().Allocate());
         new (expr_node) t_BinaryExpr
         (
             std::unique_ptr<t_Expr>(expr), 
@@ -826,7 +811,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Unary()
         }
         t_Expr *right = right_result.Value();
         
-        t_UnaryExpr* expr_node = static_cast<t_UnaryExpr*>(expr_pool.Allocate());
+        t_UnaryExpr* expr_node = static_cast<t_UnaryExpr*>(t_ASTContext::GetExprPool().Allocate());
         new (expr_node) t_UnaryExpr(op, std::unique_ptr<t_Expr>(right));
         return t_Expected<t_Expr*, t_ErrorInfo>(expr_node);
     }
@@ -848,7 +833,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::FinishUnary()
     {
         t_Token op = Previous();
         t_PostfixExpr* expr_node = 
-        static_cast<t_PostfixExpr*>(expr_pool.Allocate());
+        static_cast<t_PostfixExpr*>(t_ASTContext::GetExprPool().Allocate());
         new (expr_node) t_PostfixExpr(std::unique_ptr<t_Expr>(expr), op);
         expr = expr_node;
     }
@@ -861,7 +846,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Primary()
     if (Match({e_TOKEN_TYPE::FALSE}))
     {
         t_LiteralExpr* expr_node = 
-        static_cast<t_LiteralExpr*>(expr_pool.Allocate());
+        static_cast<t_LiteralExpr*>(t_ASTContext::GetExprPool().Allocate());
         new (expr_node) t_LiteralExpr("false", e_TOKEN_TYPE::FALSE);
         return t_Expected<t_Expr*, t_ErrorInfo>(expr_node);
     }
@@ -869,7 +854,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Primary()
     if (Match({e_TOKEN_TYPE::TRUE}))
     {
         t_LiteralExpr* expr_node = 
-        static_cast<t_LiteralExpr*>(expr_pool.Allocate());
+        static_cast<t_LiteralExpr*>(t_ASTContext::GetExprPool().Allocate());
         new (expr_node) t_LiteralExpr("true", e_TOKEN_TYPE::TRUE);
         return t_Expected<t_Expr*, t_ErrorInfo>(expr_node);
     }
@@ -877,7 +862,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Primary()
     if (Match({e_TOKEN_TYPE::NIL}))
     {
         t_LiteralExpr* expr_node = 
-        static_cast<t_LiteralExpr*>(expr_pool.Allocate());
+        static_cast<t_LiteralExpr*>(t_ASTContext::GetExprPool().Allocate());
         new (expr_node) t_LiteralExpr("nil", e_TOKEN_TYPE::NIL);
         return t_Expected<t_Expr*, t_ErrorInfo>(expr_node);
     }
@@ -896,7 +881,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Primary()
     {
         t_Token previous = Previous();
         t_LiteralExpr* expr_node = 
-        static_cast<t_LiteralExpr*>(expr_pool.Allocate());
+        static_cast<t_LiteralExpr*>(t_ASTContext::GetExprPool().Allocate());
         new (expr_node) t_LiteralExpr(previous.literal, previous.type);
         return t_Expected<t_Expr*, t_ErrorInfo>(expr_node);
     }
@@ -913,7 +898,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Primary()
         t_Expr *operand = operand_result.Value();
         
         t_PrefixExpr* expr_node = 
-        static_cast<t_PrefixExpr*>(expr_pool.Allocate());
+        static_cast<t_PrefixExpr*>(t_ASTContext::GetExprPool().Allocate());
         new (expr_node) t_PrefixExpr(op, std::unique_ptr<t_Expr>(operand));
         return t_Expected<t_Expr*, t_ErrorInfo>(expr_node);
     }
@@ -921,7 +906,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Primary()
     if (Match({e_TOKEN_TYPE::IDENTIFIER}))
     {
         t_VariableExpr* expr_node = 
-        static_cast<t_VariableExpr*>(expr_pool.Allocate());
+        static_cast<t_VariableExpr*>(t_ASTContext::GetExprPool().Allocate());
         new (expr_node) t_VariableExpr(Previous().lexeme);
         return t_Expected<t_Expr*, t_ErrorInfo>(expr_node);
     }
@@ -943,7 +928,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Primary()
         }
         
         t_GroupingExpr* expr_node = 
-        static_cast<t_GroupingExpr*>(expr_pool.Allocate());
+        static_cast<t_GroupingExpr*>(t_ASTContext::GetExprPool().Allocate());
         new (expr_node) t_GroupingExpr(std::unique_ptr<t_Expr>(expr));
         return t_Expected<t_Expr*, t_ErrorInfo>(expr_node);
     }

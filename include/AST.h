@@ -4,6 +4,7 @@
 #include <vector>
 #include <memory>
 #include "Token.h"
+#include "AST.h"
 
 struct t_Expr
 {

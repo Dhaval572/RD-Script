@@ -4,7 +4,7 @@
 #include <memory>
 #include "Token.h"
 #include "AST.h"
-#include "MemoryPool.h"
+#include "ASTContext.h"  // Include the new ASTContext header
 #include "ErrorHandling.h"
 
 class t_Parser
@@ -13,9 +13,9 @@ private:
     std::vector<t_Token> tokens;
     int current;
     
-    // Memory pool for statement allocations
-    static t_MemoryPool stmt_pool;
-    static t_MemoryPool expr_pool;
+    // Memory pool for statement allocations (now managed by ASTContext)
+    // static t_MemoryPool stmt_pool;
+    // static t_MemoryPool expr_pool;
 
     bool IsAtEnd();
     t_Token Advance();
@@ -58,6 +58,6 @@ public:
     explicit t_Parser(const std::vector<t_Token> &tokens);
     t_Expected<std::vector<t_Stmt*>, t_ErrorInfo> Parse();
     
-    // Reset the memory pools
+    // Reset the memory pools (now delegated to ASTContext)
     static void ResetPools();
 };

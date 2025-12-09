@@ -2,10 +2,14 @@
 #include <sstream>
 #include <iostream>
 #include <memory>
-#include "../include/Lexer.h"
-#include "../include/Parser.h"
-#include "../include/Interpreter.h"
-#include "../include/ErrorHandling.h"
+#include "include/Lexer.h"
+#include "include/Parser.h"
+#include "include/Interpreter.h"
+#include "include/ErrorHandling.h"
+#include "include/ASTContext.h"  
+
+// Create a static instance of ASTContext to manage the lifecycle
+static t_ASTContext ast_context;
 
 std::string ReadFile(const std::string &filename)
 {
@@ -59,7 +63,6 @@ int main(int argc, char* argv[])
     if (!statements_result.HasValue())
     {
         ReportError(statements_result.Error());
-        t_Parser::ResetPools();
         return 1;
     }
     std::vector<t_Stmt*> statements = statements_result.Value();
@@ -70,13 +73,8 @@ int main(int argc, char* argv[])
     if (!interpret_result.HasValue())
     {
         // Error already reported in Interpret method
-        t_Parser::ResetPools();
         return 1;
     }
-
-    // No need to manually delete statements - they're managed by the memory pool
-    // Reset the pools for the next run
-    t_Parser::ResetPools();
     
     return 0;
 }

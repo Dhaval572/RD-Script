@@ -75,7 +75,7 @@ t_InterpretationResult t_Interpreter::Interpret
                 (
                     e_ERROR_TYPE::RUNTIME_ERROR,
                     control_flow == "break" ?
-                    "'break' used outside of a loop"   :
+                    "'break' used outside of a loop" :
                     "'continue' used outside of a loop"
                 );
                 ReportError(err);
@@ -118,6 +118,7 @@ t_InterpretationResult t_Interpreter::Interpret
 // Scope management functions
 void t_Interpreter::PushScope()
 {
+    // Save the current state of the environment
     scope_stack.emplace_back(environment);
 }
 
@@ -136,9 +137,9 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::DeclareVariable
     const std::string& name, int line
 )
 {
-    /*  Check if variable is already declared in current scope
-        We do this by checking if it exists in the current environment
-        and comparing with the previous scope's environment if it exists */
+    // Check if variable is already declared in current scope
+    // We do this by checking if it exists in the current environment
+    // and comparing with the previous scope's environment if it exists
     if (!environment.count(name)) 
     {
         // Variable not declared yet, this is fine
@@ -293,9 +294,7 @@ bool t_Interpreter::IsFloat(const std::string& value)
 // Comparison operations are kept as they are more complex
 t_Expected<bool, t_ErrorInfo> t_Interpreter::PerformComparison
 (
-    const t_TypedValue& left, 
-    const e_TOKEN_TYPE op, 
-    const t_TypedValue& right
+    const t_TypedValue& left, const e_TOKEN_TYPE op, const t_TypedValue& right
 )
 {
     // If both values have precomputed numeric values, use them directly
@@ -459,10 +458,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
         control_signal = "break";
         return t_Expected<int, t_ErrorInfo>(0);
     }
-    else if 
-    (
-        t_ContinueStmt *continue_stmt = dynamic_cast<t_ContinueStmt *>(stmt)
-    )
+    else if (t_ContinueStmt *continue_stmt = dynamic_cast<t_ContinueStmt *>(stmt))
     {
         // Validate that we're inside a loop
         if (loop_depth <= 0)
@@ -477,28 +473,11 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
             );
         }
         // Signal continue without throwing
-        // Use explicit string assignment to ensure exact match
-        control_signal = std::string("continue");
+        control_signal = "continue";
         return t_Expected<int, t_ErrorInfo>(0);
     }
     else if (t_IfStmt *if_stmt = dynamic_cast<t_IfStmt *>(stmt))
     {
-        // Check if condition uses assignment operator (=) instead of equality (==)
-        if (t_BinaryExpr *condition_binary = dynamic_cast<t_BinaryExpr *>(if_stmt->condition.get()))
-        {
-            if (condition_binary->op.type == e_TOKEN_TYPE::EQUAL)
-            {
-                return t_Expected<int, t_ErrorInfo>
-                (
-                    t_ErrorInfo
-                    (
-                        e_ERROR_TYPE::RUNTIME_ERROR,
-                        "Use '==' for comparison in conditions, not '='. Did you mean to compare instead of assign?"
-                    )
-                );
-            }
-        }
-        
         t_Expected<std::string, t_ErrorInfo> condition_result = Evaluate(if_stmt->condition.get());
         if (!condition_result.HasValue())
         {
@@ -512,12 +491,6 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
             {
                 return then_result;
             }
-            
-            // Check if a control signal (break/continue) was raised in the then branch
-            if (!control_signal.empty())
-            {
-                return t_Expected<int, t_ErrorInfo>(0);
-            }
         }
         else if (if_stmt->else_branch)
         {
@@ -527,12 +500,6 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
             if (!else_result.HasValue())
             {
                 return else_result;
-            }
-            
-            // Check if a control signal (break/continue) was raised in the else branch
-            if (!control_signal.empty())
-            {
-                return t_Expected<int, t_ErrorInfo>(0);
             }
         }
     }
@@ -583,24 +550,6 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                     // Check condition (if any)
                     if (for_stmt->condition)
                     {
-                        // Check if condition uses assignment operator (=) instead of equality (==)
-                        if (t_BinaryExpr *condition_binary = dynamic_cast<t_BinaryExpr *>(for_stmt->condition.get()))
-                        {
-                            if (condition_binary->op.type == e_TOKEN_TYPE::EQUAL)
-                            {
-                                PopScope();
-                                loop_depth--;
-                                return t_Expected<int, t_ErrorInfo>
-                                (
-                                    t_ErrorInfo
-                                    (
-                                        e_ERROR_TYPE::RUNTIME_ERROR,
-                                        "Use '==' for comparison in loop conditions, not '='. Did you mean to compare instead of assign?"
-                                    )
-                                );
-                            }
-                        }
-                        
                         t_Expected<std::string, t_ErrorInfo> condition_result = 
                         Evaluate(for_stmt->condition.get());
                         if (!condition_result.HasValue())
@@ -624,43 +573,28 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                     }
 
                     // Execute body
+                    {
                         control_signal.clear();
                         t_Expected<int, t_ErrorInfo> body_result = 
                         Execute(for_stmt->body.get());
 
-                    // CRITICAL: Check for control signals IMMEDIATELY after Execute returns
-                    // This must happen before any other checks to ensure break/continue work
-                    std::string signal = control_signal; // Capture signal value
-                    
-                    if (signal == "break")
-                    {
-                        control_signal.clear();
                         if (!body_result.HasValue())
                         {
-                            PopScope();
+                            PopScope(); // Clean up scope before returning
                             loop_depth--;
+                            return body_result;
                         }
+                        if (control_signal == "break")
+                        {
+                            control_signal.clear();
                             break;
-                    }
-                    
-                    if (signal == "continue")
-					{
-						// Skip increment and start next iteration
-						control_signal.clear();
-                        if (!body_result.HasValue())
-                        {
-                            PopScope();
-                            loop_depth--;
                         }
-                        continue; // Continue to the next loop iteration without incrementing
-                    }
-                    
-                    // Only check for errors if no control signal was set
-                    if (!body_result.HasValue())
-                    {
-                        PopScope(); // Clean up scope before returning
-                        loop_depth--;
-                        return body_result;
+                        if (control_signal == "continue")
+                        {
+                            // Skip increment and start next iteration
+                            control_signal.clear();
+                            continue; // Continue to the next loop iteration without incrementing
+                        }
                     }
 
                     // Execute increment (if any)
@@ -814,17 +748,13 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                   << duration.count() / 1000000000.0 
                   << " seconds\n";
     }
-    else if 
-    (
-        t_EmptyStmt *empty_stmt = dynamic_cast<t_EmptyStmt *>(stmt)
-    )
+    else if (t_EmptyStmt *empty_stmt = 
+        dynamic_cast<t_EmptyStmt *>(stmt))
     {
-        // Eat five star, do nothing
+        // Do nothing for empty statements
     }
-    else if 
-    (
-        t_ExpressionStmt *expr_stmt = dynamic_cast<t_ExpressionStmt *>(stmt)
-    )
+    else if (t_ExpressionStmt *expr_stmt = 
+        dynamic_cast<t_ExpressionStmt *>(stmt))
     {
         t_Expected<std::string, t_ErrorInfo> result =
         Evaluate(expr_stmt->expression.get());
@@ -835,7 +765,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
         }
     }
     
-    return t_Expected<int, t_ErrorInfo>(0); 
+    return t_Expected<int, t_ErrorInfo>(0); // Success represented by 0
 }
 
 bool t_Interpreter::IsTruthy(const std::string &value)
@@ -928,10 +858,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                     try
                     {
                         double value = std::stod(right_literal->value);
-                        return t_Expected<std::string, t_ErrorInfo>
-                        (
-                            FormatNumber(-value)
-                        );
+                        return t_Expected<std::string, t_ErrorInfo>(FormatNumber(-value));
                     }
                     catch (...) {}
                 }
@@ -948,7 +875,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
 
     if (t_PrefixExpr *prefix = dynamic_cast<t_PrefixExpr *>(expr))
     {
-        if 
+        if
         (
             t_VariableExpr *var_expr = 
             dynamic_cast<t_VariableExpr *>(prefix->operand.get())
@@ -1005,14 +932,8 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                         num_value += 1.0;
                         std::string new_value = std::to_string(num_value);
                         // Remove trailing zeros and decimal point if not needed
-                        new_value.erase
-                        (
-                            new_value.find_last_not_of('0') + 1, std::string::npos
-                        );
-                        new_value.erase
-                        (
-                            new_value.find_last_not_of('.') + 1, std::string::npos
-                        );
+                        new_value.erase(new_value.find_last_not_of('0') + 1, std::string::npos);
+                        new_value.erase(new_value.find_last_not_of('.') + 1, std::string::npos);
                         environment[var_name] =
                         t_TypedValue
                         (
@@ -1271,11 +1192,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                         {
                             double left_val = std::stod(left_value);
                             double right_val = std::stod(right_value);
-                            final_value_result = 
-                            t_Expected<std::string, t_ErrorInfo>
-                            (
-                                FormatNumber(left_val - right_val)
-                            );
+                            final_value_result = t_Expected<std::string, t_ErrorInfo>(FormatNumber(left_val - right_val));
                         }
                         catch (...)
                         {
@@ -1324,20 +1241,12 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                             {
                                 final_value_result = t_Expected<std::string, t_ErrorInfo>
                                 (
-                                    t_ErrorInfo
-                                    (
-                                        e_ERROR_TYPE::RUNTIME_ERROR, 
-                                        "Division by zero"
-                                    )
+                                    t_ErrorInfo(e_ERROR_TYPE::RUNTIME_ERROR, "Division by zero")
                                 );
                             }
                             else
                             {
-                                final_value_result = 
-                                t_Expected<std::string, t_ErrorInfo>
-                                (
-                                    FormatNumber(left_val / right_val)
-                                );
+                                final_value_result = t_Expected<std::string, t_ErrorInfo>(FormatNumber(left_val / right_val));
                             }
                         }
                         catch (...)
@@ -1430,13 +1339,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                 }
                 
                 // Update the variable in the environment
-                AssignToVisibleVariable
-                (
-                    var_name, 
-                    t_TypedValue(final_value, type), 
-                    environment, 
-                    scope_stack
-                );
+                AssignToVisibleVariable(var_name, t_TypedValue(final_value, type), environment, scope_stack);
                 
                 // Return the assigned value
                 return t_Expected<std::string, t_ErrorInfo>(final_value);
@@ -1479,39 +1382,12 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
         {
         case e_TOKEN_TYPE::PLUS:
             {
-                // Type safety: Both operands must be numbers
-                if (left_typed.type != e_VALUE_TYPE::NUMBER || 
-                    right_typed.type != e_VALUE_TYPE::NUMBER)
-                {
-                    std::string left_type_str = 
-                    (
-                        left_typed.type == e_VALUE_TYPE::STRING ? 
-                        std::string("string") : std::string("non-number")
-                    );
-                    std::string right_type_str = 
-                    (
-                        right_typed.type == e_VALUE_TYPE::STRING ? 
-                        std::string("string") : std::string("non-number")
-                    );
-                    return t_Expected<std::string, t_ErrorInfo>
-                    (
-                        t_ErrorInfo
-                        (
-                            e_ERROR_TYPE::TYPE_ERROR, 
-                            "Cannot add " + left_type_str + " and " + right_type_str + ". Both operands must be numbers."
-                        )
-                    );
-                }
-                
                 // Simple addition implementation
                 try 
                 {
                     double left_val = std::stod(left_str);
                     double right_val = std::stod(right_str);
-                    return t_Expected<std::string, t_ErrorInfo>
-                    (
-                        FormatNumber(left_val + right_val)
-                    );
+                    return t_Expected<std::string, t_ErrorInfo>(FormatNumber(left_val + right_val));
                 }
                 catch (...)
                 {
@@ -1528,39 +1404,12 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
 
         case e_TOKEN_TYPE::MINUS:
             {
-                // Type safety: Both operands must be numbers
-                if (left_typed.type != e_VALUE_TYPE::NUMBER || 
-                    right_typed.type != e_VALUE_TYPE::NUMBER)
-                {
-                    std::string left_type_str = 
-                    (
-                        left_typed.type == e_VALUE_TYPE::STRING ? 
-                        std::string("string") : std::string("non-number")
-                    );
-                    std::string right_type_str = 
-                    (
-                        right_typed.type == e_VALUE_TYPE::STRING ? 
-                        std::string("string") : std::string("non-number")
-                    );
-                    return t_Expected<std::string, t_ErrorInfo>
-                    (
-                        t_ErrorInfo
-                        (
-                            e_ERROR_TYPE::TYPE_ERROR, 
-                            "Cannot subtract " + right_type_str + " from " + left_type_str + ". Both operands must be numbers."
-                        )
-                    );
-                }
-                
                 // Simple subtraction implementation
                 try 
                 {
                     double left_val = std::stod(left_str);
                     double right_val = std::stod(right_str);
-                    return t_Expected<std::string, t_ErrorInfo>
-                    (
-                        FormatNumber(left_val - right_val)
-                    );
+                    return t_Expected<std::string, t_ErrorInfo>(FormatNumber(left_val - right_val));
                 }
                 catch (...)
                 {
@@ -1577,30 +1426,6 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
 
         case e_TOKEN_TYPE::STAR:
             {
-                // Type safety: Both operands must be numbers
-                if (left_typed.type != e_VALUE_TYPE::NUMBER || 
-                    right_typed.type != e_VALUE_TYPE::NUMBER)
-                {
-                    std::string left_type_str = 
-                    (
-                        left_typed.type == e_VALUE_TYPE::STRING ? 
-                        std::string("string") : std::string("non-number")
-                    );
-                    std::string right_type_str = 
-                    (
-                        right_typed.type == e_VALUE_TYPE::STRING ? 
-                        std::string("string") : std::string("non-number")
-                    );
-                    return t_Expected<std::string, t_ErrorInfo>
-                    (
-                        t_ErrorInfo
-                        (
-                            e_ERROR_TYPE::TYPE_ERROR, 
-                            "Cannot multiply " + left_type_str + " and " + right_type_str + ". Both operands must be numbers."
-                        )
-                    );
-                }
-                
                 // Simple multiplication implementation
                 try 
                 {
@@ -1623,30 +1448,6 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
             
         case e_TOKEN_TYPE::SLASH:
             {
-                // Type safety: Both operands must be numbers
-                if (left_typed.type != e_VALUE_TYPE::NUMBER || 
-                    right_typed.type != e_VALUE_TYPE::NUMBER)
-                {
-                    std::string left_type_str = 
-                    (
-                        left_typed.type == e_VALUE_TYPE::STRING ? 
-                        std::string("string") : std::string("non-number")
-                    );
-                    std::string right_type_str = 
-                    (
-                        right_typed.type == e_VALUE_TYPE::STRING ? 
-                        std::string("string") : std::string("non-number")
-                    );
-                    return t_Expected<std::string, t_ErrorInfo>
-                    (
-                        t_ErrorInfo
-                        (
-                            e_ERROR_TYPE::TYPE_ERROR, 
-                            "Cannot divide " + left_type_str + " by " + right_type_str + ". Both operands must be numbers."
-                        )
-                    );
-                }
-                
                 // Simple division implementation
                 try 
                 {
@@ -1657,18 +1458,11 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                     {
                         return t_Expected<std::string, t_ErrorInfo>
                         (
-                            t_ErrorInfo
-                            (
-                                e_ERROR_TYPE::RUNTIME_ERROR, 
-                                "Division by zero"
-                            )
+                            t_ErrorInfo(e_ERROR_TYPE::RUNTIME_ERROR, "Division by zero")
                         );
                     }
                     
-                    return t_Expected<std::string, t_ErrorInfo>
-                    (
-                        FormatNumber(left_val / right_val)
-                    );
+                    return t_Expected<std::string, t_ErrorInfo>(FormatNumber(left_val / right_val));
                 }
                 catch (...)
                 {
@@ -1683,23 +1477,23 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                 }
             }
             
-        // case e_TOKEN_TYPE::BANG_EQUAL:
-        // case e_TOKEN_TYPE::EQUAL_EQUAL:
-        // case e_TOKEN_TYPE::GREATER:
-        // case e_TOKEN_TYPE::GREATER_EQUAL:
-        // case e_TOKEN_TYPE::LESS:
-        // case e_TOKEN_TYPE::LESS_EQUAL:
-        //     {
-        //         t_Expected<bool, t_ErrorInfo> comparison_result = PerformComparison(left_typed, binary->op.type, right_typed);
-        //         if (!comparison_result.HasValue())
-        //         {
-        //             return t_Expected<std::string, t_ErrorInfo>(comparison_result.Error());
-        //         }
-        //         return t_Expected<std::string, t_ErrorInfo>
-        //         (
-        //             comparison_result.Value() ? "true" : "false"
-        //         );
-        //     }
+        case e_TOKEN_TYPE::BANG_EQUAL:
+        case e_TOKEN_TYPE::EQUAL_EQUAL:
+        case e_TOKEN_TYPE::GREATER:
+        case e_TOKEN_TYPE::GREATER_EQUAL:
+        case e_TOKEN_TYPE::LESS:
+        case e_TOKEN_TYPE::LESS_EQUAL:
+            {
+                t_Expected<bool, t_ErrorInfo> comparison_result = PerformComparison(left_typed, binary->op.type, right_typed);
+                if (!comparison_result.HasValue())
+                {
+                    return t_Expected<std::string, t_ErrorInfo>(comparison_result.Error());
+                }
+                return t_Expected<std::string, t_ErrorInfo>
+                (
+                    comparison_result.Value() ? "true" : "false"
+                );
+            }
         }
     }
 
@@ -1802,10 +1596,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::EvaluateFormatExpression
             {
                 double left_val = std::stod(left_value);
                 double right_val = std::stod(right_value);
-                return t_Expected<std::string, t_ErrorInfo>
-                (
-                    FormatNumber(left_val * right_val)
-                );
+                return t_Expected<std::string, t_ErrorInfo>(FormatNumber(left_val * right_val));
             }
             catch (...)
             {
@@ -1863,11 +1654,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::EvaluateFormatExpression
                 {
                     return t_Expected<std::string, t_ErrorInfo>
                     (
-                        t_ErrorInfo
-                        (
-                            e_ERROR_TYPE::RUNTIME_ERROR, 
-                            "Division by zero"
-                        )
+                        t_ErrorInfo(e_ERROR_TYPE::RUNTIME_ERROR, "Division by zero")
                     );
                 }
                 
@@ -1924,10 +1711,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::EvaluateFormatExpression
             {
                 double left_val = std::stod(left_value);
                 double right_val = std::stod(right_value);
-                return t_Expected<std::string, t_ErrorInfo>
-                (
-                    FormatNumber(left_val + right_val)
-                );
+                return t_Expected<std::string, t_ErrorInfo>(FormatNumber(left_val + right_val));
             }
             catch (...)
             {
@@ -1980,10 +1764,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::EvaluateFormatExpression
             {
                 double left_val = std::stod(left_value);
                 double right_val = std::stod(right_value);
-                return t_Expected<std::string, t_ErrorInfo>
-                (
-                    FormatNumber(left_val - right_val)
-                );
+                return t_Expected<std::string, t_ErrorInfo>(FormatNumber(left_val - right_val));
             }
             catch (...)
             {
@@ -2000,6 +1781,11 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::EvaluateFormatExpression
         }
         
         // For other complex expressions, return the expression as a string
+        return t_Expected<std::string, t_ErrorInfo>(expr_str);
+    }
+    catch (const std::exception& e)
+    {
+        // If parsing fails, treat as literal text
         return t_Expected<std::string, t_ErrorInfo>(expr_str);
     }
     catch (...)
@@ -2039,6 +1825,16 @@ bool t_Interpreter::IsSimpleNumericLoop(t_ForStmt* for_stmt)
     t_LiteralExpr* condition_literal = 
     dynamic_cast<t_LiteralExpr*>(condition_binary->right.get());
     if (!condition_literal) return false;
+    
+    // Try to convert condition literal to number
+    try 
+    {
+        std::stod(condition_literal->value);
+    } 
+    catch (...) 
+    {
+        return false;
+    }
     
     // Check if increment is: var++ or ++var
     if (!for_stmt->increment) return false;
@@ -2116,7 +1912,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
     
     // Execute the loop with direct numeric operations
     // Manually control the loop to properly handle continue statements
-    for (int i = 0; i < limit; i++)
+    for (int i = 0; i < limit;)
     {
         // Set loop variable directly as integer
         environment[loop_var_name] = t_TypedValue(static_cast<double>(i));
@@ -2125,42 +1921,27 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
         control_signal.clear();
         t_Expected<int, t_ErrorInfo> body_result = 
         Execute(for_stmt->body.get());
-        
-        // CRITICAL: Check for control signals IMMEDIATELY after Execute returns
-        // This must happen before any other checks to ensure break/continue work
-        std::string signal = control_signal; // Capture signal value
-        
-        if (signal == "break")
-        {
-            control_signal.clear();
-            if (!body_result.HasValue())
-            {
-                PopScope();
-                loop_depth--;
-            }
-            break;
-        }
-        
-        if (signal == "continue")
-        {
-            control_signal.clear();
-            if (!body_result.HasValue())
-            {
-                PopScope();
-                loop_depth--;
-            }
-            // Continue to the next iteration
-            // The i++ at the end of the for loop will handle incrementing
-            continue;
-        }
-        
-        // Only check for errors if no control signal was set
         if (!body_result.HasValue())
         {
             PopScope(); // Clean up scope before returning
             loop_depth--;
             return body_result;
         }
+        if (control_signal == "break")
+        {
+            control_signal.clear();
+            break;
+        }
+        if (control_signal == "continue")
+        {
+            control_signal.clear();
+            // Skip increment and go to next iteration when continue is encountered
+            i++;
+            continue;
+        }
+        
+        // Only increment if no control signal was encountered
+        i++;
     }
     
     // Before popping scope, preserve modifications to pre-existing variables

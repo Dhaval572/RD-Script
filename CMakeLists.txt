@@ -11,6 +11,7 @@ include_directories(include)
 set(SOURCES
     src/core/Lexer.cpp
     src/core/ErrorHandling.cpp
+    src/core/ASTContext.cpp
     src/parser/Parser.cpp
     src/interpreter/Interpreter.cpp
     main.cpp
