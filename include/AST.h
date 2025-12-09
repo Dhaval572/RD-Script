@@ -5,7 +5,6 @@
 #include <memory>
 #include "Token.h"
 
-// Abstract base classes for expressions and statements
 struct t_Expr
 {
 public:
@@ -98,7 +97,6 @@ struct t_ExpressionStmt : public t_Stmt
         : expression(std::move(expression)) {}
 };
 
-// Empty statement
 struct t_EmptyStmt : public t_Stmt
 {
     t_Token semicolon;
@@ -107,7 +105,6 @@ struct t_EmptyStmt : public t_Stmt
         : semicolon(semicolon) {}
 };
 
-// Enhanced Display statement with format string support
 struct t_DisplayStmt : public t_Stmt
 {
     std::vector<std::unique_ptr<t_Expr>> expressions;
@@ -130,7 +127,6 @@ struct t_VarStmt : public t_Stmt
           initializer(std::move(initializer)) {}
 };
 
-// Block statement
 struct t_BlockStmt : public t_Stmt
 {
     std::vector<std::unique_ptr<t_Stmt>> statements;
@@ -139,7 +135,6 @@ struct t_BlockStmt : public t_Stmt
         : statements(std::move(statements)) {}
 };
 
-// If statement
 struct t_IfStmt : public t_Stmt
 {
     std::unique_ptr<t_Expr> condition;
@@ -157,7 +152,6 @@ struct t_IfStmt : public t_Stmt
           else_branch(std::move(else_branch)) {}
 };
 
-// For loop statement
 struct t_ForStmt : public t_Stmt
 {
     std::unique_ptr<t_Stmt> initializer;
@@ -178,7 +172,6 @@ struct t_ForStmt : public t_Stmt
           body(std::move(body)) {}
 };
 
-// Break statement
 struct t_BreakStmt : public t_Stmt
 {
     t_Token keyword;
@@ -187,7 +180,6 @@ struct t_BreakStmt : public t_Stmt
         : keyword(keyword) {}
 };
 
-// Continue statement
 struct t_ContinueStmt : public t_Stmt
 {
     t_Token keyword;
@@ -196,7 +188,6 @@ struct t_ContinueStmt : public t_Stmt
         : keyword(keyword) {}
 };
 
-// Benchmark statement
 struct t_BenchmarkStmt : public t_Stmt
 {
     std::unique_ptr<t_Stmt> body;
