@@ -114,6 +114,20 @@ struct t_DisplayStmt : public t_Stmt
         : expressions(std::move(expressions)) {}
 };
 
+struct t_GetinStmt : public t_Stmt
+{
+    t_Token keyword;
+    std::string variable_name;
+
+    t_GetinStmt
+    (
+        t_Token keyword,
+        const std::string &variable_name
+    )
+        : keyword(keyword),
+          variable_name(variable_name) {}
+};
+
 struct t_VarStmt : public t_Stmt
 {
     std::string name;

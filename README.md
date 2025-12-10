@@ -31,6 +31,7 @@ The interpreter currently supports:
 * Comparison operations (`==`, `!=`, `<`, `>`, `<=`, `>=`)
 * Logical operations (`!`)
 * Display statements with comma-separated values (`display(value1, value2, ...);`)
+* Input statements using standard C++ input wrapped in `getin(variable_name);`
 * Grouping with parentheses
 * String and number literals with escape sequence support (`\n`, `\t`, `\r`, `\\`, `\"`)
 * Variable references
@@ -107,4 +108,19 @@ else
 {
     display "x is not greater than y";
 }
+```
+
+### User Input with getin()
+The `getin(variable_name);` statement reads a single token from standard input and stores it in an already-declared variable.
+
+```cpp
+auto age = 0;
+display "Enter your age:";
+getin(age);
+display "You are", age, "years old.";
+
+auto name = "";
+display "Enter your name:";
+getin(name);
+display "Hello,", name, "!";
 ```

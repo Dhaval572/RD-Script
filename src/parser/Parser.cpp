@@ -152,6 +152,23 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::Statement()
         return BenchmarkStatement();
     }
 
+    // Built-in getin(variable_name) input statement.
+    if 
+    (
+        Check(e_TOKEN_TYPE::IDENTIFIER) &&
+        Peek().lexeme == "getin"
+    )
+    {
+        if 
+        (
+            current + 1 < static_cast<int>(tokens.size()) &&
+            tokens[current + 1].type == e_TOKEN_TYPE::LEFT_PAREN
+        )
+        {
+            return GetinStatement();
+        }
+    }
+
     if (Match({e_TOKEN_TYPE::SEMICOLON}))
     {
         return EmptyStatement();
@@ -451,6 +468,75 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::DisplayStatement()
         t_ASTContext::GetStmtPool().Allocate()
     );
     new (stmt) t_DisplayStmt(std::move(values));
+    return t_Expected<t_Stmt*, t_ErrorInfo>(stmt);
+}
+
+t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::GetinStatement()
+{
+    t_Token getin_identifier = Advance();
+
+    t_Expected<t_Token, t_ErrorInfo> open_paren_result =
+    Consume
+    (
+        e_TOKEN_TYPE::LEFT_PAREN,
+        "Expect '(' after 'getin'."
+    );
+    if (!open_paren_result.HasValue())
+    {
+        return t_Expected<t_Stmt*, t_ErrorInfo>
+        (
+            open_paren_result.Error()
+        );
+    }
+
+    t_Expected<t_Token, t_ErrorInfo> name_result =
+    Consume
+    (
+        e_TOKEN_TYPE::IDENTIFIER,
+        "Expect variable name in getin()."
+    );
+    if (!name_result.HasValue())
+    {
+        return t_Expected<t_Stmt*, t_ErrorInfo>
+        (
+            name_result.Error()
+        );
+    }
+    t_Token variable_token = name_result.Value();
+
+    t_Expected<t_Token, t_ErrorInfo> close_paren_result =
+    Consume
+    (
+        e_TOKEN_TYPE::RIGHT_PAREN,
+        "Expect ')' after variable name in getin()."
+    );
+    if (!close_paren_result.HasValue())
+    {
+        return t_Expected<t_Stmt*, t_ErrorInfo>
+        (
+            close_paren_result.Error()
+        );
+    }
+
+    t_Expected<t_Token, t_ErrorInfo> semicolon_result =
+    Consume
+    (
+        e_TOKEN_TYPE::SEMICOLON,
+        "Expect ';' after getin() statement."
+    );
+    if (!semicolon_result.HasValue())
+    {
+        return t_Expected<t_Stmt*, t_ErrorInfo>
+        (
+            semicolon_result.Error()
+        );
+    }
+
+    t_GetinStmt* stmt = static_cast<t_GetinStmt*>
+    (
+        t_ASTContext::GetStmtPool().Allocate()
+    );
+    new (stmt) t_GetinStmt(getin_identifier, variable_token.lexeme);
     return t_Expected<t_Stmt*, t_ErrorInfo>(stmt);
 }
 

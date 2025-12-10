@@ -6,6 +6,7 @@
 #include <cctype>
 #include <iomanip>
 #include <unordered_set>
+#include <limits>
 #include "../include/Lexer.h"
 #include "../include/Parser.h"
 #include "../include/ErrorHandling.h"
@@ -687,7 +688,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
         {
             if (!first)
             {
-                std::cout << ' '; // Add space between values (use char instead of string for performance)
+                std::cout << ' ';
             }
             first = false;
 
@@ -702,7 +703,167 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
             std::string value = value_result.Value();
             std::cout << value;
         }
-        std::cout << '\n'; // Use char instead of std::endl for better performance
+        std::cout << '\n';
+    }
+    else if (t_GetinStmt *getin_stmt = dynamic_cast<t_GetinStmt *>(stmt))
+    {
+        const std::string &var_name = getin_stmt->variable_name;
+
+        auto it = environment.find(var_name);
+        if (it == environment.end())
+        {
+            return t_Expected<int, t_ErrorInfo>
+            (
+                t_ErrorInfo
+                (
+                    e_ERROR_TYPE::RUNTIME_ERROR,
+                    "Variable '" + var_name +
+                    "' must be declared with 'auto' keyword before use"
+                )
+            );
+        }
+
+        t_TypedValue &current_value = it->second;
+
+        switch (current_value.type)
+        {
+        case e_VALUE_TYPE::NUMBER:
+            {
+                double number_value = 0.0;
+                if (!(std::cin >> number_value))
+                {
+                    std::cin.clear();
+                    std::cin.ignore
+                    (
+                        std::numeric_limits<std::streamsize>::max(),
+                        '\n'
+                    );
+
+                    return t_Expected<int, t_ErrorInfo>
+                    (
+                        t_ErrorInfo
+                        (
+                            e_ERROR_TYPE::RUNTIME_ERROR,
+                            "Failed to read number input for variable '" +
+                            var_name + "'"
+                        )
+                    );
+                }
+
+                AssignToVisibleVariable
+                (
+                    var_name,
+                    t_TypedValue(number_value),
+                    environment,
+                    scope_stack
+                );
+                break;
+            }
+
+        case e_VALUE_TYPE::BOOLEAN:
+            {
+                bool bool_value = false;
+                if (!(std::cin >> std::boolalpha >> bool_value))
+                {
+                    std::cin.clear();
+                    std::cin.ignore
+                    (
+                        std::numeric_limits<std::streamsize>::max(),
+                        '\n'
+                    );
+
+                    return t_Expected<int, t_ErrorInfo>
+                    (
+                        t_ErrorInfo
+                        (
+                            e_ERROR_TYPE::RUNTIME_ERROR,
+                            "Failed to read boolean input for variable '" +
+                            var_name + "'"
+                        )
+                    );
+                }
+
+                std::string stored_value = bool_value ? "true" : "false";
+
+                AssignToVisibleVariable
+                (
+                    var_name,
+                    t_TypedValue(stored_value, e_VALUE_TYPE::BOOLEAN),
+                    environment,
+                    scope_stack
+                );
+                break;
+            }
+
+        case e_VALUE_TYPE::STRING:
+            {
+                std::string input;
+                if (!(std::cin >> input))
+                {
+                    std::cin.clear();
+                    std::cin.ignore
+                    (
+                        std::numeric_limits<std::streamsize>::max(),
+                        '\n'
+                    );
+
+                    return t_Expected<int, t_ErrorInfo>
+                    (
+                        t_ErrorInfo
+                        (
+                            e_ERROR_TYPE::RUNTIME_ERROR,
+                            "Failed to read string input for variable '" +
+                            var_name + "'"
+                        )
+                    );
+                }
+
+                AssignToVisibleVariable
+                (
+                    var_name,
+                    t_TypedValue(input, e_VALUE_TYPE::STRING),
+                    environment,
+                    scope_stack
+                );
+                break;
+            }
+
+        case e_VALUE_TYPE::NIL:
+        default:
+            {
+                std::string input;
+                if (!(std::cin >> input))
+                {
+                    std::cin.clear();
+                    std::cin.ignore
+                    (
+                        std::numeric_limits<std::streamsize>::max(),
+                        '\n'
+                    );
+
+                    return t_Expected<int, t_ErrorInfo>
+                    (
+                        t_ErrorInfo
+                        (
+                            e_ERROR_TYPE::RUNTIME_ERROR,
+                            "Failed to read input for variable '" +
+                            var_name + "'"
+                        )
+                    );
+                }
+
+                e_VALUE_TYPE inferred_type = DetectType(input);
+
+                AssignToVisibleVariable
+                (
+                    var_name,
+                    t_TypedValue(input, inferred_type),
+                    environment,
+                    scope_stack
+                );
+                break;
+            }
+        }
     }
     else if (t_BenchmarkStmt *benchmark_stmt = 
         dynamic_cast<t_BenchmarkStmt *>(stmt))

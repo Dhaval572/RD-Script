@@ -18,6 +18,7 @@ namespace
             sizeof(t_ContinueStmt),
             sizeof(t_VarStmt),
             sizeof(t_DisplayStmt),
+            sizeof(t_GetinStmt),
             sizeof(t_BenchmarkStmt),
             sizeof(t_EmptyStmt),
             sizeof(t_ExpressionStmt)
