@@ -1426,7 +1426,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
             t_TypedValue& current_value = it->second;
 
             // Return the value BEFORE increment/decrement
-            std::string current_value_str = current_value.value;
+            return_value = current_value.value;
             
             // Use direct numeric operations when possible
             if (current_value.has_numeric_value)
