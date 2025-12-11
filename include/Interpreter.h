@@ -94,6 +94,8 @@ private:
     int loop_depth = 0; 
     std::string control_signal; // "break" | "continue" | ""
     std::unordered_map<std::string, t_FunStmt*> functions;
+    std::string return_value; // To store return values from functions
+    bool is_returning = false; // Flag to indicate if we're currently returning
 
     t_Expected<std::string, t_ErrorInfo> Evaluate(t_Expr *expr);
     t_Expected<int, t_ErrorInfo> Execute(t_Stmt *stmt);

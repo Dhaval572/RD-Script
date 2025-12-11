@@ -3,8 +3,6 @@
 #include "../include/ErrorHandling.h"
 #include "../include/ASTContext.h"  // Include ASTContext
 #include <iostream>
-
-// Create a static instance of ASTContext to manage the lifecycle
 static t_ASTContext ast_context;
 
 t_Parser::t_Parser(const std::vector<t_Token> &tokens)
@@ -160,6 +158,11 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::Statement()
     if (Match({e_TOKEN_TYPE::GETIN}))
     {
         return GetinStatement();
+    }
+
+    if (Match({e_TOKEN_TYPE::RETURN}))
+    {
+        return ReturnStatement();
     }
 
     if (Match({e_TOKEN_TYPE::SEMICOLON}))
@@ -466,7 +469,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::DisplayStatement()
 
 t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::GetinStatement()
 {
-    t_Token getin_identifier = Advance();
+    t_Token getin_identifier = Previous(); // Use Previous() instead of Advance()
 
     t_Expected<t_Token, t_ErrorInfo> open_paren_result =
     Consume
@@ -1217,4 +1220,35 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Primary()
             0
         )
     );
+}
+
+t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ReturnStatement()
+{
+    t_Token keyword = Previous();
+    
+    // Parse the return value expression (if any)
+    std::unique_ptr<t_Expr> value = nullptr;
+    if (!Check(e_TOKEN_TYPE::SEMICOLON))
+    {
+        t_Expected<t_Expr*, t_ErrorInfo> value_result = Expression();
+        if (!value_result.HasValue())
+        {
+            return t_Expected<t_Stmt*, t_ErrorInfo>(value_result.Error());
+        }
+        value = std::unique_ptr<t_Expr>(value_result.Value());
+    }
+    
+    t_Expected<t_Token, t_ErrorInfo> result = 
+    Consume(e_TOKEN_TYPE::SEMICOLON, "Expect ';' after return value.");
+    if (!result.HasValue())
+    {
+        return t_Expected<t_Stmt*, t_ErrorInfo>(result.Error());
+    }
+    
+    t_ReturnStmt* stmt = static_cast<t_ReturnStmt*>
+    (
+        t_ASTContext::GetStmtPool().Allocate()
+    );
+    new (stmt) t_ReturnStmt(std::move(value));
+    return t_Expected<t_Stmt*, t_ErrorInfo>(stmt);
 }

@@ -241,3 +241,12 @@ struct t_BenchmarkStmt : public t_Stmt
     t_BenchmarkStmt(std::unique_ptr<t_Stmt> body)
         : body(std::move(body)) {}
 };
+
+// Add ReturnStmt for handling return statements in functions
+struct t_ReturnStmt : public t_Stmt
+{
+    std::unique_ptr<t_Expr> value;
+    
+    t_ReturnStmt(std::unique_ptr<t_Expr> value)
+        : value(std::move(value)) {}
+};

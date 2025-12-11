@@ -432,6 +432,14 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                     PopScope();
                     return t_Expected<int, t_ErrorInfo>(0);
                 }
+                
+                // If we're returning from a function, stop executing further statements
+                // and propagate the return signal upward.
+                if (is_returning)
+                {
+                    PopScope();
+                    return t_Expected<int, t_ErrorInfo>(0);
+                }
 			}
 
 			// Pop the block scope, which will automatically clean up variables declared in this scope
@@ -505,6 +513,12 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
             {
                 return then_result;
             }
+            
+            // If we're returning from a function, propagate the return
+            if (is_returning)
+            {
+                return t_Expected<int, t_ErrorInfo>(0);
+            }
         }
         else if (if_stmt->else_branch)
         {
@@ -514,6 +528,12 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
             if (!else_result.HasValue())
             {
                 return else_result;
+            }
+            
+            // If we're returning from a function, propagate the return
+            if (is_returning)
+            {
+                return t_Expected<int, t_ErrorInfo>(0);
             }
         }
     }
@@ -608,6 +628,14 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                             // Skip increment and start next iteration
                             control_signal.clear();
                             continue; // Continue to the next loop iteration without incrementing
+                        }
+                        
+                        // If we're returning from a function, stop the loop and propagate the return
+                        if (is_returning)
+                        {
+                            PopScope();
+                            loop_depth--;
+                            return t_Expected<int, t_ErrorInfo>(0);
                         }
                     }
 
@@ -967,6 +995,35 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
             return t_Expected<int, t_ErrorInfo>(result.Error());
         }
     }
+    else if 
+    (
+        t_ReturnStmt *return_stmt = 
+        dynamic_cast<t_ReturnStmt *>(stmt)
+    )
+    {
+        // Evaluate the return value expression (if any)
+        if (return_stmt->value)
+        {
+            t_Expected<std::string, t_ErrorInfo> result =
+            Evaluate(return_stmt->value.get());
+
+            if (!result.HasValue())
+            {
+                return t_Expected<int, t_ErrorInfo>(result.Error());
+            }
+            
+            return_value = result.Value();
+        }
+        else
+        {
+            // No return value specified, return nil
+            return_value = "nil";
+        }
+        
+        // Set the returning flag to indicate we should stop execution
+        is_returning = true;
+        return t_Expected<int, t_ErrorInfo>(0);
+    }
     
     return t_Expected<int, t_ErrorInfo>(0); // Success represented by 0
 }
@@ -1093,6 +1150,9 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
 
                 if (fun_stmt->body)
                 {
+                    // Reset the return flag before executing the function body
+                    is_returning = false;
+                    
                     t_Expected<int, t_ErrorInfo> body_result =
                     Execute(fun_stmt->body.get());
 
@@ -1103,6 +1163,32 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                         (
                             body_result.Error()
                         );
+                    }
+                    
+                    // If we were returning from the function, use the return value
+                    if (is_returning)
+                    {
+                        is_returning = false; // Reset the flag
+                        std::string result = return_value;
+                        
+                        // Preserve modifications to variables that existed before the call
+                        std::unordered_map<std::string, t_TypedValue> modified_pre_existing;
+                        for (const auto &pair : environment)
+                        {
+                            if (pre_call_variables.count(pair.first) > 0)
+                            {
+                                modified_pre_existing[pair.first] = pair.second;
+                            }
+                        }
+
+                        PopScope();
+
+                        for (const auto &pair : modified_pre_existing)
+                        {
+                            environment[pair.first] = pair.second;
+                        }
+                        
+                        return t_Expected<std::string, t_ErrorInfo>(result);
                     }
                 }
 
@@ -2265,6 +2351,14 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
             // Skip increment and go to next iteration when continue is encountered
             i++;
             continue;
+        }
+        
+        // If we're returning from a function, stop the loop and propagate the return
+        if (is_returning)
+        {
+            PopScope();
+            loop_depth--;
+            return t_Expected<int, t_ErrorInfo>(0);
         }
         
         // Only increment if no control signal was encountered
