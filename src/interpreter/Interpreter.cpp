@@ -1340,8 +1340,14 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                         num_value += 1.0;
                         std::string new_value = std::to_string(num_value);
                         // Remove trailing zeros and decimal point if not needed
-                        new_value.erase(new_value.find_last_not_of('0') + 1, std::string::npos);
-                        new_value.erase(new_value.find_last_not_of('.') + 1, std::string::npos);
+                        new_value.erase
+                        (
+                            new_value.find_last_not_of('0') + 1, std::string::npos
+                        );
+                        new_value.erase
+                        (
+                            new_value.find_last_not_of('.') + 1, std::string::npos
+                        );
                         environment[var_name] =
                         t_TypedValue
                         (
@@ -1418,7 +1424,9 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
             }
             
             t_TypedValue& current_value = it->second;
-            std::string return_value = current_value.value; // Return the value BEFORE increment/decrement
+
+            // Return the value BEFORE increment/decrement
+            std::string current_value_str = current_value.value;
             
             // Use direct numeric operations when possible
             if (current_value.has_numeric_value)
@@ -1431,7 +1439,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                     return t_Expected<std::string, t_ErrorInfo>
                     (
                         current_value.value
-                    ); // Return original value
+                    ); 
                 }
                 else if (postfix->op.type == e_TOKEN_TYPE::MINUS_MINUS)
                 {
@@ -1440,7 +1448,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                     return t_Expected<std::string, t_ErrorInfo>
                     (
                         current_value.value
-                    ); // Return original value
+                    ); 
                 }
             }
             else
