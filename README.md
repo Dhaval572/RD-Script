@@ -110,6 +110,13 @@ else
 }
 ```
 
+### Function 
+```cpp
+fun Testing(auto arg1, auto arg2)
+{
+    return some_value;
+}
+
 ### User Input with getin()
 The `getin(variable_name);` statement reads a single token from standard input and stores it in an already-declared variable.
 
