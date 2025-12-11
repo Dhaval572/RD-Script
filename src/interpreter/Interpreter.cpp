@@ -36,14 +36,8 @@ static void AssignToVisibleVariable
             return;
         }
     }
-    // Not found in stack: update current environment
+// Not found in stack: update current environment
     environment[name] = value;
-}
-
-template <typename t_T>
-static t_T NativeAddition(const t_T &left, const t_T &right)
-{
-    return left + right;
 }
 
 t_Interpreter::t_Interpreter()
@@ -1142,80 +1136,6 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                         e_ERROR_TYPE::RUNTIME_ERROR,
                         "Unhandled exception in function '" +
                         fun_stmt->name + "'"
-                    )
-                );
-            }
-        }
-
-        // Native function example: Addition
-        if (call_expr->callee == "Addition")
-        {
-            if (call_expr->arguments.size() != 2)
-            {
-                return t_Expected<std::string, t_ErrorInfo>
-                (
-                    t_ErrorInfo
-                    (
-                        e_ERROR_TYPE::RUNTIME_ERROR,
-                        "Function 'Addition' expects 2 arguments"
-                    )
-                );
-            }
-
-            t_Expected<std::string, t_ErrorInfo> left_result =
-            Evaluate(call_expr->arguments[0].get());
-            if (!left_result.HasValue())
-            {
-                return left_result;
-            }
-
-            t_Expected<std::string, t_ErrorInfo> right_result =
-            Evaluate(call_expr->arguments[1].get());
-            if (!right_result.HasValue())
-            {
-                return right_result;
-            }
-
-            std::string left_value = left_result.Value();
-            std::string right_value = right_result.Value();
-
-            if 
-            (
-                DetectType(left_value) != e_VALUE_TYPE::NUMBER ||
-                DetectType(right_value) != e_VALUE_TYPE::NUMBER
-            )
-            {
-                return t_Expected<std::string, t_ErrorInfo>
-                (
-                    t_ErrorInfo
-                    (
-                        e_ERROR_TYPE::TYPE_ERROR,
-                        "Function 'Addition' supports only numeric arguments"
-                    )
-                );
-            }
-
-            try
-            {
-                double left_numeric = std::stod(left_value);
-                double right_numeric = std::stod(right_value);
-
-                double result_numeric =
-                NativeAddition(left_numeric, right_numeric);
-
-                return t_Expected<std::string, t_ErrorInfo>
-                (
-                    FormatNumber(result_numeric)
-                );
-            }
-            catch (...)
-            {
-                return t_Expected<std::string, t_ErrorInfo>
-                (
-                    t_ErrorInfo
-                    (
-                        e_ERROR_TYPE::RUNTIME_ERROR,
-                        "Cannot perform native Addition operation"
                     )
                 );
             }
