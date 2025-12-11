@@ -39,6 +39,7 @@ private:
     t_Expected<t_Stmt*, t_ErrorInfo> VarDeclaration();
     t_Expected<t_Stmt*, t_ErrorInfo> DisplayStatement();
     t_Expected<t_Stmt*, t_ErrorInfo> GetinStatement();
+    t_Expected<t_Stmt*, t_ErrorInfo> FunDeclaration();
     t_Expected<t_Stmt*, t_ErrorInfo> ExpressionStatement();
     t_Expected<t_Stmt*, t_ErrorInfo> EmptyStatement();
     t_Expected<t_Stmt*, t_ErrorInfo> BenchmarkStatement();

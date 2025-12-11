@@ -22,7 +22,7 @@ static void AssignToVisibleVariable
     t_TypedValue>> &scope_stack
 )
 {
-    for 
+    for
     (
         auto scope_it = scope_stack.rbegin(); 
         scope_it != scope_stack.rend(); 
@@ -40,6 +40,12 @@ static void AssignToVisibleVariable
     environment[name] = value;
 }
 
+template <typename t_T>
+static t_T NativeAddition(const t_T &left, const t_T &right)
+{
+    return left + right;
+}
+
 t_Interpreter::t_Interpreter()
 {
     std::ios::sync_with_stdio(false);
@@ -54,6 +60,16 @@ t_InterpretationResult t_Interpreter::Interpret
     const std::vector<t_Stmt *> &statements
 )
 {
+    functions.clear();
+
+    for (t_Stmt *statement : statements)
+    {
+        if (t_FunStmt *fun_stmt = dynamic_cast<t_FunStmt *>(statement))
+        {
+            functions[fun_stmt->name] = fun_stmt;
+        }
+    }
+
     for (t_Stmt *statement : statements)
     {
         try
@@ -479,7 +495,10 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
     }
     else if (t_IfStmt *if_stmt = dynamic_cast<t_IfStmt *>(stmt))
     {
-        t_Expected<std::string, t_ErrorInfo> condition_result = Evaluate(if_stmt->condition.get());
+        t_Expected<std::string, t_ErrorInfo> condition_result = Evaluate
+        (
+            if_stmt->condition.get()
+        );
         if (!condition_result.HasValue())
         {
             return t_Expected<int, t_ErrorInfo>(condition_result.Error());
@@ -601,7 +620,8 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                     // Execute increment (if any)
                     if (for_stmt->increment && control_signal.empty())
                     {
-                        t_Expected<std::string, t_ErrorInfo> increment_result = Evaluate(for_stmt->increment.get());
+                        t_Expected<std::string, t_ErrorInfo> increment_result = 
+                        Evaluate(for_stmt->increment.get());
 
                         if (!increment_result.HasValue())
                         {
@@ -722,7 +742,6 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                 )
             );
         }
-
         t_TypedValue &current_value = it->second;
 
         switch (current_value.type)
@@ -798,14 +817,19 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
         case e_VALUE_TYPE::STRING:
             {
                 std::string input;
-                if (!(std::cin >> input))
+
+                if (std::cin.peek() == '\n')
                 {
-                    std::cin.clear();
                     std::cin.ignore
                     (
                         std::numeric_limits<std::streamsize>::max(),
                         '\n'
                     );
+                }
+
+                if (!std::getline(std::cin, input))
+                {
+                    std::cin.clear();
 
                     return t_Expected<int, t_ErrorInfo>
                     (
@@ -832,14 +856,19 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
         default:
             {
                 std::string input;
-                if (!(std::cin >> input))
+
+                if (std::cin.peek() == '\n')
                 {
-                    std::cin.clear();
                     std::cin.ignore
                     (
                         std::numeric_limits<std::streamsize>::max(),
                         '\n'
                     );
+                }
+
+                if (!std::getline(std::cin, input))
+                {
+                    std::cin.clear();
 
                     return t_Expected<int, t_ErrorInfo>
                     (
@@ -865,8 +894,11 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
             }
         }
     }
-    else if (t_BenchmarkStmt *benchmark_stmt = 
-        dynamic_cast<t_BenchmarkStmt *>(stmt))
+    else if 
+    (
+        t_BenchmarkStmt *benchmark_stmt = 
+        dynamic_cast<t_BenchmarkStmt *>(stmt)
+    )
     {
         // Record start time
         auto start_time = std::chrono::steady_clock::now();
@@ -909,13 +941,29 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                   << duration.count() / 1000000000.0 
                   << " seconds\n";
     }
-    else if (t_EmptyStmt *empty_stmt = 
-        dynamic_cast<t_EmptyStmt *>(stmt))
+    else if 
+    (
+        t_EmptyStmt *empty_stmt = 
+        dynamic_cast<t_EmptyStmt *>(stmt)
+    )
     {
         // Do nothing for empty statements
     }
-    else if (t_ExpressionStmt *expr_stmt = 
-        dynamic_cast<t_ExpressionStmt *>(stmt))
+    else if 
+    (
+        t_FunStmt *fun_stmt =
+        dynamic_cast<t_FunStmt *>(stmt)
+    )
+    {
+        // Native functions are implemented in C++.
+        // The fun declaration is currently a no-op placeholder.
+        (void)fun_stmt;
+    }
+    else if 
+    (
+        t_ExpressionStmt *expr_stmt = 
+        dynamic_cast<t_ExpressionStmt *>(stmt)
+    )
     {
         t_Expected<std::string, t_ErrorInfo> result =
         Evaluate(expr_stmt->expression.get());
@@ -993,6 +1041,196 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
         return Evaluate(grouping->expression.get());
     }
 
+    if (t_CallExpr *call_expr = dynamic_cast<t_CallExpr *>(expr))
+    {
+        // User-defined functions
+        auto fun_it = functions.find(call_expr->callee);
+        if (fun_it != functions.end())
+        {
+            t_FunStmt *fun_stmt = fun_it->second;
+
+            if (call_expr->arguments.size() != fun_stmt->parameters.size())
+            {
+                return t_Expected<std::string, t_ErrorInfo>
+                (
+                    t_ErrorInfo
+                    (
+                        e_ERROR_TYPE::RUNTIME_ERROR,
+                        "Function '" + fun_stmt->name +
+                        "' called with wrong number of arguments"
+                    )
+                );
+            }
+
+            std::vector<t_TypedValue> argument_values;
+            argument_values.reserve(call_expr->arguments.size());
+
+            for (size_t i = 0; i < call_expr->arguments.size(); ++i)
+            {
+                t_Expected<std::string, t_ErrorInfo> arg_result =
+                Evaluate(call_expr->arguments[i].get());
+                if (!arg_result.HasValue())
+                {
+                    return arg_result;
+                }
+
+                std::string arg_value = arg_result.Value();
+                e_VALUE_TYPE arg_type = DetectType(arg_value);
+                argument_values.emplace_back(arg_value, arg_type);
+            }
+
+            // Preserve modifications to pre-existing variables as in for-loops
+            std::unordered_set<std::string> pre_call_variables;
+            for (const auto &pair : environment)
+            {
+                pre_call_variables.insert(pair.first);
+            }
+
+            PushScope();
+
+            try
+            {
+                // Bind parameters in the new scope
+                for (size_t i = 0; i < fun_stmt->parameters.size(); ++i)
+                {
+                    const std::string &param_name = fun_stmt->parameters[i];
+                    environment[param_name] = argument_values[i];
+                }
+
+                if (fun_stmt->body)
+                {
+                    t_Expected<int, t_ErrorInfo> body_result =
+                    Execute(fun_stmt->body.get());
+
+                    if (!body_result.HasValue())
+                    {
+                        PopScope();
+                        return t_Expected<std::string, t_ErrorInfo>
+                        (
+                            body_result.Error()
+                        );
+                    }
+                }
+
+                // Preserve modifications to variables that existed before the call
+                std::unordered_map<std::string, t_TypedValue> modified_pre_existing;
+                for (const auto &pair : environment)
+                {
+                    if (pre_call_variables.count(pair.first) > 0)
+                    {
+                        modified_pre_existing[pair.first] = pair.second;
+                    }
+                }
+
+                PopScope();
+
+                for (const auto &pair : modified_pre_existing)
+                {
+                    environment[pair.first] = pair.second;
+                }
+
+                // User-defined functions currently return nil
+                return t_Expected<std::string, t_ErrorInfo>("nil");
+            }
+            catch (...)
+            {
+                PopScope();
+                return t_Expected<std::string, t_ErrorInfo>
+                (
+                    t_ErrorInfo
+                    (
+                        e_ERROR_TYPE::RUNTIME_ERROR,
+                        "Unhandled exception in function '" +
+                        fun_stmt->name + "'"
+                    )
+                );
+            }
+        }
+
+        // Native function example: Addition
+        if (call_expr->callee == "Addition")
+        {
+            if (call_expr->arguments.size() != 2)
+            {
+                return t_Expected<std::string, t_ErrorInfo>
+                (
+                    t_ErrorInfo
+                    (
+                        e_ERROR_TYPE::RUNTIME_ERROR,
+                        "Function 'Addition' expects 2 arguments"
+                    )
+                );
+            }
+
+            t_Expected<std::string, t_ErrorInfo> left_result =
+            Evaluate(call_expr->arguments[0].get());
+            if (!left_result.HasValue())
+            {
+                return left_result;
+            }
+
+            t_Expected<std::string, t_ErrorInfo> right_result =
+            Evaluate(call_expr->arguments[1].get());
+            if (!right_result.HasValue())
+            {
+                return right_result;
+            }
+
+            std::string left_value = left_result.Value();
+            std::string right_value = right_result.Value();
+
+            if 
+            (
+                DetectType(left_value) != e_VALUE_TYPE::NUMBER ||
+                DetectType(right_value) != e_VALUE_TYPE::NUMBER
+            )
+            {
+                return t_Expected<std::string, t_ErrorInfo>
+                (
+                    t_ErrorInfo
+                    (
+                        e_ERROR_TYPE::TYPE_ERROR,
+                        "Function 'Addition' supports only numeric arguments"
+                    )
+                );
+            }
+
+            try
+            {
+                double left_numeric = std::stod(left_value);
+                double right_numeric = std::stod(right_value);
+
+                double result_numeric =
+                NativeAddition(left_numeric, right_numeric);
+
+                return t_Expected<std::string, t_ErrorInfo>
+                (
+                    FormatNumber(result_numeric)
+                );
+            }
+            catch (...)
+            {
+                return t_Expected<std::string, t_ErrorInfo>
+                (
+                    t_ErrorInfo
+                    (
+                        e_ERROR_TYPE::RUNTIME_ERROR,
+                        "Cannot perform native Addition operation"
+                    )
+                );
+            }
+        }
+
+        return t_Expected<std::string, t_ErrorInfo>
+        (
+            t_ErrorInfo
+            (
+                e_ERROR_TYPE::RUNTIME_ERROR,
+                "Undefined function '" + call_expr->callee + "'"
+            )
+        );
+    }
+
     if (t_UnaryExpr *unary = dynamic_cast<t_UnaryExpr *>(expr))
     {
         t_Expected<std::string, t_ErrorInfo> right_result = 
@@ -1019,7 +1257,10 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                     try
                     {
                         double value = std::stod(right_literal->value);
-                        return t_Expected<std::string, t_ErrorInfo>(FormatNumber(-value));
+                        return t_Expected<std::string, t_ErrorInfo>
+                        (
+                            FormatNumber(-value)
+                        );
                     }
                     catch (...) {}
                 }
@@ -1322,7 +1563,8 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                 switch (binary->op.type)
                 {
                 case e_TOKEN_TYPE::EQUAL:
-                    final_value_result = t_Expected<std::string, t_ErrorInfo>(right_value);
+                    final_value_result = 
+                    t_Expected<std::string, t_ErrorInfo>(right_value);
                     break;
                     
                 case e_TOKEN_TYPE::PLUS_EQUAL:
@@ -1331,7 +1573,11 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                         {
                             double left_val = std::stod(left_value);
                             double right_val = std::stod(right_value);
-                            final_value_result = t_Expected<std::string, t_ErrorInfo>(FormatNumber(left_val + right_val));
+                            final_value_result = 
+                            t_Expected<std::string, t_ErrorInfo>
+                            (
+                                FormatNumber(left_val + right_val)
+                            );
                         }
                         catch (...)
                         {
@@ -2123,8 +2369,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
     {
         environment[pair.first] = pair.second;
     }
-    
     loop_depth--;
     
-    return t_Expected<int, t_ErrorInfo>(0); // Success represented by 0
+    return t_Expected<int, t_ErrorInfo>(0); 
 }

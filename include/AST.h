@@ -90,6 +90,20 @@ struct t_PostfixExpr : public t_Expr
         : operand(std::move(operand)), op(op) {}
 };
 
+struct t_CallExpr : public t_Expr
+{
+    std::string callee;
+    std::vector<std::unique_ptr<t_Expr>> arguments;
+
+    t_CallExpr
+    (
+        const std::string &callee,
+        std::vector<std::unique_ptr<t_Expr>> arguments
+    )
+        : callee(callee),
+          arguments(std::move(arguments)) {}
+};
+
 // Statement types
 struct t_ExpressionStmt : public t_Stmt
 {
@@ -126,6 +140,23 @@ struct t_GetinStmt : public t_Stmt
     )
         : keyword(keyword),
           variable_name(variable_name) {}
+};
+
+struct t_FunStmt : public t_Stmt
+{
+    std::string name;
+    std::vector<std::string> parameters;
+    std::unique_ptr<t_Stmt> body;
+
+    t_FunStmt
+    (
+        const std::string &name,
+        std::vector<std::string> parameters,
+        std::unique_ptr<t_Stmt> body
+    )
+        : name(name),
+          parameters(std::move(parameters)),
+          body(std::move(body)) {}
 };
 
 struct t_VarStmt : public t_Stmt

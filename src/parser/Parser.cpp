@@ -117,6 +117,11 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::Statement()
         return BlockStatement();
     }
 
+    if (Match({e_TOKEN_TYPE::FUN}))
+    {
+        return FunDeclaration();
+    }
+
     if (Match({e_TOKEN_TYPE::IF}))
     {
         return IfStatement();
@@ -152,21 +157,9 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::Statement()
         return BenchmarkStatement();
     }
 
-    // Built-in getin(variable_name) input statement.
-    if 
-    (
-        Check(e_TOKEN_TYPE::IDENTIFIER) &&
-        Peek().lexeme == "getin"
-    )
+    if (Match({e_TOKEN_TYPE::GETIN}))
     {
-        if 
-        (
-            current + 1 < static_cast<int>(tokens.size()) &&
-            tokens[current + 1].type == e_TOKEN_TYPE::LEFT_PAREN
-        )
-        {
-            return GetinStatement();
-        }
+        return GetinStatement();
     }
 
     if (Match({e_TOKEN_TYPE::SEMICOLON}))
@@ -537,6 +530,150 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::GetinStatement()
         t_ASTContext::GetStmtPool().Allocate()
     );
     new (stmt) t_GetinStmt(getin_identifier, variable_token.lexeme);
+    return t_Expected<t_Stmt*, t_ErrorInfo>(stmt);
+}
+
+t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::FunDeclaration()
+{
+    t_Expected<t_Token, t_ErrorInfo> name_result =
+    Consume
+    (
+        e_TOKEN_TYPE::IDENTIFIER,
+        "Expect function name after 'fun'."
+    );
+    if (!name_result.HasValue())
+    {
+        return t_Expected<t_Stmt*, t_ErrorInfo>
+        (
+            name_result.Error()
+        );
+    }
+    t_Token name_token = name_result.Value();
+
+    t_Expected<t_Token, t_ErrorInfo> open_paren_result =
+    Consume
+    (
+        e_TOKEN_TYPE::LEFT_PAREN,
+        "Expect '(' after function name."
+    );
+    if (!open_paren_result.HasValue())
+    {
+        return t_Expected<t_Stmt*, t_ErrorInfo>
+        (
+            open_paren_result.Error()
+        );
+    }
+
+    std::vector<std::string> parameters;
+
+    if (!Check(e_TOKEN_TYPE::RIGHT_PAREN))
+    {
+        while (true)
+        {
+            t_Expected<t_Token, t_ErrorInfo> auto_result =
+            Consume
+            (
+                e_TOKEN_TYPE::AUTO,
+                "Expect 'auto' before parameter name."
+            );
+            if (!auto_result.HasValue())
+            {
+                return t_Expected<t_Stmt*, t_ErrorInfo>
+                (
+                    auto_result.Error()
+                );
+            }
+
+            t_Expected<t_Token, t_ErrorInfo> param_name_result =
+            Consume
+            (
+                e_TOKEN_TYPE::IDENTIFIER,
+                "Expect parameter name."
+            );
+            if (!param_name_result.HasValue())
+            {
+                return t_Expected<t_Stmt*, t_ErrorInfo>
+                (
+                    param_name_result.Error()
+                );
+            }
+
+            parameters.push_back(param_name_result.Value().lexeme);
+
+            if (!Match({e_TOKEN_TYPE::COMMA}))
+            {
+                break;
+            }
+        }
+    }
+
+    t_Expected<t_Token, t_ErrorInfo> close_paren_result =
+    Consume
+    (
+        e_TOKEN_TYPE::RIGHT_PAREN,
+        "Expect ')' after function parameters."
+    );
+    if (!close_paren_result.HasValue())
+    {
+        return t_Expected<t_Stmt*, t_ErrorInfo>
+        (
+            close_paren_result.Error()
+        );
+    }
+
+    // Function can be declared with a body or as a prototype;
+    // if the next token is '{', parse a body statement, otherwise
+    // require a terminating semicolon.
+    if (Check(e_TOKEN_TYPE::LEFT_BRACE))
+    {
+        t_Expected<t_Stmt*, t_ErrorInfo> body_result = Statement();
+        if (!body_result.HasValue())
+        {
+            return t_Expected<t_Stmt*, t_ErrorInfo>
+            (
+                body_result.Error()
+            );
+        }
+
+        t_Stmt *body_stmt = body_result.Value();
+
+        t_FunStmt* stmt = static_cast<t_FunStmt*>
+        (
+            t_ASTContext::GetStmtPool().Allocate()
+        );
+        new (stmt) t_FunStmt
+        (
+            name_token.lexeme,
+            std::move(parameters),
+            std::unique_ptr<t_Stmt>(body_stmt)
+        );
+        return t_Expected<t_Stmt*, t_ErrorInfo>(stmt);
+    }
+
+    t_Expected<t_Token, t_ErrorInfo> semicolon_result =
+    Consume
+    (
+        e_TOKEN_TYPE::SEMICOLON,
+        "Expect ';' after function declaration."
+    );
+    if (!semicolon_result.HasValue())
+    {
+        return t_Expected<t_Stmt*, t_ErrorInfo>
+        (
+            semicolon_result.Error()
+        );
+    }
+
+    t_FunStmt* stmt = static_cast<t_FunStmt*>
+    (
+        t_ASTContext::GetStmtPool().Allocate()
+    );
+    new (stmt) t_FunStmt
+    (
+        name_token.lexeme,
+        std::move(parameters),
+        std::unique_ptr<t_Stmt>(nullptr)
+    );
     return t_Expected<t_Stmt*, t_ErrorInfo>(stmt);
 }
 
@@ -991,9 +1128,60 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Primary()
 
     if (Match({e_TOKEN_TYPE::IDENTIFIER}))
     {
+        t_Token identifier = Previous();
+
+        if (Match({e_TOKEN_TYPE::LEFT_PAREN}))
+        {
+            std::vector<std::unique_ptr<t_Expr>> arguments;
+
+            if (!Check(e_TOKEN_TYPE::RIGHT_PAREN))
+            {
+                while (true)
+                {
+                    t_Expected<t_Expr*, t_ErrorInfo> argument_result =
+                    Expression();
+                    if (!argument_result.HasValue())
+                    {
+                        return argument_result;
+                    }
+
+                    arguments.push_back
+                    (
+                        std::unique_ptr<t_Expr>(argument_result.Value())
+                    );
+
+                    if (!Match({e_TOKEN_TYPE::COMMA}))
+                    {
+                        break;
+                    }
+                }
+            }
+
+            t_Expected<t_Token, t_ErrorInfo> close_paren_result =
+            Consume
+            (
+                e_TOKEN_TYPE::RIGHT_PAREN,
+                "Expect ')' after function arguments."
+            );
+            if (!close_paren_result.HasValue())
+            {
+                return t_Expected<t_Expr*, t_ErrorInfo>
+                (
+                    close_paren_result.Error()
+                );
+            }
+
+            t_CallExpr* call_expr = static_cast<t_CallExpr*>
+            (
+                t_ASTContext::GetExprPool().Allocate()
+            );
+            new (call_expr) t_CallExpr(identifier.lexeme, std::move(arguments));
+            return t_Expected<t_Expr*, t_ErrorInfo>(call_expr);
+        }
+
         t_VariableExpr* expr_node = 
         static_cast<t_VariableExpr*>(t_ASTContext::GetExprPool().Allocate());
-        new (expr_node) t_VariableExpr(Previous().lexeme);
+        new (expr_node) t_VariableExpr(identifier.lexeme);
         return t_Expected<t_Expr*, t_ErrorInfo>(expr_node);
     }
 

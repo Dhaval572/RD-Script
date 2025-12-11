@@ -19,6 +19,7 @@ namespace
             sizeof(t_VarStmt),
             sizeof(t_DisplayStmt),
             sizeof(t_GetinStmt),
+            sizeof(t_FunStmt),
             sizeof(t_BenchmarkStmt),
             sizeof(t_EmptyStmt),
             sizeof(t_ExpressionStmt)
@@ -38,7 +39,8 @@ namespace
             sizeof(t_GroupingExpr),
             sizeof(t_VariableExpr),
             sizeof(t_PrefixExpr),
-            sizeof(t_PostfixExpr)
+            sizeof(t_PostfixExpr),
+            sizeof(t_CallExpr)
         };
         size_t max_size = 0;
         for (size_t s : sizes) if (s > max_size) max_size = s;

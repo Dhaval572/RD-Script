@@ -93,6 +93,7 @@ private:
     std::vector<std::unordered_map<std::string, t_TypedValue>> scope_stack; 
     int loop_depth = 0; 
     std::string control_signal; // "break" | "continue" | ""
+    std::unordered_map<std::string, t_FunStmt*> functions;
 
     t_Expected<std::string, t_ErrorInfo> Evaluate(t_Expr *expr);
     t_Expected<int, t_ErrorInfo> Execute(t_Stmt *stmt);
