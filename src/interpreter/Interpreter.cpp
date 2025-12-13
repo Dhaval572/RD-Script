@@ -47,6 +47,34 @@ t_Interpreter::t_Interpreter()
     
     // Initialize with global scope
     PushScope();
+    m_BufferOutput = false;
+    m_OutputBuffer.clear();
+}
+
+void t_Interpreter::WriteOutput(const std::string& text)
+{
+    if (m_BufferOutput)
+    {
+        m_OutputBuffer.append(text);
+    }
+    else
+    {
+        std::cout.write(text.data(), static_cast<std::streamsize>(text.size()));
+    }
+}
+
+void t_Interpreter::FlushOutput()
+{
+    if (!m_OutputBuffer.empty())
+    {
+        std::cout.write
+        (
+            m_OutputBuffer.data(),
+            static_cast<std::streamsize>(m_OutputBuffer.size())
+        );
+        std::cout.flush();
+        m_OutputBuffer.clear();
+    }
 }
 
 t_InterpretationResult t_Interpreter::Interpret
@@ -741,7 +769,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
         {
             if (!first)
             {
-                std::cout << ' ';
+                WriteOutput(" ");
             }
             first = false;
 
@@ -754,9 +782,9 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
             }
             
             std::string value = value_result.Value();
-            std::cout << value;
+            WriteOutput(value);
         }
-        std::cout << '\n';
+        WriteOutput("\n");
     }
     else if (t_GetinStmt *getin_stmt = dynamic_cast<t_GetinStmt *>(stmt))
     {
@@ -933,12 +961,24 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
         dynamic_cast<t_BenchmarkStmt *>(stmt)
     )
     {
+        bool previous_buffering = m_BufferOutput;
+        m_BufferOutput = true;
+
+        if (!previous_buffering)
+        {
+            m_OutputBuffer.clear();
+            m_OutputBuffer.reserve(1024 * 1024);
+        }
+
         // Record start time
         auto start_time = std::chrono::steady_clock::now();
         
         // Execute the benchmark body
         t_Expected<int, t_ErrorInfo> body_result = 
         Execute(benchmark_stmt->body.get());
+
+        FlushOutput();
+        m_BufferOutput = previous_buffering;
         
         if (!body_result.HasValue())
         {
@@ -2497,11 +2537,10 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteAccumulationLoop
     
     // Update the accumulation variable with the result
     environment[acc_var_name] = t_TypedValue(accumulator);
-    
+
     return t_Expected<int, t_ErrorInfo>(0);
 }
 
-// Optimized execution for simple numeric loops: for (auto i = 0; i < N; i++)
 t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
 (
     t_ForStmt* for_stmt
@@ -2531,49 +2570,128 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
     
     // Store the variable name
     std::string loop_var_name = init_var->name;
-    
+
+    bool use_fast_break_optimization = false;
+    int break_at_value = -1;
+
+    t_BlockStmt* body_block = dynamic_cast<t_BlockStmt*>(for_stmt->body.get());
+    if (body_block && body_block->statements.size() == 1)
+    {
+        t_IfStmt* if_stmt = dynamic_cast<t_IfStmt*>(body_block->statements[0].get());
+        if (if_stmt && !if_stmt->else_branch)
+        {
+            bool then_is_break = false;
+
+            if (dynamic_cast<t_BreakStmt*>(if_stmt->then_branch.get()))
+            {
+                then_is_break = true;
+            }
+            else if (t_BlockStmt* then_block = dynamic_cast<t_BlockStmt*>(if_stmt->then_branch.get()))
+            {
+                if (then_block->statements.size() == 1)
+                {
+                    if (dynamic_cast<t_BreakStmt*>(then_block->statements[0].get()))
+                    {
+                        then_is_break = true;
+                    }
+                }
+            }
+
+            if (then_is_break)
+            {
+                t_BinaryExpr* cond_binary = dynamic_cast<t_BinaryExpr*>(if_stmt->condition.get());
+                if (cond_binary && cond_binary->op.type == e_TOKEN_TYPE::EQUAL_EQUAL)
+                {
+                    t_VariableExpr* cond_var = 
+                    dynamic_cast<t_VariableExpr*>(cond_binary->left.get());
+                    t_LiteralExpr* cond_lit = 
+                    dynamic_cast<t_LiteralExpr*>(cond_binary->right.get());
+
+                    if (!cond_var || !cond_lit)
+                    {
+                        cond_var = dynamic_cast<t_VariableExpr*>(cond_binary->right.get());
+                        cond_lit = dynamic_cast<t_LiteralExpr*>(cond_binary->left.get());
+                    }
+
+                    if (cond_var && cond_lit && cond_var->name == loop_var_name)
+                    {
+                        try
+                        {
+                            double raw_value = std::stod(cond_lit->value);
+                            int int_value = static_cast<int>(raw_value);
+                            if (raw_value == static_cast<double>(int_value))
+                            {
+                                break_at_value = int_value;
+                                use_fast_break_optimization = true;
+                            }
+                        }
+                        catch (...) {}
+                    }
+                }
+            }
+        }
+    }
+
     // Execute the loop with direct numeric operations
     // Manually control the loop to properly handle continue statements
-    for (int i = 0; i < limit;)
+    if (!use_fast_break_optimization)
     {
-        // Set loop variable directly as integer
-        environment[loop_var_name] = t_TypedValue(static_cast<double>(i));
-        
-        // Execute body
-        control_signal.clear();
-        t_Expected<int, t_ErrorInfo> body_result = 
-        Execute(for_stmt->body.get());
-        if (!body_result.HasValue())
+        for (int i = 0; i < limit;)
         {
-            PopScope(); // Clean up scope before returning
-            loop_depth--;
-            return body_result;
-        }
-        if (control_signal == "break")
-        {
+            // Set loop variable directly as integer
+            environment[loop_var_name] = t_TypedValue(static_cast<double>(i));
+            
+            // Execute body
             control_signal.clear();
-            break;
-        }
-        if (control_signal == "continue")
-        {
-            control_signal.clear();
-            // Skip increment and go to next iteration when continue is encountered
+            t_Expected<int, t_ErrorInfo> body_result = 
+            Execute(for_stmt->body.get());
+            if (!body_result.HasValue())
+            {
+                PopScope(); // Clean up scope before returning
+                loop_depth--;
+                return body_result;
+            }
+            if (control_signal == "break")
+            {
+                control_signal.clear();
+                break;
+            }
+            if (control_signal == "continue")
+            {
+                control_signal.clear();
+                // Skip increment and go to next iteration when continue is encountered
+                i++;
+                continue;
+            }
+            
+            // If we're returning from a function, stop the loop and propagate the return
+            if (is_returning)
+            {
+                PopScope();
+                loop_depth--;
+                return t_Expected<int, t_ErrorInfo>(0);
+            }
+            
+            // Only increment if no control signal was encountered
             i++;
-            continue;
         }
-        
-        // If we're returning from a function, stop the loop and propagate the return
-        if (is_returning)
-        {
-            PopScope();
-            loop_depth--;
-            return t_Expected<int, t_ErrorInfo>(0);
-        }
-        
-        // Only increment if no control signal was encountered
-        i++;
     }
-    
+    else
+    {
+        int final_i = 0;
+        if (break_at_value >= 0 && break_at_value < limit)
+        {
+            final_i = break_at_value;
+        }
+        else if (limit > 0)
+        {
+            final_i = limit - 1;
+        }
+
+        control_signal.clear();
+        environment[loop_var_name] = t_TypedValue(static_cast<double>(final_i));
+    }
+
     // Before popping scope, preserve modifications to pre-existing variables
     std::unordered_map<std::string, t_TypedValue> modified_pre_existing;
     for (const auto& pair : environment)
@@ -2583,7 +2701,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
             modified_pre_existing[pair.first] = pair.second;
         }
     }
-    
+
     // Pop the loop scope
     PopScope();
     

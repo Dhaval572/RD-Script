@@ -94,8 +94,11 @@ private:
     int loop_depth = 0; 
     std::string control_signal; // "break" | "continue" | ""
     std::unordered_map<std::string, t_FunStmt*> functions;
-    std::string return_value; // To store return values from functions
-    bool is_returning = false; // Flag to indicate if we're currently returning
+    std::string return_value; 
+    bool is_returning = false;
+
+    bool m_BufferOutput = false;
+    std::string m_OutputBuffer;
 
     t_Expected<std::string, t_ErrorInfo> Evaluate(t_Expr *expr);
     t_Expected<int, t_ErrorInfo> Execute(t_Stmt *stmt);
@@ -126,26 +129,25 @@ private:
     (
         t_ForStmt* for_stmt
     ); 
-    
-    // General optimized int-only for-loop execution
-    bool IsIntForLoop(t_ForStmt* for_stmt);
-    t_Expected<int, t_ErrorInfo> ExecuteIntForLoop
-    (
-        t_ForStmt* for_stmt
-    );
 
     // Optimized arithmetic operations
     t_Expected<bool, t_ErrorInfo> PerformComparison
     (
-        const t_TypedValue& left, const e_TOKEN_TYPE op, const t_TypedValue& right
+        const t_TypedValue& left, 
+        const e_TOKEN_TYPE op, 
+        const t_TypedValue& right
     );
     
     // Scope management
     void PushScope();
     void PopScope();
+
+    void WriteOutput(const std::string& text);
+    void FlushOutput();
     t_Expected<int, t_ErrorInfo> DeclareVariable
     (
-        const std::string& name, int line
+        const std::string& name, 
+        int line
     ); 
 
 public:
