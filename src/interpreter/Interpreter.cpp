@@ -2321,7 +2321,7 @@ bool t_Interpreter::IsSimpleNumericLoop(t_ForStmt* for_stmt)
     // Try to convert condition literal to number
     try 
     {
-        std::stod(condition_literal->value);
+        (void)std::stod(condition_literal->value);
     } 
     catch (...) 
     {
