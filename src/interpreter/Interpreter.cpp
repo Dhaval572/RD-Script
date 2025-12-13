@@ -286,7 +286,7 @@ bool t_Interpreter::IsFloat(const std::string& value)
     }
     
     bool has_decimal = false;
-    for (int i = start; i < value.length(); i++) 
+    for (size_t i = start; i < value.size(); i++) 
     {
         if (value[i] == '.') 
         {
@@ -299,7 +299,7 @@ bool t_Interpreter::IsFloat(const std::string& value)
         }
     }
     
-    return has_decimal && (value.length() > start + 1);
+    return has_decimal && (static_cast<size_t>(value.length()) > static_cast<size_t>(start + 1));
 }
 
 // Comparison operations are kept as they are more complex
@@ -459,7 +459,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
 			);
 		}
     }
-    else if (t_BreakStmt *break_stmt = dynamic_cast<t_BreakStmt *>(stmt))
+    else if (dynamic_cast<t_BreakStmt *>(stmt))
     {
         // Validate that we're inside a loop
         if (loop_depth <= 0)
@@ -477,7 +477,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
         control_signal = "break";
         return t_Expected<int, t_ErrorInfo>(0);
     }
-    else if (t_ContinueStmt *continue_stmt = dynamic_cast<t_ContinueStmt *>(stmt))
+    else if (dynamic_cast<t_ContinueStmt *>(stmt))
     {
         // Validate that we're inside a loop
         if (loop_depth <= 0)
@@ -975,10 +975,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                   << " seconds\n";
     }
     else if 
-    (
-        t_EmptyStmt *empty_stmt = 
-        dynamic_cast<t_EmptyStmt *>(stmt)
-    )
+    (dynamic_cast<t_EmptyStmt *>(stmt))
     {
         // Do nothing for empty statements
     }
@@ -1965,6 +1962,18 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                 return t_Expected<std::string, t_ErrorInfo>
                 (
                     comparison_result.Value() ? "true" : "false"
+                );
+            }
+        
+        default:
+            {
+                return t_Expected<std::string, t_ErrorInfo>
+                (
+                    t_ErrorInfo
+                    (
+                        e_ERROR_TYPE::RUNTIME_ERROR, 
+                        "Unsupported binary operator"
+                    )
                 );
             }
         }
