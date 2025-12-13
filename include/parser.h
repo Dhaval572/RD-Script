@@ -26,7 +26,8 @@ private:
     
     t_Expected<t_Token, t_ErrorInfo> Consume
     (
-        e_TOKEN_TYPE type, const std::string &message
+        e_TOKEN_TYPE type, 
+        const std::string &message
     );
     t_ErrorInfo Error(t_Token token, const std::string &message);
 

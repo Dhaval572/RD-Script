@@ -275,3 +275,42 @@ Benchmark Results:
 ```
 
 This provides an easy way to measure performance, similar to Python's timeit module but with the speed of C++ chrono.
+
+### Function Calls
+
+Functions in RD Script must be defined before they can be called. Attempting to call an undefined function will result in a runtime error with a descriptive message indicating that the function is not defined.
+
+Syntax:
+```rubberduck
+// Function definition
+fun function_name(auto param1, auto param2) {
+    // function body
+}
+
+// Function call
+function_name(argument1, argument2);
+```
+
+Example:
+```rubberduck
+fun greet(auto name) {
+    display "Hello, ", name, "!";
+}
+
+greet("World");  // Valid - displays "Hello, World!"
+```
+
+Calling an undefined function will result in a runtime error:
+```rubberduck
+undefined_function();  // Error: Undefined function 'undefined_function'
+```
+
+Function calls must include parentheses even if they take no arguments:
+```rubberduck
+fun do_something() {
+    display "Doing something...";
+}
+
+do_something();  // Valid
+do_something;    // Error: This is not a valid function call
+```
