@@ -1178,7 +1178,12 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Primary()
             (
                 t_ASTContext::GetExprPool().Allocate()
             );
-            new (call_expr) t_CallExpr(identifier.lexeme, std::move(arguments));
+            new (call_expr) t_CallExpr
+            (
+                identifier.lexeme, 
+                std::move(arguments),
+                identifier.line
+            );
             return t_Expected<t_Expr*, t_ErrorInfo>(call_expr);
         }
 

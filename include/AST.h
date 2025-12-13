@@ -94,14 +94,17 @@ struct t_CallExpr : public t_Expr
 {
     std::string callee;
     std::vector<std::unique_ptr<t_Expr>> arguments;
+    int line;
 
     t_CallExpr
     (
         const std::string &callee,
-        std::vector<std::unique_ptr<t_Expr>> arguments
+        std::vector<std::unique_ptr<t_Expr>> arguments,
+        int line = 0
     )
         : callee(callee),
-          arguments(std::move(arguments)) {}
+          arguments(std::move(arguments)),
+          line(line) {}
 };
 
 // Statement types

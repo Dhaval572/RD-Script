@@ -1232,7 +1232,8 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
             t_ErrorInfo
             (
                 e_ERROR_TYPE::RUNTIME_ERROR,
-                "Undefined function '" + call_expr->callee + "'"
+                "Undefined function '" + call_expr->callee + "'",
+                call_expr->line
             )
         );
     }
