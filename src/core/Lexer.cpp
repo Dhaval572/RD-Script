@@ -133,6 +133,25 @@ t_ParsingResult t_Lexer::ScanToken()
             );
         }
         break;
+    case '|':
+        if (Match('|'))
+        {
+            AddToken(e_TOKEN_TYPE::OR);
+        }
+        else
+        {
+            return t_ParsingResult
+            (
+                t_ErrorInfo
+                (
+                    e_ERROR_TYPE::LEXING_ERROR,
+                    "Unexpected character",
+                    line,
+                    current
+                )
+            );
+        }
+        break;
     case '<':
         AddToken(Match('=') ? e_TOKEN_TYPE::LESS_EQUAL : e_TOKEN_TYPE::LESS);
         break;

@@ -127,12 +127,19 @@ private:
         t_ForStmt* for_stmt
     ); 
     
+    // General optimized int-only for-loop execution
+    bool IsIntForLoop(t_ForStmt* for_stmt);
+    t_Expected<int, t_ErrorInfo> ExecuteIntForLoop
+    (
+        t_ForStmt* for_stmt
+    );
+
     // Optimized arithmetic operations
     t_Expected<bool, t_ErrorInfo> PerformComparison
     (
         const t_TypedValue& left, const e_TOKEN_TYPE op, const t_TypedValue& right
     );
-
+    
     // Scope management
     void PushScope();
     void PopScope();

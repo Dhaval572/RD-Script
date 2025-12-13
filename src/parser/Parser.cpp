@@ -1,9 +1,74 @@
-#include "../include/parser.h"
+#include "../include/Parser.h"
 #include "../include/AST.h"
 #include "../include/ErrorHandling.h"
 #include "../include/ASTContext.h"  // Include ASTContext
 #include <iostream>
-static t_ASTContext ast_context;
+#include <string>
+#include <cctype>
+#include <cmath>
+
+namespace
+{
+    bool IsIntegerLiteralValue(const std::string &value)
+    {
+        if (value.empty())
+        {
+            return false;
+        }
+
+        size_t start = 0;
+        if (value[0] == '-')
+        {
+            if (value.size() == 1)
+            {
+                return false;
+            }
+            start = 1;
+        }
+
+        for (size_t i = start; i < value.size(); i++)
+        {
+            if (!std::isdigit(static_cast<unsigned char>(value[i])))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    bool TryGetNumberLiteral(t_Expr *expr, double &out_value)
+    {
+        t_LiteralExpr *literal = dynamic_cast<t_LiteralExpr *>(expr);
+        if (!literal || literal->token_type != e_TOKEN_TYPE::NUMBER)
+        {
+            return false;
+        }
+
+        try
+        {
+            out_value = std::stod(literal->value);
+            return true;
+        }
+        catch (...)
+        {
+            return false;
+        }
+    }
+
+    t_LiteralExpr *MakeNumberLiteral(double value)
+    {
+        t_LiteralExpr *expr_node =
+        static_cast<t_LiteralExpr *>(t_ASTContext::GetExprPool().Allocate());
+
+        std::string text = std::to_string(value);
+        text.erase(text.find_last_not_of('0') + 1, std::string::npos);
+        text.erase(text.find_last_not_of('.') + 1, std::string::npos);
+
+        new (expr_node) t_LiteralExpr(text, e_TOKEN_TYPE::NUMBER);
+        return expr_node;
+    }
+}
 
 t_Parser::t_Parser(const std::vector<t_Token> &tokens)
     : tokens(tokens), current(0) {}
@@ -303,7 +368,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
         return t_Expected<t_Stmt*, t_ErrorInfo>(paren_result.Error());
     }
 
-    // Parse initializer (can be a variable declaration or an expression statement)
+    // Parse initializer (must be a variable declaration or empty)
     std::unique_ptr<t_Stmt> initializer;
     if (Match({e_TOKEN_TYPE::SEMICOLON}))
     {
@@ -324,13 +389,14 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
     }
     else
     {
-        // Expression statement
-        t_Expected<t_Stmt*, t_ErrorInfo> expr_result = ExpressionStatement();
-        if (!expr_result.HasValue())
-        {
-            return t_Expected<t_Stmt*, t_ErrorInfo>(expr_result.Error());
-        }
-        initializer = std::unique_ptr<t_Stmt>(expr_result.Value());
+        return t_Expected<t_Stmt*, t_ErrorInfo>
+        (
+            Error
+            (
+                Peek(),
+                "Expect 'auto' variable declaration or ';' in for-loop initializer."
+            )
+        );
     }
 
     // Parse condition
@@ -389,6 +455,138 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
         std::move(increment),
         std::unique_ptr<t_Stmt>(body)
     );
+
+    t_VarStmt *init_var = nullptr;
+    if (stmt->initializer)
+    {
+        init_var = dynamic_cast<t_VarStmt *>(stmt->initializer.get());
+        if (!init_var || !init_var->initializer)
+        {
+            return t_Expected<t_Stmt*, t_ErrorInfo>
+            (
+                Error
+                (
+                    Previous(),
+                    "For-loop initializer must declare an int variable with an initializer."
+                )
+            );
+        }
+
+        t_LiteralExpr *init_literal =
+        dynamic_cast<t_LiteralExpr *>(init_var->initializer.get());
+
+        if (!init_literal || init_literal->token_type != e_TOKEN_TYPE::NUMBER ||
+            !IsIntegerLiteralValue(init_literal->value))
+        {
+            return t_Expected<t_Stmt*, t_ErrorInfo>
+            (
+                Error
+                (
+                    Previous(),
+                    "For-loop variable must be initialized with an int literal."
+                )
+            );
+        }
+
+        if (!stmt->condition)
+        {
+            return t_Expected<t_Stmt*, t_ErrorInfo>
+            (
+                Error(Previous(), "For-loop condition is required.")
+            );
+        }
+
+        t_BinaryExpr *cond = dynamic_cast<t_BinaryExpr *>(stmt->condition.get());
+        if (!cond)
+        {
+            return t_Expected<t_Stmt*, t_ErrorInfo>
+            (
+                Error(Previous(), "For-loop condition must be a comparison.")
+            );
+        }
+
+        if (cond->op.type != e_TOKEN_TYPE::LESS &&
+            cond->op.type != e_TOKEN_TYPE::LESS_EQUAL &&
+            cond->op.type != e_TOKEN_TYPE::GREATER &&
+            cond->op.type != e_TOKEN_TYPE::GREATER_EQUAL)
+        {
+            return t_Expected<t_Stmt*, t_ErrorInfo>
+            (
+                Error(Previous(), "For-loop condition must be <, <=, >, or >=.")
+            );
+        }
+
+        t_VariableExpr *cond_var = dynamic_cast<t_VariableExpr *>(cond->left.get());
+        t_LiteralExpr *cond_lit = dynamic_cast<t_LiteralExpr *>(cond->right.get());
+
+        if (!cond_var || cond_var->name != init_var->name || !cond_lit ||
+            cond_lit->token_type != e_TOKEN_TYPE::NUMBER ||
+            !IsIntegerLiteralValue(cond_lit->value))
+        {
+            return t_Expected<t_Stmt*, t_ErrorInfo>
+            (
+                Error(Previous(), "For-loop condition must compare loop variable to an int literal.")
+            );
+        }
+
+        if (!stmt->increment)
+        {
+            return t_Expected<t_Stmt*, t_ErrorInfo>
+            (
+                Error(Previous(), "For-loop increment is required.")
+            );
+        }
+
+        bool valid_increment = false;
+        if (t_PostfixExpr *post = dynamic_cast<t_PostfixExpr *>(stmt->increment.get()))
+        {
+            t_VariableExpr *var = dynamic_cast<t_VariableExpr *>(post->operand.get());
+            if (var && var->name == init_var->name &&
+                (post->op.type == e_TOKEN_TYPE::PLUS_PLUS ||
+                 post->op.type == e_TOKEN_TYPE::MINUS_MINUS))
+            {
+                valid_increment = true;
+            }
+        }
+        else if (t_PrefixExpr *pre = dynamic_cast<t_PrefixExpr *>(stmt->increment.get()))
+        {
+            t_VariableExpr *var = dynamic_cast<t_VariableExpr *>(pre->operand.get());
+            if (var && var->name == init_var->name &&
+                (pre->op.type == e_TOKEN_TYPE::PLUS_PLUS ||
+                 pre->op.type == e_TOKEN_TYPE::MINUS_MINUS))
+            {
+                valid_increment = true;
+            }
+        }
+        else if (t_BinaryExpr *assign = dynamic_cast<t_BinaryExpr *>(stmt->increment.get()))
+        {
+            if (assign->op.type == e_TOKEN_TYPE::PLUS_EQUAL ||
+                assign->op.type == e_TOKEN_TYPE::MINUS_EQUAL)
+            {
+                t_VariableExpr *lhs = dynamic_cast<t_VariableExpr *>(assign->left.get());
+                t_LiteralExpr *rhs = dynamic_cast<t_LiteralExpr *>(assign->right.get());
+                if (lhs && rhs && lhs->name == init_var->name &&
+                    rhs->token_type == e_TOKEN_TYPE::NUMBER &&
+                    IsIntegerLiteralValue(rhs->value))
+                {
+                    valid_increment = true;
+                }
+            }
+        }
+
+        if (!valid_increment)
+        {
+            return t_Expected<t_Stmt*, t_ErrorInfo>
+            (
+                Error
+                (
+                    Previous(),
+                    "For-loop increment must be ++/-- or +=/-= with an int literal."
+                )
+            );
+        }
+    }
+
     return t_Expected<t_Stmt*, t_ErrorInfo>(stmt);
 }
 
@@ -834,7 +1032,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Or()
             return right_result;
         }
         t_Expr *right = right_result.Value();
-        
+
         t_BinaryExpr* expr_node = 
         static_cast<t_BinaryExpr*>(t_ASTContext::GetExprPool().Allocate());
         new (expr_node) t_BinaryExpr
@@ -977,16 +1175,34 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Term()
             return right_result;
         }
         t_Expr *right = right_result.Value();
-        
-        t_BinaryExpr* expr_node = 
-        static_cast<t_BinaryExpr*>(t_ASTContext::GetExprPool().Allocate());
-        new (expr_node) t_BinaryExpr
-        (
-            std::unique_ptr<t_Expr>(expr), 
-            op, 
-            std::unique_ptr<t_Expr>(right)
-        );
-        expr = expr_node;
+
+        double left_num = 0.0;
+        double right_num = 0.0;
+        if (TryGetNumberLiteral(expr, left_num) && TryGetNumberLiteral(right, right_num))
+        {
+            double result = 0.0;
+            if (op.type == e_TOKEN_TYPE::PLUS)
+            {
+                result = left_num + right_num;
+            }
+            else
+            {
+                result = left_num - right_num;
+            }
+            expr = MakeNumberLiteral(result);
+        }
+        else
+        {
+            t_BinaryExpr* expr_node = 
+            static_cast<t_BinaryExpr*>(t_ASTContext::GetExprPool().Allocate());
+            new (expr_node) t_BinaryExpr
+            (
+                std::unique_ptr<t_Expr>(expr), 
+                op, 
+                std::unique_ptr<t_Expr>(right)
+            );
+            expr = expr_node;
+        }
     }
 
     return t_Expected<t_Expr*, t_ErrorInfo>(expr);
@@ -1010,16 +1226,34 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Factor()
             return right_result;
         }
         t_Expr *right = right_result.Value();
-        
-        t_BinaryExpr* expr_node = 
-        static_cast<t_BinaryExpr*>(t_ASTContext::GetExprPool().Allocate());
-        new (expr_node) t_BinaryExpr
-        (
-            std::unique_ptr<t_Expr>(expr), 
-            op, 
-            std::unique_ptr<t_Expr>(right)
-        );
-        expr = expr_node;
+
+        double left_num = 0.0;
+        double right_num = 0.0;
+        if (TryGetNumberLiteral(expr, left_num) && TryGetNumberLiteral(right, right_num))
+        {
+            double result = 0.0;
+            if (op.type == e_TOKEN_TYPE::STAR)
+            {
+                result = left_num * right_num;
+            }
+            else
+            {
+                result = left_num / right_num;
+            }
+            expr = MakeNumberLiteral(result);
+        }
+        else
+        {
+            t_BinaryExpr* expr_node = 
+            static_cast<t_BinaryExpr*>(t_ASTContext::GetExprPool().Allocate());
+            new (expr_node) t_BinaryExpr
+            (
+                std::unique_ptr<t_Expr>(expr), 
+                op, 
+                std::unique_ptr<t_Expr>(right)
+            );
+            expr = expr_node;
+        }
     }
 
     return t_Expected<t_Expr*, t_ErrorInfo>(expr);
@@ -1037,7 +1271,17 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Unary()
         }
         t_Expr *right = right_result.Value();
         
-        t_UnaryExpr* expr_node = static_cast<t_UnaryExpr*>(t_ASTContext::GetExprPool().Allocate());
+        if (op.type == e_TOKEN_TYPE::MINUS)
+        {
+            double value = 0.0;
+            if (TryGetNumberLiteral(right, value))
+            {
+                return t_Expected<t_Expr*, t_ErrorInfo>(MakeNumberLiteral(-value));
+            }
+        }
+
+        t_UnaryExpr* expr_node =
+        static_cast<t_UnaryExpr*>(t_ASTContext::GetExprPool().Allocate());
         new (expr_node) t_UnaryExpr(op, std::unique_ptr<t_Expr>(right));
         return t_Expected<t_Expr*, t_ErrorInfo>(expr_node);
     }

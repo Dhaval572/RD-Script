@@ -1798,6 +1798,46 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
             return left_result;
         }
         std::string left_str = left_result.Value();
+
+        if (binary->op.type == e_TOKEN_TYPE::AND)
+        {
+            if (!IsTruthy(left_str))
+            {
+                return t_Expected<std::string, t_ErrorInfo>("false");
+            }
+
+            t_Expected<std::string, t_ErrorInfo> right_result =
+            Evaluate(binary->right.get());
+            if (!right_result.HasValue())
+            {
+                return right_result;
+            }
+
+            return t_Expected<std::string, t_ErrorInfo>
+            (
+                IsTruthy(right_result.Value()) ? "true" : "false"
+            );
+        }
+
+        if (binary->op.type == e_TOKEN_TYPE::OR)
+        {
+            if (IsTruthy(left_str))
+            {
+                return t_Expected<std::string, t_ErrorInfo>("true");
+            }
+
+            t_Expected<std::string, t_ErrorInfo> right_result =
+            Evaluate(binary->right.get());
+            if (!right_result.HasValue())
+            {
+                return right_result;
+            }
+
+            return t_Expected<std::string, t_ErrorInfo>
+            (
+                IsTruthy(right_result.Value()) ? "true" : "false"
+            );
+        }
         
         t_Expected<std::string, t_ErrorInfo> right_result = 
         Evaluate(binary->right.get());
