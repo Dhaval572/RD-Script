@@ -539,8 +539,19 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
     }
     else if (t_ForStmt *for_stmt = dynamic_cast<t_ForStmt *>(stmt))
     {
+        // Check for ultra-fast accumulation loop pattern: for (auto i = 0; i < N; i++) { var += i; }
+        if (IsSimpleAccumulationLoop(for_stmt))
+        {
+            t_Expected<int, t_ErrorInfo> result = 
+            ExecuteAccumulationLoop(for_stmt);
+
+            if (!result.HasValue())
+            {
+                return result;
+            }
+        }
         // Check for specialized numeric loop pattern: for (auto i = 0; i < N; i++)
-        if (IsSimpleNumericLoop(for_stmt))
+        else if (IsSimpleNumericLoop(for_stmt))
         {
             t_Expected<int, t_ErrorInfo> result = 
             ExecuteSimpleNumericLoop(for_stmt);
@@ -2299,6 +2310,136 @@ bool t_Interpreter::IsSimpleNumericLoop(t_ForStmt* for_stmt)
     }
     
     return false;
+}
+
+// Ultra-fast optimization for simple accumulation loops: for (auto i = 0; i < N; i++) { var += i; }
+bool t_Interpreter::IsSimpleAccumulationLoop(t_ForStmt* for_stmt)
+{
+    // First check if it's a simple numeric loop
+    if (!IsSimpleNumericLoop(for_stmt)) return false;
+    
+    // Check if body is a block with exactly one statement
+    t_BlockStmt* body_block = dynamic_cast<t_BlockStmt*>(for_stmt->body.get());
+    if (!body_block || body_block->statements.size() != 1) return false;
+    
+    // Check if the single statement is an expression statement
+    t_ExpressionStmt* expr_stmt = 
+    dynamic_cast<t_ExpressionStmt*>(body_block->statements[0].get());
+    if (!expr_stmt) return false;
+    
+    // Check if the expression is a binary assignment (+=)
+    t_BinaryExpr* binary_expr = 
+    dynamic_cast<t_BinaryExpr*>(expr_stmt->expression.get());
+    if 
+    (
+        !binary_expr || 
+        binary_expr->op.type != e_TOKEN_TYPE::PLUS_EQUAL
+    ) return false;
+    
+    // Check if left side is a variable
+    t_VariableExpr* left_var = 
+    dynamic_cast<t_VariableExpr*>(binary_expr->left.get());
+    if (!left_var) return false;
+    
+    // Check if right side is the loop variable
+    t_VariableExpr* right_var = 
+    dynamic_cast<t_VariableExpr*>(binary_expr->right.get());
+    if (!right_var) return false;
+    
+    // Get loop variable name from initializer
+    t_VarStmt* init_var = dynamic_cast<t_VarStmt*>
+    (
+        for_stmt->initializer.get()
+    );
+    if (!init_var) return false;
+    
+    // Check if right side matches loop variable
+    if (right_var->name != init_var->name) return false;
+    
+    return true;
+}
+
+// Ultra-fast native execution for simple accumulation loops
+t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteAccumulationLoop
+(
+    t_ForStmt* for_stmt
+)
+{
+    // Extract loop parameters
+    t_VarStmt* init_var = dynamic_cast<t_VarStmt*>
+    (
+        for_stmt->initializer.get()
+    );
+    t_BinaryExpr* condition_binary = 
+    dynamic_cast<t_BinaryExpr*>(for_stmt->condition.get());
+    
+    t_LiteralExpr* condition_literal = 
+    dynamic_cast<t_LiteralExpr*>(condition_binary->right.get());
+    
+    // Get the loop limit
+    int limit = static_cast<int>(std::stod(condition_literal->value));
+    
+    // Get accumulation variable name
+    t_BlockStmt* body_block = dynamic_cast<t_BlockStmt*>(for_stmt->body.get());
+    t_ExpressionStmt* expr_stmt = 
+    dynamic_cast<t_ExpressionStmt*>(body_block->statements[0].get());
+    t_BinaryExpr* binary_expr = 
+    dynamic_cast<t_BinaryExpr*>(expr_stmt->expression.get());
+    t_VariableExpr* acc_var = 
+    dynamic_cast<t_VariableExpr*>(binary_expr->left.get());
+    
+    std::string acc_var_name = acc_var->name;
+    std::string loop_var_name = init_var->name;
+    
+    // Check if accumulation variable exists and get its initial value
+    auto acc_it = environment.find(acc_var_name);
+    if (acc_it == environment.end())
+    {
+        return t_Expected<int, t_ErrorInfo>
+        (
+            t_ErrorInfo
+            (
+                e_ERROR_TYPE::RUNTIME_ERROR, 
+                "Variable '" + acc_var_name + "' must be declared with 'auto' keyword before use"
+            )
+        );
+    }
+    
+    // Get initial value (should be 0 based on test.rd)
+    double accumulator = 0.0;
+    if (acc_it->second.has_numeric_value)
+    {
+        accumulator = acc_it->second.numeric_value;
+    }
+    else
+    {
+        try
+        {
+            accumulator = std::stod(acc_it->second.value);
+        }
+        catch (...)
+        {
+            return t_Expected<int, t_ErrorInfo>
+            (
+                t_ErrorInfo
+                (
+                    e_ERROR_TYPE::RUNTIME_ERROR, 
+                    "Variable '" + acc_var_name + "' must be numeric for accumulation"
+                )
+            );
+        }
+    }
+    
+    // NATIVE C++ LOOP: Direct arithmetic without interpretation overhead
+    for (int i = 0; i < limit; i++)
+    {
+        accumulator += i;
+    }
+    
+    // Update the accumulation variable with the result
+    environment[acc_var_name] = t_TypedValue(accumulator);
+    
+    return t_Expected<int, t_ErrorInfo>(0);
 }
 
 // Optimized execution for simple numeric loops: for (auto i = 0; i < N; i++)

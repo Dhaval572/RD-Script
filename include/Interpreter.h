@@ -120,6 +120,13 @@ private:
         t_ForStmt* for_stmt
     ); 
     
+    // Ultra-fast native loop optimization for simple accumulation patterns
+    bool IsSimpleAccumulationLoop(t_ForStmt* for_stmt);
+    t_Expected<int, t_ErrorInfo> ExecuteAccumulationLoop
+    (
+        t_ForStmt* for_stmt
+    ); 
+    
     // Optimized arithmetic operations
     t_Expected<bool, t_ErrorInfo> PerformComparison
     (
