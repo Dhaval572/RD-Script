@@ -1287,6 +1287,16 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
             (
                 (right == "false" || right == "0") ? "true" : "false"
             );
+
+        default:
+            return t_Expected<std::string, t_ErrorInfo>
+            (
+                t_ErrorInfo
+                (
+                    e_ERROR_TYPE::RUNTIME_ERROR,
+                    "Unsupported unary operator"
+                )
+            );
         }
     }
 
