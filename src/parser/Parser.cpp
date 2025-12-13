@@ -81,7 +81,10 @@ t_Expected<std::vector<t_Stmt*>, t_ErrorInfo> t_Parser::Parse()
         t_Expected<t_Stmt*, t_ErrorInfo> result = Statement();
         if (!result.HasValue())
         {
-            return t_Expected<std::vector<t_Stmt*>, t_ErrorInfo>(result.Error());
+            return t_Expected<std::vector<t_Stmt*>, t_ErrorInfo>
+            (
+                result.Error()
+            );
         }
         statements.push_back(result.Value());
     }
@@ -114,7 +117,7 @@ bool t_Parser::Check(e_TOKEN_TYPE type)
 
 t_Token t_Parser::Peek()
 {
-    if (current >= tokens.size())
+    if (static_cast<size_t>(current) >= tokens.size())
     {
         // Return EOF token if we're past the end of the tokens vector
         return t_Token(e_TOKEN_TYPE::EOF_TOKEN, "", "", 0);
@@ -475,15 +478,19 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
         t_LiteralExpr *init_literal =
         dynamic_cast<t_LiteralExpr *>(init_var->initializer.get());
 
-        if (!init_literal || init_literal->token_type != e_TOKEN_TYPE::NUMBER ||
-            !IsIntegerLiteralValue(init_literal->value))
+        if 
+        (
+            !init_literal                                    || 
+            init_literal->token_type != e_TOKEN_TYPE::NUMBER ||
+            !IsIntegerLiteralValue(init_literal->value)
+        )
         {
             return t_Expected<t_Stmt*, t_ErrorInfo>
             (
                 Error
                 (
                     Previous(),
-                    "For-loop variable must be initialized with an int literal."
+                    "For-loop variable must be initialized with an int literal"
                 )
             );
         }
@@ -496,8 +503,11 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
             );
         }
 
-        t_BinaryExpr *cond = dynamic_cast<t_BinaryExpr *>(stmt->condition.get());
-        if (!cond)
+        t_BinaryExpr *condi = dynamic_cast<t_BinaryExpr *>
+        (
+            stmt->condition.get()
+        );
+        if (!condi)
         {
             return t_Expected<t_Stmt*, t_ErrorInfo>
             (
@@ -505,27 +515,44 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
             );
         }
 
-        if (cond->op.type != e_TOKEN_TYPE::LESS &&
-            cond->op.type != e_TOKEN_TYPE::LESS_EQUAL &&
-            cond->op.type != e_TOKEN_TYPE::GREATER &&
-            cond->op.type != e_TOKEN_TYPE::GREATER_EQUAL)
+        if 
+        (
+            condi->op.type != e_TOKEN_TYPE::LESS         &&
+            condi->op.type != e_TOKEN_TYPE::LESS_EQUAL   &&
+            condi->op.type != e_TOKEN_TYPE::GREATER      &&
+            condi->op.type != e_TOKEN_TYPE::GREATER_EQUAL
+        )
         {
             return t_Expected<t_Stmt*, t_ErrorInfo>
             (
-                Error(Previous(), "For-loop condition must be <, <=, >, or >=.")
+                Error
+                (
+                    Previous(), "For-loop condition must be <, <=, >, or >=."
+                )
             );
         }
 
-        t_VariableExpr *cond_var = dynamic_cast<t_VariableExpr *>(cond->left.get());
-        t_LiteralExpr *cond_lit = dynamic_cast<t_LiteralExpr *>(cond->right.get());
+        t_VariableExpr *cond_var = 
+        dynamic_cast<t_VariableExpr *>(condi->left.get());
 
-        if (!cond_var || cond_var->name != init_var->name || !cond_lit ||
+        t_LiteralExpr *cond_lit = 
+        dynamic_cast<t_LiteralExpr *>(condi->right.get());
+
+        if 
+        (
+            !cond_var                                    || 
+            cond_var->name != init_var->name             || 
+            !cond_lit                                    ||
             cond_lit->token_type != e_TOKEN_TYPE::NUMBER ||
-            !IsIntegerLiteralValue(cond_lit->value))
+            !IsIntegerLiteralValue(cond_lit->value)
+        )
         {
             return t_Expected<t_Stmt*, t_ErrorInfo>
             (
-                Error(Previous(), "For-loop condition must compare loop variable to an int literal.")
+                Error
+                (
+                    Previous(), "For-loop condition must compare loop variable to an int literal."
+                )
             );
         }
 
@@ -540,34 +567,56 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
         bool valid_increment = false;
         if (t_PostfixExpr *post = dynamic_cast<t_PostfixExpr *>(stmt->increment.get()))
         {
-            t_VariableExpr *var = dynamic_cast<t_VariableExpr *>(post->operand.get());
-            if (var && var->name == init_var->name &&
-                (post->op.type == e_TOKEN_TYPE::PLUS_PLUS ||
-                 post->op.type == e_TOKEN_TYPE::MINUS_MINUS))
+            t_VariableExpr *var = 
+            dynamic_cast<t_VariableExpr *>(post->operand.get());
+            if 
+            (
+                var && var->name == init_var->name &&
+                (
+                    post->op.type == e_TOKEN_TYPE::PLUS_PLUS ||
+                    post->op.type == e_TOKEN_TYPE::MINUS_MINUS
+                )
+            )
             {
                 valid_increment = true;
             }
         }
         else if (t_PrefixExpr *pre = dynamic_cast<t_PrefixExpr *>(stmt->increment.get()))
         {
-            t_VariableExpr *var = dynamic_cast<t_VariableExpr *>(pre->operand.get());
-            if (var && var->name == init_var->name &&
-                (pre->op.type == e_TOKEN_TYPE::PLUS_PLUS ||
-                 pre->op.type == e_TOKEN_TYPE::MINUS_MINUS))
+            t_VariableExpr *var = 
+            dynamic_cast<t_VariableExpr *>(pre->operand.get());
+            if 
+            (
+                var && var->name == init_var->name &&
+                (
+                    pre->op.type == e_TOKEN_TYPE::PLUS_PLUS ||
+                    pre->op.type == e_TOKEN_TYPE::MINUS_MINUS
+                )
+            )
             {
                 valid_increment = true;
             }
         }
-        else if (t_BinaryExpr *assign = dynamic_cast<t_BinaryExpr *>(stmt->increment.get()))
+        else if 
+        (
+            t_BinaryExpr *assign = 
+            dynamic_cast<t_BinaryExpr *>(stmt->increment.get())
+        )
         {
             if (assign->op.type == e_TOKEN_TYPE::PLUS_EQUAL ||
                 assign->op.type == e_TOKEN_TYPE::MINUS_EQUAL)
             {
-                t_VariableExpr *lhs = dynamic_cast<t_VariableExpr *>(assign->left.get());
-                t_LiteralExpr *rhs = dynamic_cast<t_LiteralExpr *>(assign->right.get());
-                if (lhs && rhs && lhs->name == init_var->name &&
-                    rhs->token_type == e_TOKEN_TYPE::NUMBER &&
-                    IsIntegerLiteralValue(rhs->value))
+                t_VariableExpr *lhs = 
+                dynamic_cast<t_VariableExpr *>(assign->left.get());
+                t_LiteralExpr *rhs = 
+                dynamic_cast<t_LiteralExpr *>(assign->right.get());
+                
+                if 
+                (
+                    lhs && rhs && lhs->name == init_var->name &&
+                    rhs->token_type == e_TOKEN_TYPE::NUMBER   &&
+                    IsIntegerLiteralValue(rhs->value)
+                )
                 {
                     valid_increment = true;
                 }
@@ -942,7 +991,10 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::BenchmarkStatement()
     // Create a block statement for the body
     t_Stmt *body = new t_BlockStmt(std::move(statements));
     
-    t_BenchmarkStmt* stmt = static_cast<t_BenchmarkStmt*>(t_ASTContext::GetStmtPool().Allocate());
+    t_BenchmarkStmt* stmt = static_cast<t_BenchmarkStmt*>
+    (
+        t_ASTContext::GetStmtPool().Allocate()
+    );
     new (stmt) t_BenchmarkStmt(std::unique_ptr<t_Stmt>(body));
     return t_Expected<t_Stmt*, t_ErrorInfo>(stmt);
 }
@@ -1178,7 +1230,11 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Term()
 
         double left_num = 0.0;
         double right_num = 0.0;
-        if (TryGetNumberLiteral(expr, left_num) && TryGetNumberLiteral(right, right_num))
+        if 
+        (
+            TryGetNumberLiteral(expr, left_num) && 
+            TryGetNumberLiteral(right, right_num)
+        )
         {
             double result = 0.0;
             if (op.type == e_TOKEN_TYPE::PLUS)
@@ -1229,7 +1285,11 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Factor()
 
         double left_num = 0.0;
         double right_num = 0.0;
-        if (TryGetNumberLiteral(expr, left_num) && TryGetNumberLiteral(right, right_num))
+        if 
+        (
+            TryGetNumberLiteral(expr, left_num) && 
+            TryGetNumberLiteral(right, right_num)
+        )
         {
             double result = 0.0;
             if (op.type == e_TOKEN_TYPE::STAR)
@@ -1276,7 +1336,10 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Unary()
             double value = 0.0;
             if (TryGetNumberLiteral(right, value))
             {
-                return t_Expected<t_Expr*, t_ErrorInfo>(MakeNumberLiteral(-value));
+                return t_Expected<t_Expr*, t_ErrorInfo>
+                (
+                    MakeNumberLiteral(-value)
+                );
             }
         }
 

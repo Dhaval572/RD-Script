@@ -2596,7 +2596,10 @@ bool t_Interpreter::IsSimpleAccumulationLoop(t_ForStmt* for_stmt)
     // First check if it's a simple numeric loop
     if (!IsSimpleNumericLoop(for_stmt)) return false;
 
-    t_VarStmt* init_var = dynamic_cast<t_VarStmt*>(for_stmt->initializer.get());
+    t_VarStmt* init_var = dynamic_cast<t_VarStmt*>
+    (
+        for_stmt->initializer.get()
+    );
     t_LiteralExpr* init_literal =
     dynamic_cast<t_LiteralExpr*>(init_var->initializer.get());
 
@@ -2615,13 +2618,27 @@ bool t_Interpreter::IsSimpleAccumulationLoop(t_ForStmt* for_stmt)
     }
 
     bool increment_is_plus_plus = false;
-    if (t_PostfixExpr* postfix_inc = dynamic_cast<t_PostfixExpr*>(for_stmt->increment.get()))
+    if 
+    (
+        t_PostfixExpr* postfix_inc = 
+        dynamic_cast<t_PostfixExpr*>(for_stmt->increment.get())
+    )
     {
-        increment_is_plus_plus = (postfix_inc->op.type == e_TOKEN_TYPE::PLUS_PLUS);
+        increment_is_plus_plus = 
+        (
+            postfix_inc->op.type == e_TOKEN_TYPE::PLUS_PLUS
+        );
     }
-    else if (t_PrefixExpr* prefix_inc = dynamic_cast<t_PrefixExpr*>(for_stmt->increment.get()))
+    else if 
+    (
+        t_PrefixExpr* prefix_inc = 
+        dynamic_cast<t_PrefixExpr*>(for_stmt->increment.get())
+    )
     {
-        increment_is_plus_plus = (prefix_inc->op.type == e_TOKEN_TYPE::PLUS_PLUS);
+        increment_is_plus_plus = 
+        (
+            prefix_inc->op.type == e_TOKEN_TYPE::PLUS_PLUS
+        );
     }
 
     if (!increment_is_plus_plus)
@@ -2686,8 +2703,10 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteAccumulationLoop
     t_BlockStmt* body_block = dynamic_cast<t_BlockStmt*>(for_stmt->body.get());
     t_ExpressionStmt* expr_stmt = 
     dynamic_cast<t_ExpressionStmt*>(body_block->statements[0].get());
+
     t_BinaryExpr* binary_expr = 
     dynamic_cast<t_BinaryExpr*>(expr_stmt->expression.get());
+    
     t_VariableExpr* acc_var = 
     dynamic_cast<t_VariableExpr*>(binary_expr->left.get());
     
@@ -2762,7 +2781,10 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
     loop_depth++;
     
     // Extract loop parameters
-    t_VarStmt* init_var = dynamic_cast<t_VarStmt*>(for_stmt->initializer.get());
+    t_VarStmt* init_var = dynamic_cast<t_VarStmt*>
+    (
+        for_stmt->initializer.get()
+    );
     t_LiteralExpr* init_literal =
     dynamic_cast<t_LiteralExpr*>(init_var->initializer.get());
 
@@ -2789,7 +2811,10 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
     {
         t_LiteralExpr* rhs = dynamic_cast<t_LiteralExpr*>(assign->right.get());
         int rhs_int = static_cast<int>(std::stod(rhs->value));
-        step = (assign->op.type == e_TOKEN_TYPE::PLUS_EQUAL) ? rhs_int : -rhs_int;
+        step = 
+        (
+            assign->op.type == e_TOKEN_TYPE::PLUS_EQUAL) ? 
+                rhs_int : -rhs_int;
     }
 
     std::string loop_var_name = init_var->name;
@@ -2805,9 +2830,17 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
     );
 
     t_BlockStmt* body_block = dynamic_cast<t_BlockStmt*>(for_stmt->body.get());
-    if (allow_break_optimization && body_block && body_block->statements.size() == 1)
+    if 
+    (
+        allow_break_optimization && 
+        body_block               &&
+        body_block->statements.size() == 1
+    )
     {
-        t_IfStmt* if_stmt = dynamic_cast<t_IfStmt*>(body_block->statements[0].get());
+        t_IfStmt* if_stmt = dynamic_cast<t_IfStmt*>
+        (
+            body_block->statements[0].get()
+        );
         if (if_stmt && !if_stmt->else_branch)
         {
             bool then_is_break = false;
@@ -2816,7 +2849,11 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
             {
                 then_is_break = true;
             }
-            else if (t_BlockStmt* then_block = dynamic_cast<t_BlockStmt*>(if_stmt->then_branch.get()))
+            else if 
+            (
+                t_BlockStmt* then_block = 
+                dynamic_cast<t_BlockStmt*>(if_stmt->then_branch.get())
+            )
             {
                 if (then_block->statements.size() == 1)
                 {
@@ -2838,7 +2875,11 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
                 t_BinaryExpr* cond_binary = 
                 dynamic_cast<t_BinaryExpr*>(if_stmt->condition.get());
 
-                if (cond_binary && cond_binary->op.type == e_TOKEN_TYPE::EQUAL_EQUAL)
+                if 
+                (
+                    cond_binary && 
+                    cond_binary->op.type == e_TOKEN_TYPE::EQUAL_EQUAL
+                )
                 {
                     t_VariableExpr* cond_var = 
                     dynamic_cast<t_VariableExpr*>(cond_binary->left.get());
@@ -2852,7 +2893,12 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
                         cond_lit = dynamic_cast<t_LiteralExpr*>(cond_binary->left.get());
                     }
 
-                    if (cond_var && cond_lit && cond_var->name == loop_var_name)
+                    if 
+                    (
+                        cond_var && 
+                        cond_lit && 
+                        cond_var->name == loop_var_name
+                    )
                     {
                         try
                         {
@@ -2876,8 +2922,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
     if (!use_fast_break_optimization)
     {
         auto ConditionHolds =
-        [condition_op, limit]
-        (int i) -> bool
+        [condition_op, limit](int i) -> bool
         {
             switch (condition_op)
             {
