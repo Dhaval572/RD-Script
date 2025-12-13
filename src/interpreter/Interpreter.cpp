@@ -56,10 +56,25 @@ void t_Interpreter::WriteOutput(const std::string& text)
     if (m_BufferOutput)
     {
         m_OutputBuffer.append(text);
+
+        static const std::size_t flush_threshold = 4 * 1024 * 1024;
+        if (m_OutputBuffer.size() >= flush_threshold)
+        {
+            std::cout.write
+            (
+                m_OutputBuffer.data(),
+                static_cast<std::streamsize>(m_OutputBuffer.size())
+            );
+            m_OutputBuffer.clear();
+        }
     }
     else
     {
-        std::cout.write(text.data(), static_cast<std::streamsize>(text.size()));
+        std::cout.write
+        (
+            text.data(), 
+            static_cast<std::streamsize>(text.size())
+        );
     }
 }
 
@@ -333,7 +348,9 @@ bool t_Interpreter::IsFloat(const std::string& value)
 // Comparison operations are kept as they are more complex
 t_Expected<bool, t_ErrorInfo> t_Interpreter::PerformComparison
 (
-    const t_TypedValue& left, const e_TOKEN_TYPE op, const t_TypedValue& right
+    const t_TypedValue& left, 
+    const e_TOKEN_TYPE op,
+    const t_TypedValue& right
 )
 {
     // If both values have precomputed numeric values, use them directly
@@ -681,7 +698,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                     // Execute increment (if any)
                     if (for_stmt->increment && control_signal.empty())
                     {
-                        t_Expected<std::string, t_ErrorInfo> increment_result = 
+                        t_Expected<std::string, t_ErrorInfo> increment_result= 
                         Evaluate(for_stmt->increment.get());
 
                         if (!increment_result.HasValue())
@@ -695,6 +712,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
 
                 // Before popping scope, preserve modifications to pre-existing variables
                 std::unordered_map<std::string, t_TypedValue> modified_pre_existing;
+
                 for (const auto& pair : environment)
                 {
                     if (pre_loop_variables.count(pair.first) > 0)
@@ -1014,8 +1032,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                   << duration.count() / 1000000000.0 
                   << " seconds\n";
     }
-    else if 
-    (dynamic_cast<t_EmptyStmt *>(stmt))
+    else if (dynamic_cast<t_EmptyStmt *>(stmt))
     {
         // Do nothing for empty statements
     }
@@ -1659,7 +1676,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                                 t_ErrorInfo
                                 (
                                     e_ERROR_TYPE::RUNTIME_ERROR, 
-                                    "Cannot perform arithmetic operation"
+                                    "String concatenation with '+' is not allowed. Use comma-separated values in display statements instead."
                                 )
                             );
                         }
@@ -1721,7 +1738,11 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                             {
                                 final_value_result = t_Expected<std::string, t_ErrorInfo>
                                 (
-                                    t_ErrorInfo(e_ERROR_TYPE::RUNTIME_ERROR, "Division by zero")
+                                    t_ErrorInfo
+                                    (
+                                        e_ERROR_TYPE::RUNTIME_ERROR, 
+                                        "Division by zero"
+                                    )
                                 );
                             }
                             else
@@ -1819,7 +1840,13 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                 }
                 
                 // Update the variable in the environment
-                AssignToVisibleVariable(var_name, t_TypedValue(final_value, type), environment, scope_stack);
+                AssignToVisibleVariable
+                (
+                    var_name, 
+                    t_TypedValue(final_value, type), 
+                    environment, 
+                    scope_stack
+                );
                 
                 // Return the assigned value
                 return t_Expected<std::string, t_ErrorInfo>(final_value);
@@ -1978,7 +2005,11 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                     {
                         return t_Expected<std::string, t_ErrorInfo>
                         (
-                            t_ErrorInfo(e_ERROR_TYPE::RUNTIME_ERROR, "Division by zero")
+                            t_ErrorInfo
+                            (
+                                e_ERROR_TYPE::RUNTIME_ERROR, 
+                                "Division by zero"
+                            )
                         );
                     }
                     
@@ -2186,11 +2217,18 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::EvaluateFormatExpression
                 {
                     return t_Expected<std::string, t_ErrorInfo>
                     (
-                        t_ErrorInfo(e_ERROR_TYPE::RUNTIME_ERROR, "Division by zero")
+                        t_ErrorInfo
+                        (
+                            e_ERROR_TYPE::RUNTIME_ERROR, 
+                            "Division by zero"
+                        )
                     );
                 }
                 
-                return t_Expected<std::string, t_ErrorInfo>(FormatNumber(left_val / right_val));
+                return t_Expected<std::string, t_ErrorInfo>
+                (
+                    FormatNumber(left_val / right_val)
+                );
             }
             catch (...)
             {
@@ -2243,7 +2281,10 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::EvaluateFormatExpression
             {
                 double left_val = std::stod(left_value);
                 double right_val = std::stod(right_value);
-                return t_Expected<std::string, t_ErrorInfo>(FormatNumber(left_val + right_val));
+                return t_Expected<std::string, t_ErrorInfo>
+                (
+                    FormatNumber(left_val + right_val)
+                );
             }
             catch (...)
             {
@@ -2338,17 +2379,41 @@ bool t_Interpreter::IsSimpleNumericLoop(t_ForStmt* for_stmt)
     
     t_LiteralExpr* init_literal = 
     dynamic_cast<t_LiteralExpr*>(init_var->initializer.get());
-    if (!init_literal || init_literal->value != "0") return false;
+    if (!init_literal || init_literal->token_type != e_TOKEN_TYPE::NUMBER) return false;
+
+    int start_value = 0;
+    try
+    {
+        double raw_value = std::stod(init_literal->value);
+        start_value = static_cast<int>(raw_value);
+        if (raw_value != static_cast<double>(start_value))
+        {
+            return false;
+        }
+    }
+    catch (...)
+    {
+        return false;
+    }
     
     // Check if condition is: var < number
     if (!for_stmt->condition) return false;
     
     t_BinaryExpr* condition_binary = 
     dynamic_cast<t_BinaryExpr*>(for_stmt->condition.get());
-    if 
+    if (!condition_binary) return false;
+
+    e_TOKEN_TYPE condition_op = condition_binary->op.type;
+    if
     (
-        !condition_binary || condition_binary->op.type != e_TOKEN_TYPE::LESS
-    ) return false;
+        condition_op != e_TOKEN_TYPE::LESS          &&
+        condition_op != e_TOKEN_TYPE::LESS_EQUAL    &&
+        condition_op != e_TOKEN_TYPE::GREATER       &&
+        condition_op != e_TOKEN_TYPE::GREATER_EQUAL
+    )
+    {
+        return false;
+    }
     
     t_VariableExpr* condition_var = 
     dynamic_cast<t_VariableExpr*>(condition_binary->left.get());
@@ -2356,7 +2421,22 @@ bool t_Interpreter::IsSimpleNumericLoop(t_ForStmt* for_stmt)
     
     t_LiteralExpr* condition_literal = 
     dynamic_cast<t_LiteralExpr*>(condition_binary->right.get());
-    if (!condition_literal) return false;
+    if (!condition_literal || condition_literal->token_type != e_TOKEN_TYPE::NUMBER) return false;
+
+    int limit_value = 0;
+    try
+    {
+        double raw_value = std::stod(condition_literal->value);
+        limit_value = static_cast<int>(raw_value);
+        if (raw_value != static_cast<double>(limit_value))
+        {
+            return false;
+        }
+    }
+    catch (...)
+    {
+        return false;
+    }
     
     // Try to convert condition literal to number
     try 
@@ -2370,6 +2450,8 @@ bool t_Interpreter::IsSimpleNumericLoop(t_ForStmt* for_stmt)
     
     // Check if increment is: var++ or ++var
     if (!for_stmt->increment) return false;
+
+    int step = 0;
     
     // Check for postfix increment: var++
     t_PostfixExpr* postfix_inc = 
@@ -2385,7 +2467,20 @@ bool t_Interpreter::IsSimpleNumericLoop(t_ForStmt* for_stmt)
             postfix_inc->op.type == e_TOKEN_TYPE::PLUS_PLUS
         ) 
         {
-            return true;
+            step = 1;
+        }
+        else if
+        (
+            inc_var                         &&
+            inc_var->name == init_var->name &&
+            postfix_inc->op.type == e_TOKEN_TYPE::MINUS_MINUS
+        )
+        {
+            step = -1;
+        }
+        else
+        {
+            return false;
         }
     }
     
@@ -2404,11 +2499,95 @@ bool t_Interpreter::IsSimpleNumericLoop(t_ForStmt* for_stmt)
             prefix_inc->op.type == e_TOKEN_TYPE::PLUS_PLUS
         )
         {
-            return true;
+            step = 1;
+        }
+        else if
+        (
+            inc_var                         &&
+            inc_var->name == init_var->name &&
+            prefix_inc->op.type == e_TOKEN_TYPE::MINUS_MINUS
+        )
+        {
+            step = -1;
+        }
+        else
+        {
+            return false;
         }
     }
-    
-    return false;
+
+    if (step == 0)
+    {
+        if (t_BinaryExpr* assign = dynamic_cast<t_BinaryExpr*>(for_stmt->increment.get()))
+        {
+            if
+            (
+                assign->op.type != e_TOKEN_TYPE::PLUS_EQUAL &&
+                assign->op.type != e_TOKEN_TYPE::MINUS_EQUAL
+            )
+            {
+                return false;
+            }
+
+            t_VariableExpr* lhs = dynamic_cast<t_VariableExpr*>(assign->left.get());
+            t_LiteralExpr* rhs = dynamic_cast<t_LiteralExpr*>(assign->right.get());
+            if
+            (
+                !lhs ||
+                !rhs ||
+                lhs->name != init_var->name ||
+                rhs->token_type != e_TOKEN_TYPE::NUMBER
+            )
+            {
+                return false;
+            }
+
+            int rhs_int = 0;
+            try
+            {
+                double raw_value = std::stod(rhs->value);
+                rhs_int = static_cast<int>(raw_value);
+                if (raw_value != static_cast<double>(rhs_int))
+                {
+                    return false;
+                }
+            }
+            catch (...)
+            {
+                return false;
+            }
+
+            if (rhs_int == 0)
+            {
+                return false;
+            }
+
+            step = (assign->op.type == e_TOKEN_TYPE::PLUS_EQUAL) ? rhs_int : -rhs_int;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    if (condition_op == e_TOKEN_TYPE::LESS || condition_op == e_TOKEN_TYPE::LESS_EQUAL)
+    {
+        if (step <= 0)
+        {
+            return false;
+        }
+    }
+    else
+    {
+        if (step >= 0)
+        {
+            return false;
+        }
+    }
+
+    (void)start_value;
+    (void)limit_value;
+    return true;
 }
 
 // Ultra-fast optimization for simple accumulation loops: for (auto i = 0; i < N; i++) { var += i; }
@@ -2416,12 +2595,44 @@ bool t_Interpreter::IsSimpleAccumulationLoop(t_ForStmt* for_stmt)
 {
     // First check if it's a simple numeric loop
     if (!IsSimpleNumericLoop(for_stmt)) return false;
+
+    t_VarStmt* init_var = dynamic_cast<t_VarStmt*>(for_stmt->initializer.get());
+    t_LiteralExpr* init_literal =
+    dynamic_cast<t_LiteralExpr*>(init_var->initializer.get());
+
+    t_BinaryExpr* condition_binary =
+    dynamic_cast<t_BinaryExpr*>(for_stmt->condition.get());
+
+    if
+    (
+        !init_literal ||
+        init_literal->value != "0" ||
+        !condition_binary ||
+        condition_binary->op.type != e_TOKEN_TYPE::LESS
+    )
+    {
+        return false;
+    }
+
+    bool increment_is_plus_plus = false;
+    if (t_PostfixExpr* postfix_inc = dynamic_cast<t_PostfixExpr*>(for_stmt->increment.get()))
+    {
+        increment_is_plus_plus = (postfix_inc->op.type == e_TOKEN_TYPE::PLUS_PLUS);
+    }
+    else if (t_PrefixExpr* prefix_inc = dynamic_cast<t_PrefixExpr*>(for_stmt->increment.get()))
+    {
+        increment_is_plus_plus = (prefix_inc->op.type == e_TOKEN_TYPE::PLUS_PLUS);
+    }
+
+    if (!increment_is_plus_plus)
+    {
+        return false;
+    }
     
     // Check if body is a block with exactly one statement
     t_BlockStmt* body_block = dynamic_cast<t_BlockStmt*>(for_stmt->body.get());
     if (!body_block || body_block->statements.size() != 1) return false;
     
-    // Check if the single statement is an expression statement
     t_ExpressionStmt* expr_stmt = 
     dynamic_cast<t_ExpressionStmt*>(body_block->statements[0].get());
     if (!expr_stmt) return false;
@@ -2444,13 +2655,6 @@ bool t_Interpreter::IsSimpleAccumulationLoop(t_ForStmt* for_stmt)
     t_VariableExpr* right_var = 
     dynamic_cast<t_VariableExpr*>(binary_expr->right.get());
     if (!right_var) return false;
-    
-    // Get loop variable name from initializer
-    t_VarStmt* init_var = dynamic_cast<t_VarStmt*>
-    (
-        for_stmt->initializer.get()
-    );
-    if (!init_var) return false;
     
     // Check if right side matches loop variable
     if (right_var->name != init_var->name) return false;
@@ -2559,23 +2763,49 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
     
     // Extract loop parameters
     t_VarStmt* init_var = dynamic_cast<t_VarStmt*>(for_stmt->initializer.get());
+    t_LiteralExpr* init_literal =
+    dynamic_cast<t_LiteralExpr*>(init_var->initializer.get());
+
     t_BinaryExpr* condition_binary = 
     dynamic_cast<t_BinaryExpr*>(for_stmt->condition.get());
 
     t_LiteralExpr* condition_literal = 
     dynamic_cast<t_LiteralExpr*>(condition_binary->right.get());
-    
-    // Get the loop limit
+
+    int start = static_cast<int>(std::stod(init_literal->value));
     int limit = static_cast<int>(std::stod(condition_literal->value));
-    
-    // Store the variable name
+    e_TOKEN_TYPE condition_op = condition_binary->op.type;
+
+    int step = 1;
+    if (t_PostfixExpr* postfix_inc = dynamic_cast<t_PostfixExpr*>(for_stmt->increment.get()))
+    {
+        step = (postfix_inc->op.type == e_TOKEN_TYPE::PLUS_PLUS) ? 1 : -1;
+    }
+    else if (t_PrefixExpr* prefix_inc = dynamic_cast<t_PrefixExpr*>(for_stmt->increment.get()))
+    {
+        step = (prefix_inc->op.type == e_TOKEN_TYPE::PLUS_PLUS) ? 1 : -1;
+    }
+    else if (t_BinaryExpr* assign = dynamic_cast<t_BinaryExpr*>(for_stmt->increment.get()))
+    {
+        t_LiteralExpr* rhs = dynamic_cast<t_LiteralExpr*>(assign->right.get());
+        int rhs_int = static_cast<int>(std::stod(rhs->value));
+        step = (assign->op.type == e_TOKEN_TYPE::PLUS_EQUAL) ? rhs_int : -rhs_int;
+    }
+
     std::string loop_var_name = init_var->name;
 
     bool use_fast_break_optimization = false;
     int break_at_value = -1;
 
+    bool allow_break_optimization =
+    (
+        start == 0                  &&
+        step == 1                   &&
+        condition_op == e_TOKEN_TYPE::LESS
+    );
+
     t_BlockStmt* body_block = dynamic_cast<t_BlockStmt*>(for_stmt->body.get());
-    if (body_block && body_block->statements.size() == 1)
+    if (allow_break_optimization && body_block && body_block->statements.size() == 1)
     {
         t_IfStmt* if_stmt = dynamic_cast<t_IfStmt*>(body_block->statements[0].get());
         if (if_stmt && !if_stmt->else_branch)
@@ -2590,7 +2820,13 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
             {
                 if (then_block->statements.size() == 1)
                 {
-                    if (dynamic_cast<t_BreakStmt*>(then_block->statements[0].get()))
+                    if 
+                    (
+                        dynamic_cast<t_BreakStmt*>
+                        (
+                            then_block->statements[0].get()
+                        )
+                    )
                     {
                         then_is_break = true;
                     }
@@ -2599,7 +2835,9 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
 
             if (then_is_break)
             {
-                t_BinaryExpr* cond_binary = dynamic_cast<t_BinaryExpr*>(if_stmt->condition.get());
+                t_BinaryExpr* cond_binary = 
+                dynamic_cast<t_BinaryExpr*>(if_stmt->condition.get());
+
                 if (cond_binary && cond_binary->op.type == e_TOKEN_TYPE::EQUAL_EQUAL)
                 {
                     t_VariableExpr* cond_var = 
@@ -2610,6 +2848,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
                     if (!cond_var || !cond_lit)
                     {
                         cond_var = dynamic_cast<t_VariableExpr*>(cond_binary->right.get());
+
                         cond_lit = dynamic_cast<t_LiteralExpr*>(cond_binary->left.get());
                     }
 
@@ -2636,7 +2875,30 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
     // Manually control the loop to properly handle continue statements
     if (!use_fast_break_optimization)
     {
-        for (int i = 0; i < limit;)
+        auto ConditionHolds =
+        [condition_op, limit]
+        (int i) -> bool
+        {
+            switch (condition_op)
+            {
+            case e_TOKEN_TYPE::LESS:
+                return i < limit;
+
+            case e_TOKEN_TYPE::LESS_EQUAL:
+                return i <= limit;
+
+            case e_TOKEN_TYPE::GREATER:
+                return i > limit;
+
+            case e_TOKEN_TYPE::GREATER_EQUAL:
+                return i >= limit;
+
+            default:
+                return false;
+            }
+        };
+
+        for (int i = start; ConditionHolds(i);)
         {
             // Set loop variable directly as integer
             environment[loop_var_name] = t_TypedValue(static_cast<double>(i));
@@ -2645,6 +2907,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
             control_signal.clear();
             t_Expected<int, t_ErrorInfo> body_result = 
             Execute(for_stmt->body.get());
+
             if (!body_result.HasValue())
             {
                 PopScope(); // Clean up scope before returning
@@ -2660,7 +2923,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
             {
                 control_signal.clear();
                 // Skip increment and go to next iteration when continue is encountered
-                i++;
+                i += step;
                 continue;
             }
             
@@ -2673,7 +2936,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
             }
             
             // Only increment if no control signal was encountered
-            i++;
+            i += step;
         }
     }
     else
@@ -2689,7 +2952,10 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
         }
 
         control_signal.clear();
-        environment[loop_var_name] = t_TypedValue(static_cast<double>(final_i));
+        environment[loop_var_name] = t_TypedValue
+        (
+            static_cast<double>(final_i)
+        );
     }
 
     // Before popping scope, preserve modifications to pre-existing variables
