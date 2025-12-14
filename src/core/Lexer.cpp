@@ -125,7 +125,7 @@ t_ParsingResult t_Lexer::ScanToken()
             (
                 t_ErrorInfo
                 (
-                    e_ERROR_TYPE::LEXING_ERROR, 
+                    e_ErrorType::LEXING_ERROR, 
                     "Unexpected character", 
                     line, 
                     current
@@ -144,7 +144,7 @@ t_ParsingResult t_Lexer::ScanToken()
             (
                 t_ErrorInfo
                 (
-                    e_ERROR_TYPE::LEXING_ERROR,
+                    e_ErrorType::LEXING_ERROR,
                     "Unexpected character",
                     line,
                     current
@@ -204,7 +204,7 @@ t_ParsingResult t_Lexer::ScanToken()
             (
                 t_ErrorInfo
                 (
-                    e_ERROR_TYPE::LEXING_ERROR, 
+                    e_ErrorType::LEXING_ERROR, 
                     "Unexpected character", 
                     line, 
                     current
@@ -227,7 +227,7 @@ t_ParsingResult t_Lexer::ScanToken()
             (
                 t_ErrorInfo
                 (
-                    e_ERROR_TYPE::LEXING_ERROR, 
+                    e_ErrorType::LEXING_ERROR, 
                     "Unexpected character", 
                     line, 
                     current
@@ -312,7 +312,7 @@ t_Expected<std::string, t_ErrorInfo> t_Lexer::String()
         (
             t_ErrorInfo
             (
-                e_ERROR_TYPE::LEXING_ERROR, 
+                e_ErrorType::LEXING_ERROR, 
                 "Unterminated string", 
                 line, 
                 current
@@ -376,7 +376,7 @@ t_Expected<std::string, t_ErrorInfo> t_Lexer::FormatString()
         (
             t_ErrorInfo
             (
-                e_ERROR_TYPE::LEXING_ERROR, 
+                e_ErrorType::LEXING_ERROR, 
                 "Unterminated format string", 
                 line,
                 current

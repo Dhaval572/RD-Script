@@ -161,7 +161,7 @@ t_Expected<t_Token, t_ErrorInfo> t_Parser::Consume
 
     return t_Expected<t_Token, t_ErrorInfo>
     (
-        t_ErrorInfo(e_ERROR_TYPE::PARSING_ERROR, message, Peek().line, 0)
+        t_ErrorInfo(e_ErrorType::PARSING_ERROR, message, Peek().line, 0)
     );
 }
 
@@ -173,7 +173,7 @@ t_ErrorInfo t_Parser::Error(t_Token token, const std::string &message)
               << token.line 
               << std::endl;
 
-    return t_ErrorInfo(e_ERROR_TYPE::PARSING_ERROR, message, token.line, 0);
+    return t_ErrorInfo(e_ErrorType::PARSING_ERROR, message, token.line, 0);
 }
 
 t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::Statement()
@@ -1055,7 +1055,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Assignment()
         (
             t_ErrorInfo
             (
-                e_ERROR_TYPE::PARSING_ERROR, 
+                e_ErrorType::PARSING_ERROR, 
                 "Invalid assignment target", 
                 equals.line, 
                 0
@@ -1526,7 +1526,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Primary()
     (
         t_ErrorInfo
         (
-            e_ERROR_TYPE::PARSING_ERROR, 
+            e_ErrorType::PARSING_ERROR, 
             "Expect expression", 
             Peek().line, 
             0
