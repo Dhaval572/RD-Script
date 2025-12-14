@@ -3,28 +3,28 @@
 #include <cctype>
 #include "ErrorHandling.h"
 
-static const std::unordered_map<std::string, e_TOKEN_TYPE> keywords =
+static const std::unordered_map<std::string, e_TokenType> keywords =
 {
-    {"and", e_TOKEN_TYPE::AND},
-    {"break", e_TOKEN_TYPE::BREAK},
-    {"class", e_TOKEN_TYPE::CLASS},
-    {"continue", e_TOKEN_TYPE::CONTINUE},
-    {"else", e_TOKEN_TYPE::ELSE},
-    {"false", e_TOKEN_TYPE::FALSE},
-    {"for", e_TOKEN_TYPE::FOR},
-    {"fun", e_TOKEN_TYPE::FUN},
-    {"if", e_TOKEN_TYPE::IF},
-    {"nil", e_TOKEN_TYPE::NIL},
-    {"or", e_TOKEN_TYPE::OR},
-    {"display", e_TOKEN_TYPE::DISPLAY},
-    {"return", e_TOKEN_TYPE::RETURN},
-    {"super", e_TOKEN_TYPE::SUPER},
-    {"this", e_TOKEN_TYPE::THIS},
-    {"true", e_TOKEN_TYPE::TRUE},
-    {"while", e_TOKEN_TYPE::WHILE},
-    {"auto", e_TOKEN_TYPE::AUTO},
-    {"benchmark", e_TOKEN_TYPE::BENCHMARK},
-    {"getin", e_TOKEN_TYPE::GETIN} 
+    {"and", e_TokenType::AND},
+    {"break", e_TokenType::BREAK},
+    {"class", e_TokenType::CLASS},
+    {"continue", e_TokenType::CONTINUE},
+    {"else", e_TokenType::ELSE},
+    {"false", e_TokenType::FALSE},
+    {"for", e_TokenType::FOR},
+    {"fun", e_TokenType::FUN},
+    {"if", e_TokenType::IF},
+    {"nil", e_TokenType::NIL},
+    {"or", e_TokenType::OR},
+    {"display", e_TokenType::DISPLAY},
+    {"return", e_TokenType::RETURN},
+    {"super", e_TokenType::SUPER},
+    {"this", e_TokenType::THIS},
+    {"true", e_TokenType::TRUE},
+    {"while", e_TokenType::WHILE},
+    {"auto", e_TokenType::AUTO},
+    {"benchmark", e_TokenType::BENCHMARK},
+    {"getin", e_TokenType::GETIN} 
 };
 
 t_Lexer::t_Lexer(const std::string &source)
@@ -42,7 +42,7 @@ t_ParsingResult t_Lexer::ScanTokens()
         }
     }
 
-    tokens.emplace_back(e_TOKEN_TYPE::EOF_TOKEN, "", "", line);
+    tokens.emplace_back(e_TokenType::EOF_TOKEN, "", "", line);
     return t_ParsingResult(tokens);
 }
 
@@ -57,67 +57,67 @@ t_ParsingResult t_Lexer::ScanToken()
     switch (c)
     {
     case '(':
-        AddToken(e_TOKEN_TYPE::LEFT_PAREN);
+        AddToken(e_TokenType::LEFT_PAREN);
         break;
     case ')':
-        AddToken(e_TOKEN_TYPE::RIGHT_PAREN);
+        AddToken(e_TokenType::RIGHT_PAREN);
         break;
     case '{':
-        AddToken(e_TOKEN_TYPE::LEFT_BRACE);
+        AddToken(e_TokenType::LEFT_BRACE);
         break;
     case '}':
-        AddToken(e_TOKEN_TYPE::RIGHT_BRACE);
+        AddToken(e_TokenType::RIGHT_BRACE);
         break;
     case ',':
-        AddToken(e_TOKEN_TYPE::COMMA);
+        AddToken(e_TokenType::COMMA);
         break;
     case '.':
-        AddToken(e_TOKEN_TYPE::DOT);
+        AddToken(e_TokenType::DOT);
         break;
     case '-':
         if (Match('-')) 
         {
-            AddToken(e_TOKEN_TYPE::MINUS_MINUS);
+            AddToken(e_TokenType::MINUS_MINUS);
         } 
         else if (Match('='))
         {
-            AddToken(e_TOKEN_TYPE::MINUS_EQUAL);
+            AddToken(e_TokenType::MINUS_EQUAL);
         }
         else 
         {
-            AddToken(e_TOKEN_TYPE::MINUS);
+            AddToken(e_TokenType::MINUS);
         }
         break;
     case '+':
         if (Match('+')) 
         {
-            AddToken(e_TOKEN_TYPE::PLUS_PLUS);
+            AddToken(e_TokenType::PLUS_PLUS);
         } 
         else if (Match('='))
         {
-            AddToken(e_TOKEN_TYPE::PLUS_EQUAL);
+            AddToken(e_TokenType::PLUS_EQUAL);
         }
         else 
         {
-            AddToken(e_TOKEN_TYPE::PLUS);
+            AddToken(e_TokenType::PLUS);
         }
         break;
     case ';':
-        AddToken(e_TOKEN_TYPE::SEMICOLON);
+        AddToken(e_TokenType::SEMICOLON);
         break;
     case '*':
-        AddToken(Match('=') ? e_TOKEN_TYPE::STAR_EQUAL : e_TOKEN_TYPE::STAR);
+        AddToken(Match('=') ? e_TokenType::STAR_EQUAL : e_TokenType::STAR);
         break;
     case '!':
-        AddToken(Match('=') ? e_TOKEN_TYPE::BANG_EQUAL : e_TOKEN_TYPE::BANG);
+        AddToken(Match('=') ? e_TokenType::BANG_EQUAL : e_TokenType::BANG);
         break;
     case '=':
-        AddToken(Match('=') ? e_TOKEN_TYPE::EQUAL_EQUAL : e_TOKEN_TYPE::EQUAL);
+        AddToken(Match('=') ? e_TokenType::EQUAL_EQUAL : e_TokenType::EQUAL);
         break;
     case '&':
         if (Match('&')) 
         {
-            AddToken(e_TOKEN_TYPE::AND);
+            AddToken(e_TokenType::AND);
         } 
         else 
         {
@@ -136,7 +136,7 @@ t_ParsingResult t_Lexer::ScanToken()
     case '|':
         if (Match('|'))
         {
-            AddToken(e_TOKEN_TYPE::OR);
+            AddToken(e_TokenType::OR);
         }
         else
         {
@@ -153,10 +153,10 @@ t_ParsingResult t_Lexer::ScanToken()
         }
         break;
     case '<':
-        AddToken(Match('=') ? e_TOKEN_TYPE::LESS_EQUAL : e_TOKEN_TYPE::LESS);
+        AddToken(Match('=') ? e_TokenType::LESS_EQUAL : e_TokenType::LESS);
         break;
     case '>':
-        AddToken(Match('=') ? e_TOKEN_TYPE::GREATER_EQUAL : e_TOKEN_TYPE::GREATER);
+        AddToken(Match('=') ? e_TokenType::GREATER_EQUAL : e_TokenType::GREATER);
         break;
     case '/':
         if (Match('/')) 
@@ -166,7 +166,7 @@ t_ParsingResult t_Lexer::ScanToken()
         } 
         else
         {
-            AddToken(Match('=') ? e_TOKEN_TYPE::SLASH_EQUAL : e_TOKEN_TYPE::SLASH);
+            AddToken(Match('=') ? e_TokenType::SLASH_EQUAL : e_TokenType::SLASH);
         }
         break;
 
@@ -184,7 +184,7 @@ t_ParsingResult t_Lexer::ScanToken()
             {
                 return t_ParsingResult(result.Error());
             }
-            AddToken(e_TOKEN_TYPE::STRING, result.Value());
+            AddToken(e_TokenType::STRING, result.Value());
         }
         break;
     case '$':
@@ -196,7 +196,7 @@ t_ParsingResult t_Lexer::ScanToken()
             {
                 return t_ParsingResult(result.Error());
             }
-            AddToken(e_TOKEN_TYPE::FORMAT_STRING, result.Value());
+            AddToken(e_TokenType::FORMAT_STRING, result.Value());
         }
         else
         {
@@ -401,7 +401,7 @@ void t_Lexer::Number()
         while (std::isdigit(Peek())) Advance();
     }
 
-    AddToken(e_TOKEN_TYPE::NUMBER, source.substr(start, current - start));
+    AddToken(e_TokenType::NUMBER, source.substr(start, current - start));
 }
 
 void t_Lexer::Identifier()
@@ -409,16 +409,16 @@ void t_Lexer::Identifier()
     while (std::isalnum(Peek()) || Peek() == '_') Advance();
 
     std::string text = source.substr(start, current - start);
-    e_TOKEN_TYPE type = IdentifierType();
+    e_TokenType type = IdentifierType();
     AddToken(type, text);
 }
 
-e_TOKEN_TYPE t_Lexer::IdentifierType()
+e_TokenType t_Lexer::IdentifierType()
 {
     std::string text = source.substr(start, current - start);
     
     auto it = keywords.find(text);
-    return (it != keywords.end()) ? it->second : e_TOKEN_TYPE::IDENTIFIER;
+    return (it != keywords.end()) ? it->second : e_TokenType::IDENTIFIER;
 }
 
 char t_Lexer::Advance()
@@ -426,12 +426,12 @@ char t_Lexer::Advance()
     return source[current++];
 }
 
-void t_Lexer::AddToken(e_TOKEN_TYPE type)
+void t_Lexer::AddToken(e_TokenType type)
 {
     AddToken(type, "");
 }
 
-void t_Lexer::AddToken(e_TOKEN_TYPE type, const std::string &literal)
+void t_Lexer::AddToken(e_TokenType type, const std::string &literal)
 {
     std::string text = source.substr(start, current - start);
     tokens.emplace_back(type, text, literal, line);

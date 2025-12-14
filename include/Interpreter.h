@@ -9,7 +9,7 @@
 #include "ErrorHandling.h"
 
 // Type enumeration for RD Script values
-enum class e_VALUE_TYPE
+enum class e_ValueType
 {
     NIL,
     NUMBER,
@@ -21,24 +21,24 @@ enum class e_VALUE_TYPE
 struct t_TypedValue
 {
     std::string value;
-    e_VALUE_TYPE type;
+    e_ValueType type;
     double numeric_value;  
     bool has_numeric_value;
 
     t_TypedValue() 
         : value("nil"), 
-          type(e_VALUE_TYPE::NIL), 
+          type(e_ValueType::NIL), 
           numeric_value(0.0), 
           has_numeric_value(false) {}
     
-    t_TypedValue(const std::string& val, e_VALUE_TYPE typ) 
+    t_TypedValue(const std::string& val, e_ValueType typ) 
         : value(val), 
           type(typ), 
           numeric_value(0.0), 
           has_numeric_value(false) 
     {
         // Pre-compute numeric value if possible
-        if (typ == e_VALUE_TYPE::NUMBER) 
+        if (typ == e_ValueType::NUMBER) 
         {
             try 
             {
@@ -54,7 +54,7 @@ struct t_TypedValue
     
     // Constructor for direct numeric values
     t_TypedValue(double num_val) 
-        : type(e_VALUE_TYPE::NUMBER), 
+        : type(e_ValueType::NUMBER), 
           numeric_value(num_val), 
           has_numeric_value(true) 
     {
@@ -109,7 +109,7 @@ private:
         const std::string &expr_str
     );
     
-    e_VALUE_TYPE DetectType(const std::string& value);
+    e_ValueType DetectType(const std::string& value);
 
     // Helper functions for number formatting and type checking
     static std::string FormatNumber(double value);
@@ -134,7 +134,7 @@ private:
     t_Expected<bool, t_ErrorInfo> PerformComparison
     (
         const t_TypedValue& left, 
-        const e_TOKEN_TYPE op, 
+        const e_TokenType op, 
         const t_TypedValue& right
     );
     

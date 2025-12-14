@@ -21,7 +21,7 @@
    - Example: `TokenType`, `ParserState`
 
 6. **Enum Values**: Use UPPER_SNAKE_CASE
-   - Example: `e_TOKEN_EOF`, `e_PARSER_ERROR`
+   - Example: `TOKEN_EOF`, `PARSER_ERROR`
 
 ## Formatting Style
 

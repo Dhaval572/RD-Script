@@ -1,7 +1,7 @@
 # AST (Abstract Syntax Tree) Class Diagram
 
 ```mermaid
-classDiagram
+classDiagram`
     class t_Expr {
         <<abstract>>
         +~t_Expr() virtual

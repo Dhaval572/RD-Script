@@ -238,16 +238,16 @@ std::string t_Interpreter::FormatNumber(double value)
 }
 
 // Helper function to detect the type of a value
-e_VALUE_TYPE t_Interpreter::DetectType(const std::string& value)
+e_ValueType t_Interpreter::DetectType(const std::string& value)
 {
     if (value == "nil")
     {
-        return e_VALUE_TYPE::NIL;
+        return e_ValueType::NIL;
     }
     
     if (value == "true" || value == "false")
     {
-        return e_VALUE_TYPE::BOOLEAN;
+        return e_ValueType::BOOLEAN;
     }
     
     // Check if it's a number (integer or floating point)
@@ -285,12 +285,12 @@ e_VALUE_TYPE t_Interpreter::DetectType(const std::string& value)
         // Make sure we have at least one digit
         if (is_number && value.length() > start)
         {
-            return e_VALUE_TYPE::NUMBER;
+            return e_ValueType::NUMBER;
         }
     }
     
     // Default to string for all other values
-    return e_VALUE_TYPE::STRING;
+    return e_ValueType::STRING;
 }
 
 // Helper function to check if a string represents an integer
@@ -349,7 +349,7 @@ bool t_Interpreter::IsFloat(const std::string& value)
 t_Expected<bool, t_ErrorInfo> t_Interpreter::PerformComparison
 (
     const t_TypedValue& left, 
-    const e_TOKEN_TYPE op,
+    const e_TokenType op,
     const t_TypedValue& right
 )
 {
@@ -358,37 +358,37 @@ t_Expected<bool, t_ErrorInfo> t_Interpreter::PerformComparison
     {
         switch (op)
         {
-        case e_TOKEN_TYPE::GREATER:
+        case e_TokenType::GREATER:
             return t_Expected<bool, t_ErrorInfo>
             (
                 left.numeric_value > right.numeric_value
             );
         
-        case e_TOKEN_TYPE::GREATER_EQUAL:
+        case e_TokenType::GREATER_EQUAL:
             return t_Expected<bool, t_ErrorInfo>
             (
                 left.numeric_value >= right.numeric_value
             );
         
-        case e_TOKEN_TYPE::LESS:
+        case e_TokenType::LESS:
             return t_Expected<bool, t_ErrorInfo>
             (
                 left.numeric_value < right.numeric_value
             );
         
-        case e_TOKEN_TYPE::LESS_EQUAL:
+        case e_TokenType::LESS_EQUAL:
             return t_Expected<bool, t_ErrorInfo>
             (
                 left.numeric_value <= right.numeric_value
             );
         
-        case e_TOKEN_TYPE::EQUAL_EQUAL:
+        case e_TokenType::EQUAL_EQUAL:
             return t_Expected<bool, t_ErrorInfo>
             (
                 left.numeric_value == right.numeric_value
             );
         
-        case e_TOKEN_TYPE::BANG_EQUAL:
+        case e_TokenType::BANG_EQUAL:
             return t_Expected<bool, t_ErrorInfo>
             (
                 left.numeric_value != right.numeric_value
@@ -414,17 +414,17 @@ t_Expected<bool, t_ErrorInfo> t_Interpreter::PerformComparison
         
         switch (op)
         {
-        case e_TOKEN_TYPE::GREATER:
+        case e_TokenType::GREATER:
             return t_Expected<bool, t_ErrorInfo>(left_num > right_num);
-        case e_TOKEN_TYPE::GREATER_EQUAL:
+        case e_TokenType::GREATER_EQUAL:
             return t_Expected<bool, t_ErrorInfo>(left_num >= right_num);
-        case e_TOKEN_TYPE::LESS:
+        case e_TokenType::LESS:
             return t_Expected<bool, t_ErrorInfo>(left_num < right_num);
-        case e_TOKEN_TYPE::LESS_EQUAL:
+        case e_TokenType::LESS_EQUAL:
             return t_Expected<bool, t_ErrorInfo>(left_num <= right_num);
-        case e_TOKEN_TYPE::EQUAL_EQUAL:
+        case e_TokenType::EQUAL_EQUAL:
             return t_Expected<bool, t_ErrorInfo>(left_num == right_num);
-        case e_TOKEN_TYPE::BANG_EQUAL:
+        case e_TokenType::BANG_EQUAL:
             return t_Expected<bool, t_ErrorInfo>(left_num != right_num);
         default:
             return t_Expected<bool, t_ErrorInfo>(false);
@@ -435,9 +435,9 @@ t_Expected<bool, t_ErrorInfo> t_Interpreter::PerformComparison
         // For non-numeric comparisons, fallback to string comparison
         switch (op)
         {
-        case e_TOKEN_TYPE::EQUAL_EQUAL:
+        case e_TokenType::EQUAL_EQUAL:
             return t_Expected<bool, t_ErrorInfo>(left.value == right.value);
-        case e_TOKEN_TYPE::BANG_EQUAL:
+        case e_TokenType::BANG_EQUAL:
             return t_Expected<bool, t_ErrorInfo>(left.value != right.value);
         default:
             return t_Expected<bool, t_ErrorInfo>
@@ -774,7 +774,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
             }
             
             std::string value = value_result.Value();
-            e_VALUE_TYPE type = DetectType(value);
+            e_ValueType type = DetectType(value);
             // Use optimized TypedValue constructor
             typed_value = t_TypedValue(value, type);
         }
@@ -825,7 +825,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
 
         switch (current_value.type)
         {
-        case e_VALUE_TYPE::NUMBER:
+        case e_ValueType::NUMBER:
             {
                 double number_value = 0.0;
                 if (!(std::cin >> number_value))
@@ -858,7 +858,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                 break;
             }
 
-        case e_VALUE_TYPE::BOOLEAN:
+        case e_ValueType::BOOLEAN:
             {
                 bool bool_value = false;
                 if (!(std::cin >> std::boolalpha >> bool_value))
@@ -886,14 +886,14 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                 AssignToVisibleVariable
                 (
                     var_name,
-                    t_TypedValue(stored_value, e_VALUE_TYPE::BOOLEAN),
+                    t_TypedValue(stored_value, e_ValueType::BOOLEAN),
                     environment,
                     scope_stack
                 );
                 break;
             }
 
-        case e_VALUE_TYPE::STRING:
+        case e_ValueType::STRING:
             {
                 std::string input;
 
@@ -924,14 +924,14 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                 AssignToVisibleVariable
                 (
                     var_name,
-                    t_TypedValue(input, e_VALUE_TYPE::STRING),
+                    t_TypedValue(input, e_ValueType::STRING),
                     environment,
                     scope_stack
                 );
                 break;
             }
 
-        case e_VALUE_TYPE::NIL:
+        case e_ValueType::NIL:
         default:
             {
                 std::string input;
@@ -960,7 +960,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                     );
                 }
 
-                e_VALUE_TYPE inferred_type = DetectType(input);
+                e_ValueType inferred_type = DetectType(input);
 
                 AssignToVisibleVariable
                 (
@@ -1103,7 +1103,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
     if (t_LiteralExpr *literal = dynamic_cast<t_LiteralExpr *>(expr))
     {
         // Check if this is a format string based on token type
-        if (literal->token_type == e_TOKEN_TYPE::FORMAT_STRING)
+        if (literal->token_type == e_TokenType::FORMAT_STRING)
         {
             // Process format string
             std::string format_str = literal->value;
@@ -1191,7 +1191,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                 }
 
                 std::string arg_value = arg_result.Value();
-                e_VALUE_TYPE arg_type = DetectType(arg_value);
+                e_ValueType arg_type = DetectType(arg_value);
                 argument_values.emplace_back(arg_value, arg_type);
             }
 
@@ -1315,7 +1315,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
         std::string right = right_result.Value();
         switch (unary->op.type)
         {
-        case e_TOKEN_TYPE::MINUS:
+        case e_TokenType::MINUS:
             // Optimize unary minus for numeric literals
             if 
             (
@@ -1323,8 +1323,8 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                 dynamic_cast<t_LiteralExpr*>(unary->right.get())
             )
             {
-                e_VALUE_TYPE type = DetectType(right_literal->value);
-                if (type == e_VALUE_TYPE::NUMBER)
+                e_ValueType type = DetectType(right_literal->value);
+                if (type == e_ValueType::NUMBER)
                 {
                     try
                     {
@@ -1339,7 +1339,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
             }
             return t_Expected<std::string, t_ErrorInfo>("-" + right);
 
-        case e_TOKEN_TYPE::BANG:
+        case e_TokenType::BANG:
             return t_Expected<std::string, t_ErrorInfo>
             (
                 (right == "false" || right == "0") ? "true" : "false"
@@ -1385,7 +1385,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
             // Use direct numeric operations when possible
             if (current_value.has_numeric_value)
             {
-                if (prefix->op.type == e_TOKEN_TYPE::PLUS_PLUS)
+                if (prefix->op.type == e_TokenType::PLUS_PLUS)
                 {
                     double new_value = current_value.numeric_value + 1.0;
                     environment[var_name] = t_TypedValue(new_value);
@@ -1394,7 +1394,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                         std::to_string(new_value)
                     );
                 }
-                else if (prefix->op.type == e_TOKEN_TYPE::MINUS_MINUS)
+                else if (prefix->op.type == e_TokenType::MINUS_MINUS)
                 {
                     double new_value = current_value.numeric_value - 1.0;
                     environment[var_name] = t_TypedValue(new_value);
@@ -1411,7 +1411,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                 {
                     double num_value = std::stod(current_value.value);
                     
-                    if (prefix->op.type == e_TOKEN_TYPE::PLUS_PLUS)
+                    if (prefix->op.type == e_TokenType::PLUS_PLUS)
                     {
                         num_value += 1.0;
                         std::string new_value = std::to_string(num_value);
@@ -1427,11 +1427,11 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                         environment[var_name] =
                         t_TypedValue
                         (
-                            new_value, e_VALUE_TYPE::NUMBER
+                            new_value, e_ValueType::NUMBER
                         );
                         return t_Expected<std::string, t_ErrorInfo>(new_value);
                     }
-                    else if (prefix->op.type == e_TOKEN_TYPE::MINUS_MINUS)
+                    else if (prefix->op.type == e_TokenType::MINUS_MINUS)
                     {
                         num_value -= 1.0;
                         std::string new_value = std::to_string(num_value);
@@ -1448,7 +1448,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                         environment[var_name] = 
                         t_TypedValue
                         (
-                            new_value, e_VALUE_TYPE::NUMBER
+                            new_value, e_ValueType::NUMBER
                         );
                         return t_Expected<std::string, t_ErrorInfo>(new_value);
                     }
@@ -1507,7 +1507,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
             // Use direct numeric operations when possible
             if (current_value.has_numeric_value)
             {
-                if (postfix->op.type == e_TOKEN_TYPE::PLUS_PLUS)
+                if (postfix->op.type == e_TokenType::PLUS_PLUS)
                 {
                     double new_value = current_value.numeric_value + 1.0;
                     environment[var_name] = t_TypedValue(new_value);
@@ -1517,7 +1517,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                         current_value.value
                     ); 
                 }
-                else if (postfix->op.type == e_TOKEN_TYPE::MINUS_MINUS)
+                else if (postfix->op.type == e_TokenType::MINUS_MINUS)
                 {
                     double new_value = current_value.numeric_value - 1.0;
                     environment[var_name] = t_TypedValue(new_value);
@@ -1534,7 +1534,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                 {
                     double num_value = std::stod(current_value.value);
                     
-                    if (postfix->op.type == e_TOKEN_TYPE::PLUS_PLUS)
+                    if (postfix->op.type == e_TokenType::PLUS_PLUS)
                     {
                         num_value += 1.0;
                         std::string new_value = std::to_string(num_value);
@@ -1549,9 +1549,9 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                             new_value.find_last_not_of('.') + 1, std::string::npos
                         );
                         environment[var_name] = 
-                        t_TypedValue(new_value, e_VALUE_TYPE::NUMBER);
+                        t_TypedValue(new_value, e_ValueType::NUMBER);
                     }
-                    else if (postfix->op.type == e_TOKEN_TYPE::MINUS_MINUS)
+                    else if (postfix->op.type == e_TokenType::MINUS_MINUS)
                     {
                         num_value -= 1.0;
                         std::string new_value = std::to_string(num_value);
@@ -1565,7 +1565,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                             new_value.find_last_not_of('.') + 1, std::string::npos
                         );
                         environment[var_name] = 
-                        t_TypedValue(new_value, e_VALUE_TYPE::NUMBER);
+                        t_TypedValue(new_value, e_ValueType::NUMBER);
                     }
                 }
                 catch (...)
@@ -1598,11 +1598,11 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
         // Handle assignment expressions
         if 
         (
-            binary->op.type == e_TOKEN_TYPE::EQUAL       || 
-            binary->op.type == e_TOKEN_TYPE::PLUS_EQUAL  ||
-            binary->op.type == e_TOKEN_TYPE::MINUS_EQUAL ||
-            binary->op.type == e_TOKEN_TYPE::STAR_EQUAL  ||
-            binary->op.type == e_TOKEN_TYPE::SLASH_EQUAL
+            binary->op.type == e_TokenType::EQUAL       || 
+            binary->op.type == e_TokenType::PLUS_EQUAL  ||
+            binary->op.type == e_TokenType::MINUS_EQUAL ||
+            binary->op.type == e_TokenType::STAR_EQUAL  ||
+            binary->op.type == e_TokenType::SLASH_EQUAL
         )
         {
             // Left side must be a variable
@@ -1652,12 +1652,12 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                 // Handle compound assignments by converting them to regular operations
                 switch (binary->op.type)
                 {
-                case e_TOKEN_TYPE::EQUAL:
+                case e_TokenType::EQUAL:
                     final_value_result = 
                     t_Expected<std::string, t_ErrorInfo>(right_value);
                     break;
                     
-                case e_TOKEN_TYPE::PLUS_EQUAL:
+                case e_TokenType::PLUS_EQUAL:
                     {
                         try 
                         {
@@ -1683,7 +1683,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                     }
                     break;
                     
-                case e_TOKEN_TYPE::MINUS_EQUAL:
+                case e_TokenType::MINUS_EQUAL:
                     {
                         try 
                         {
@@ -1705,7 +1705,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                     }
                     break;
                     
-                case e_TOKEN_TYPE::STAR_EQUAL:
+                case e_TokenType::STAR_EQUAL:
                     {
                         try 
                         {
@@ -1727,7 +1727,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                     }
                     break;
                     
-                case e_TOKEN_TYPE::SLASH_EQUAL:
+                case e_TokenType::SLASH_EQUAL:
                     {
                         try 
                         {
@@ -1775,30 +1775,30 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                 }
                 
                 std::string final_value = final_value_result.Value();
-                e_VALUE_TYPE type = DetectType(final_value);
+                e_ValueType type = DetectType(final_value);
                 
                 // Enforce static typing - check if the new value type matches the declared variable type
                 auto it = environment.find(var_name);
                 if (it != environment.end())
                 {
-                    e_VALUE_TYPE declared_type = it->second.type;
+                    e_ValueType declared_type = it->second.type;
                     // Allow assignment only if types match or if assigning to a NIL typed variable (initial assignment)
                     if 
                     (
-                        declared_type != e_VALUE_TYPE::NIL && 
+                        declared_type != e_ValueType::NIL && 
                         declared_type != type
                     )
                     {
                         std::string type_name;
                         switch (declared_type)
                         {
-                        case e_VALUE_TYPE::NUMBER:
+                        case e_ValueType::NUMBER:
                             type_name = "number";
                             break;
-                        case e_VALUE_TYPE::STRING:
+                        case e_ValueType::STRING:
                             type_name = "string";
                             break;
-                        case e_VALUE_TYPE::BOOLEAN:
+                        case e_ValueType::BOOLEAN:
                             type_name = "boolean";
                             break;
                         default:
@@ -1809,13 +1809,13 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                         std::string new_type_name;
                         switch (type)
                         {
-                        case e_VALUE_TYPE::NUMBER:
+                        case e_ValueType::NUMBER:
                             new_type_name = "number";
                             break;
-                        case e_VALUE_TYPE::STRING:
+                        case e_ValueType::STRING:
                             new_type_name = "string";
                             break;
-                        case e_VALUE_TYPE::BOOLEAN:
+                        case e_ValueType::BOOLEAN:
                             new_type_name = "boolean";
                             break;
                         default:
@@ -1873,7 +1873,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
         }
         std::string left_str = left_result.Value();
 
-        if (binary->op.type == e_TOKEN_TYPE::AND)
+        if (binary->op.type == e_TokenType::AND)
         {
             if (!IsTruthy(left_str))
             {
@@ -1893,7 +1893,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
             );
         }
 
-        if (binary->op.type == e_TOKEN_TYPE::OR)
+        if (binary->op.type == e_TokenType::OR)
         {
             if (IsTruthy(left_str))
             {
@@ -1927,7 +1927,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
 
         switch (binary->op.type)
         {
-        case e_TOKEN_TYPE::PLUS:
+        case e_TokenType::PLUS:
             {
                 // Simple addition implementation
                 try 
@@ -1949,7 +1949,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                 }
             }
 
-        case e_TOKEN_TYPE::MINUS:
+        case e_TokenType::MINUS:
             {
                 // Simple subtraction implementation
                 try 
@@ -1971,7 +1971,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                 }
             }
 
-        case e_TOKEN_TYPE::STAR:
+        case e_TokenType::STAR:
             {
                 // Simple multiplication implementation
                 try 
@@ -1993,7 +1993,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                 }
             }
             
-        case e_TOKEN_TYPE::SLASH:
+        case e_TokenType::SLASH:
             {
                 // Simple division implementation
                 try 
@@ -2028,12 +2028,12 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                 }
             }
             
-        case e_TOKEN_TYPE::BANG_EQUAL:
-        case e_TOKEN_TYPE::EQUAL_EQUAL:
-        case e_TOKEN_TYPE::GREATER:
-        case e_TOKEN_TYPE::GREATER_EQUAL:
-        case e_TOKEN_TYPE::LESS:
-        case e_TOKEN_TYPE::LESS_EQUAL:
+        case e_TokenType::BANG_EQUAL:
+        case e_TokenType::EQUAL_EQUAL:
+        case e_TokenType::GREATER:
+        case e_TokenType::GREATER_EQUAL:
+        case e_TokenType::LESS:
+        case e_TokenType::LESS_EQUAL:
             {
                 t_Expected<bool, t_ErrorInfo> comparison_result = PerformComparison(left_typed, binary->op.type, right_typed);
                 if (!comparison_result.HasValue())
@@ -2110,7 +2110,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::EvaluateFormatExpression
         }
         
         // For numeric literals, return them directly
-        if (DetectType(expr_str) == e_VALUE_TYPE::NUMBER)
+        if (DetectType(expr_str) == e_ValueType::NUMBER)
         {
             return t_Expected<std::string, t_ErrorInfo>(expr_str);
         }
@@ -2379,7 +2379,7 @@ bool t_Interpreter::IsSimpleNumericLoop(t_ForStmt* for_stmt)
     
     t_LiteralExpr* init_literal = 
     dynamic_cast<t_LiteralExpr*>(init_var->initializer.get());
-    if (!init_literal || init_literal->token_type != e_TOKEN_TYPE::NUMBER) return false;
+    if (!init_literal || init_literal->token_type != e_TokenType::NUMBER) return false;
 
     int start_value = 0;
     try
@@ -2403,13 +2403,13 @@ bool t_Interpreter::IsSimpleNumericLoop(t_ForStmt* for_stmt)
     dynamic_cast<t_BinaryExpr*>(for_stmt->condition.get());
     if (!condition_binary) return false;
 
-    e_TOKEN_TYPE condition_op = condition_binary->op.type;
+    e_TokenType condition_op = condition_binary->op.type;
     if
     (
-        condition_op != e_TOKEN_TYPE::LESS          &&
-        condition_op != e_TOKEN_TYPE::LESS_EQUAL    &&
-        condition_op != e_TOKEN_TYPE::GREATER       &&
-        condition_op != e_TOKEN_TYPE::GREATER_EQUAL
+        condition_op != e_TokenType::LESS          &&
+        condition_op != e_TokenType::LESS_EQUAL    &&
+        condition_op != e_TokenType::GREATER       &&
+        condition_op != e_TokenType::GREATER_EQUAL
     )
     {
         return false;
@@ -2421,7 +2421,7 @@ bool t_Interpreter::IsSimpleNumericLoop(t_ForStmt* for_stmt)
     
     t_LiteralExpr* condition_literal = 
     dynamic_cast<t_LiteralExpr*>(condition_binary->right.get());
-    if (!condition_literal || condition_literal->token_type != e_TOKEN_TYPE::NUMBER) return false;
+    if (!condition_literal || condition_literal->token_type != e_TokenType::NUMBER) return false;
 
     int limit_value = 0;
     try
@@ -2464,7 +2464,7 @@ bool t_Interpreter::IsSimpleNumericLoop(t_ForStmt* for_stmt)
         (
             inc_var                         && 
             inc_var->name == init_var->name && 
-            postfix_inc->op.type == e_TOKEN_TYPE::PLUS_PLUS
+            postfix_inc->op.type == e_TokenType::PLUS_PLUS
         ) 
         {
             step = 1;
@@ -2473,7 +2473,7 @@ bool t_Interpreter::IsSimpleNumericLoop(t_ForStmt* for_stmt)
         (
             inc_var                         &&
             inc_var->name == init_var->name &&
-            postfix_inc->op.type == e_TOKEN_TYPE::MINUS_MINUS
+            postfix_inc->op.type == e_TokenType::MINUS_MINUS
         )
         {
             step = -1;
@@ -2496,7 +2496,7 @@ bool t_Interpreter::IsSimpleNumericLoop(t_ForStmt* for_stmt)
         (
             inc_var                         && 
             inc_var->name == init_var->name && 
-            prefix_inc->op.type == e_TOKEN_TYPE::PLUS_PLUS
+            prefix_inc->op.type == e_TokenType::PLUS_PLUS
         )
         {
             step = 1;
@@ -2505,7 +2505,7 @@ bool t_Interpreter::IsSimpleNumericLoop(t_ForStmt* for_stmt)
         (
             inc_var                         &&
             inc_var->name == init_var->name &&
-            prefix_inc->op.type == e_TOKEN_TYPE::MINUS_MINUS
+            prefix_inc->op.type == e_TokenType::MINUS_MINUS
         )
         {
             step = -1;
@@ -2522,8 +2522,8 @@ bool t_Interpreter::IsSimpleNumericLoop(t_ForStmt* for_stmt)
         {
             if
             (
-                assign->op.type != e_TOKEN_TYPE::PLUS_EQUAL &&
-                assign->op.type != e_TOKEN_TYPE::MINUS_EQUAL
+                assign->op.type != e_TokenType::PLUS_EQUAL &&
+                assign->op.type != e_TokenType::MINUS_EQUAL
             )
             {
                 return false;
@@ -2536,7 +2536,7 @@ bool t_Interpreter::IsSimpleNumericLoop(t_ForStmt* for_stmt)
                 !lhs ||
                 !rhs ||
                 lhs->name != init_var->name ||
-                rhs->token_type != e_TOKEN_TYPE::NUMBER
+                rhs->token_type != e_TokenType::NUMBER
             )
             {
                 return false;
@@ -2562,7 +2562,7 @@ bool t_Interpreter::IsSimpleNumericLoop(t_ForStmt* for_stmt)
                 return false;
             }
 
-            step = (assign->op.type == e_TOKEN_TYPE::PLUS_EQUAL) ? rhs_int : -rhs_int;
+            step = (assign->op.type == e_TokenType::PLUS_EQUAL) ? rhs_int : -rhs_int;
         }
         else
         {
@@ -2570,7 +2570,7 @@ bool t_Interpreter::IsSimpleNumericLoop(t_ForStmt* for_stmt)
         }
     }
 
-    if (condition_op == e_TOKEN_TYPE::LESS || condition_op == e_TOKEN_TYPE::LESS_EQUAL)
+    if (condition_op == e_TokenType::LESS || condition_op == e_TokenType::LESS_EQUAL)
     {
         if (step <= 0)
         {
@@ -2611,7 +2611,7 @@ bool t_Interpreter::IsSimpleAccumulationLoop(t_ForStmt* for_stmt)
         !init_literal ||
         init_literal->value != "0" ||
         !condition_binary ||
-        condition_binary->op.type != e_TOKEN_TYPE::LESS
+        condition_binary->op.type != e_TokenType::LESS
     )
     {
         return false;
@@ -2626,7 +2626,7 @@ bool t_Interpreter::IsSimpleAccumulationLoop(t_ForStmt* for_stmt)
     {
         increment_is_plus_plus = 
         (
-            postfix_inc->op.type == e_TOKEN_TYPE::PLUS_PLUS
+            postfix_inc->op.type == e_TokenType::PLUS_PLUS
         );
     }
     else if 
@@ -2637,7 +2637,7 @@ bool t_Interpreter::IsSimpleAccumulationLoop(t_ForStmt* for_stmt)
     {
         increment_is_plus_plus = 
         (
-            prefix_inc->op.type == e_TOKEN_TYPE::PLUS_PLUS
+            prefix_inc->op.type == e_TokenType::PLUS_PLUS
         );
     }
 
@@ -2660,7 +2660,7 @@ bool t_Interpreter::IsSimpleAccumulationLoop(t_ForStmt* for_stmt)
     if 
     (
         !binary_expr || 
-        binary_expr->op.type != e_TOKEN_TYPE::PLUS_EQUAL
+        binary_expr->op.type != e_TokenType::PLUS_EQUAL
     ) return false;
     
     // Check if left side is a variable
@@ -2796,16 +2796,16 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
 
     int start = static_cast<int>(std::stod(init_literal->value));
     int limit = static_cast<int>(std::stod(condition_literal->value));
-    e_TOKEN_TYPE condition_op = condition_binary->op.type;
+    e_TokenType condition_op = condition_binary->op.type;
 
     int step = 1;
     if (t_PostfixExpr* postfix_inc = dynamic_cast<t_PostfixExpr*>(for_stmt->increment.get()))
     {
-        step = (postfix_inc->op.type == e_TOKEN_TYPE::PLUS_PLUS) ? 1 : -1;
+        step = (postfix_inc->op.type == e_TokenType::PLUS_PLUS) ? 1 : -1;
     }
     else if (t_PrefixExpr* prefix_inc = dynamic_cast<t_PrefixExpr*>(for_stmt->increment.get()))
     {
-        step = (prefix_inc->op.type == e_TOKEN_TYPE::PLUS_PLUS) ? 1 : -1;
+        step = (prefix_inc->op.type == e_TokenType::PLUS_PLUS) ? 1 : -1;
     }
     else if (t_BinaryExpr* assign = dynamic_cast<t_BinaryExpr*>(for_stmt->increment.get()))
     {
@@ -2813,7 +2813,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
         int rhs_int = static_cast<int>(std::stod(rhs->value));
         step = 
         (
-            assign->op.type == e_TOKEN_TYPE::PLUS_EQUAL) ? 
+            assign->op.type == e_TokenType::PLUS_EQUAL) ? 
                 rhs_int : -rhs_int;
     }
 
@@ -2826,7 +2826,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
     (
         start == 0                  &&
         step == 1                   &&
-        condition_op == e_TOKEN_TYPE::LESS
+        condition_op == e_TokenType::LESS
     );
 
     t_BlockStmt* body_block = dynamic_cast<t_BlockStmt*>(for_stmt->body.get());
@@ -2878,7 +2878,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
                 if 
                 (
                     cond_binary && 
-                    cond_binary->op.type == e_TOKEN_TYPE::EQUAL_EQUAL
+                    cond_binary->op.type == e_TokenType::EQUAL_EQUAL
                 )
                 {
                     t_VariableExpr* cond_var = 
@@ -2926,16 +2926,16 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
         {
             switch (condition_op)
             {
-            case e_TOKEN_TYPE::LESS:
+            case e_TokenType::LESS:
                 return i < limit;
 
-            case e_TOKEN_TYPE::LESS_EQUAL:
+            case e_TokenType::LESS_EQUAL:
                 return i <= limit;
 
-            case e_TOKEN_TYPE::GREATER:
+            case e_TokenType::GREATER:
                 return i > limit;
 
-            case e_TOKEN_TYPE::GREATER_EQUAL:
+            case e_TokenType::GREATER_EQUAL:
                 return i >= limit;
 
             default:

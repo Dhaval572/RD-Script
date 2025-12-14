@@ -17,8 +17,8 @@ private:
     bool IsAtEnd();
     t_ParsingResult ScanToken();
     char Advance();
-    void AddToken(e_TOKEN_TYPE type);
-    void AddToken(e_TOKEN_TYPE type, const std::string &literal);
+    void AddToken(e_TokenType type);
+    void AddToken(e_TokenType type, const std::string &literal);
     bool Match(char expected);
     char Peek();
     char PeekNext();
@@ -30,7 +30,7 @@ private:
     void Identifier();
 
     // Keyword checking
-    e_TOKEN_TYPE IdentifierType();
+    e_TokenType IdentifierType();
 
 public:
     t_Lexer(const std::string &source);
