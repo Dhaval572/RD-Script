@@ -1,48 +1,24 @@
 # Rubber Duck Scripting Language
 
-Name: Rubber Duck Script
-Extension: .rd
+A statically-typed scripting language with C-like syntax, featuring automatic memory management and intuitive programming constructs.
 
-## Features
+## Overview
 
-* Static typing with C-like syntax
-* Automatic memory management
-* Standard programming constructs (loops, branching, etc.)
-* Dynamic array and linked list support( TODO )
+**Name:** Rubber Duck Script
+**Extension:** `.rd`
+**Philosophy:** Simple, expressive, and efficient
 
-## Coding Guidelines
+## Key Features
 
-This project follows specific C++ coding guidelines documented in [CODING_GUIDELINES.md](CODING_GUIDELINES.md):
+* **Static typing** with type inference using `auto` keyword
+* **Automatic memory management** - no manual allocation/deallocation
+* **C-like syntax** - familiar and easy to learn
+* **Performance benchmarking** - built-in timing utilities
+* **Standard I/O support** - `display()` and `getin()` for user interaction
 
-* Struct names: `t_StructName`
-* Variable names: `var_name`
-* Function names: `FunctionName`
-* Braces style: Allman style (opening brace on the next line)
+## Quick Start
 
-## Memory Management
-
-See [MEMORY_MANAGEMENT.md](MEMORY_MANAGEMENT.md) for a detailed explanation of how memory is managed in this interpreter
-
-## Current Implementation Status
-
-The interpreter currently supports:
-* Variable declarations (`auto name = value;`)
-* Expressions with arithmetic operations (`+`,`-`, `*`, `/`)
-* Comparison operations (`==`, `!=`, `<`, `>`, `<=`, `>=`)
-* Logical operations (`!`)
-* Display statements with comma-separated values (`display(value1, value2, ...);`)
-* Input statements using standard C++ input wrapped in `getin(variable_name);`
-* Grouping with parentheses
-* String and number literals with escape sequence support (`\n`, `\t`, `\r`, `\\`, `\"`)
-* Variable references
-* Control structures (`if`, `else`, `for`)
-
-Not yet implemented:
-* Loops (`while`)
-* Functions
-* Data structures (dynamic arrays, linked lists)
-
-## Building the Project
+### Building the Project
 
 ```bash
 mkdir build
@@ -51,84 +27,304 @@ cmake ..
 cmake --build .
 ```
 
-## Running Scripts
+> **Note:** When making changes to the project, delete the `build` folder before rebuilding.
+
+### Running Scripts
 
 ```bash
-./rubberduck script.rd
+./rd.bat script.rd
 ```
 
-## Language Examples
+## Language Syntax
 
-### Hello World
-```cpp
-display("Hello, Rubber Duck!");
-```
+### Variables and Data Types
 
-### Variables
 ```cpp
 auto name = "Rubber Duck";
 auto age = 5;
-display name, "is", age, "years old";
+auto price = 19.99;
+auto is_active = true;
 ```
 
-### Expressions
+### Arithmetic Operators
+
 ```cpp
-auto a = 10;
-auto b = 20;
-auto difference = a - b;
-auto product = a * b;
-display($"Difference: {difference}");
-display "Product:", product;
+auto sum = 10 + 5;        // Addition
+auto diff = 10 - 5;       // Subtraction
+auto product = 10 * 5;    // Multiplication
+auto quotient = 10 / 5;   // Division
 ```
 
-### For Loop
+### Comparison Operators
+
 ```cpp
-// Simple for loop counting from 0 to 9
-for (auto i = 0; i < 10; ++i)
+auto is_equal = (a == b);
+auto not_equal = (a != b);
+auto less_than = (a < b);
+auto greater_than = (a > b);
+auto less_or_equal = (a <= b);
+auto greater_or_equal = (a >= b);
+```
+
+### Logical Operators
+
+```cpp
+auto and_result = (x > 5 && y < 10);   // AND
+auto or_result = (x == 0 || y == 0);   // OR
+auto not_result = !(x > 5);            // NOT
+```
+
+### Output with display()
+
+**Method 1: String interpolation with `prefix`**
+
+```cpp
+auto name = "Duck";
+auto age = 5;
+display($"Hello, my name is {name} and I am {age} years old!");
+display($"Result: {10 + 20}");
+display($"{name} says: 'Quack!'");
+```
+
+**Method 2: Comma-separated concatenation**
+
+```cpp
+display("Hello, World!");
+display("Name:", name, "Age:", age);
+display("Sum of ", a, " and ", b, " is: ", a + b);
+display(name, " is ", age, " years old");
+```
+
+**Method 3: Simple string literal**
+
+```cpp
+display("Simple message");
+```
+
+### Input with getin()
+
+```cpp
+auto user_input = "";
+display("Enter your name:");
+getin(user_input);
+display("Hello,", user_input, "!");
+```
+
+### Conditional Statements
+
+```cpp
+if (temperature > 30)
 {
-    display "Number: ", i;
+    display("It's hot outside!");
 }
-```
-
-### If-Else Statements
-```cpp
-auto x = 10;
-auto y = 20;
-
-if (x < y)
+else if (temperature > 20)
 {
-    display "x is less than y";
-}
-
-if (x > y)
-{
-    display "x is greater than y";
+    display("Nice weather!");
 }
 else
 {
-    display "x is not greater than y";
+    display("It's cold!");
 }
 ```
 
-### Function 
+### For Loops
+
+**Standard for loop:**
+
 ```cpp
-fun Testing(auto arg1, auto arg2)
+for (auto i = 0; i < 10; ++i)
 {
-    return some_value;
+    display("Iteration:", i);
 }
 ```
 
-### User Input with getin()
-The `getin(variable_name);` statement reads a single token from standard input and stores it in an already-declared variable.
+**Infinite for loop:**
 
 ```cpp
-auto age = 0;
-display "Enter your age:";
-getin(age);
-display "You are", age, "years old.";
-
-auto name = "";
-display "Enter your name:";
-getin(name);
-display "Hello,", name, "!";
+for (;;)
+{
+    display("Running forever...");
+    if (some_condition)
+    {
+        break;
+    }
+}
 ```
+
+**Conditional for loop:**
+
+```cpp
+for (auto i = 0; i < 100; i = i + 1)
+{
+    if (i == 50)
+    {
+        break;      // Exit the loop
+    }
+    
+    if (i % 2 == 0)
+    {
+        continue;   // Skip even numbers
+    }
+    
+    display("Odd number:", i);
+}
+```
+
+### Break and Continue
+
+```cpp
+for (auto i = 0; i < 10; ++i)
+{
+    if (i == 5)
+    {
+        break;      // Exit loop when i equals 5
+    }
+    
+    if (i % 2 == 0)
+    {
+        continue;   // Skip to next iteration for even numbers
+    }
+    
+    display(i);     // Only displays odd numbers: 1, 3
+}
+```
+
+### Functions
+
+```cpp
+fun CalculateSum(auto a, auto b)
+{
+    auto result = a + b;
+    return result;
+}
+
+auto total = CalculateSum(10, 20);
+display("Total:", total);
+```
+
+### Benchmark Blocks
+
+Measure execution time of code blocks with automatic formatting:
+
+```cpp
+benchmark
+{
+    auto sum = 0;
+    for (auto i = 0; i < 1000000; ++i)
+    {
+        sum = sum + i;
+    }
+    display("Sum:", sum);
+}
+```
+
+**Output format:**
+
+* Nanoseconds (ns)
+* Microseconds (μs)
+* Milliseconds (ms)
+* Seconds (s)
+
+## String Features
+
+**Escape sequences:**
+
+```cpp
+display("Line 1\nLine 2");          // Newline
+display("Column1\tColumn2");        // Tab
+display("Quote: \"Hello\"");        // Escaped quotes
+display("Backslash: \\");           // Escaped backslash
+```
+
+## Example Programs
+
+### Calculator
+
+```cpp
+auto num1 = 0;
+auto num2 = 0;
+
+display("Enter first number:");
+getin(num1);
+
+display("Enter second number:");
+getin(num2);
+
+display("Sum:", num1 + num2);
+display("Difference:", num1 - num2);
+display("Product:", num1 * num2);
+display("Quotient:", num1 / num2);
+```
+
+### FizzBuzz
+
+```cpp
+for (auto i = 1; i <= 100; ++i)
+{
+    if (i % 15 == 0)
+    {
+        display("FizzBuzz");
+    }
+    else if (i % 3 == 0)
+    {
+        display("Fizz");
+    }
+    else if (i % 5 == 0)
+    {
+        display("Buzz");
+    }
+    else
+    {
+        display(i);
+    }
+}
+```
+
+### Performance Test
+
+```cpp
+benchmark
+{
+    auto iterations = 1000000;
+    auto counter = 0;
+    
+    for (auto i = 0; i < iterations; ++i)
+    {
+        counter = counter + 1;
+    }
+    
+    display("Completed", iterations, "iterations");
+}
+```
+
+## Implementation Status
+
+### ✅ Current Features
+
+* Variable declarations with `auto`
+* Arithmetic operators (`+`, `-`, `*`, `/`)
+* Comparison operators (`==`, `!=`, `<`, `>`, `<=`, `>=`)
+* Logical operators (`&&`, `||`, `!`)
+* Control flow (`if`, `else if`, `else`)
+* For loops (standard, infinite, conditional)
+* Loop control (`break`, `continue`)
+* Functions with return values
+* Input/output (`getin()`, `display()`)
+* String literals with escape sequences
+* Benchmark blocks for performance measurement
+
+## Coding Standards
+
+For detailed coding conventions and guidelines, see [CODING_GUIDELINES.md](CODING_GUIDELINES.md).
+
+## Memory Management
+
+Rubber Duck Script features automatic memory management. For implementation details, refer to [MEMORY_MANAGEMENT.md](MEMORY_MANAGEMENT.md).
+
+## Contributing
+
+Contributions are welcome! Please follow the coding guidelines and ensure all tests pass before submitting a pull request.
+
+---
+
+**Happy scripting with Rubber Duck!** 🦆
