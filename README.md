@@ -32,7 +32,7 @@ cmake --build .
 ### Running Scripts
 
 ```bash
-rd.bat script.rd
+./rd.bat script.rd
 ```
 
 ## Language Syntax
