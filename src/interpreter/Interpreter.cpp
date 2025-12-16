@@ -1602,7 +1602,8 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
             binary->op.type == e_TokenType::PLUS_EQUAL  ||
             binary->op.type == e_TokenType::MINUS_EQUAL ||
             binary->op.type == e_TokenType::STAR_EQUAL  ||
-            binary->op.type == e_TokenType::SLASH_EQUAL
+            binary->op.type == e_TokenType::SLASH_EQUAL ||
+            binary->op.type == e_TokenType::MODULUS_EQUAL
         )
         {
             // Left side must be a variable
@@ -1712,6 +1713,43 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                             double left_val = std::stod(left_value);
                             double right_val = std::stod(right_value);
                             final_value_result = t_Expected<std::string, t_ErrorInfo>(FormatNumber(left_val * right_val));
+                        }
+                        catch (...)
+                        {
+                            final_value_result = t_Expected<std::string, t_ErrorInfo>
+                            (
+                                t_ErrorInfo
+                                (
+                                    e_ErrorType::RUNTIME_ERROR, 
+                                    "Cannot perform arithmetic operation"
+                                )
+                            );
+                        }
+                    }
+                    break;
+                    
+                case e_TokenType::MODULUS_EQUAL:
+                    {
+                        try 
+                        {
+                            double left_val = std::stod(left_value);
+                            double right_val = std::stod(right_value);
+                            
+                            if (right_val == 0)
+                            {
+                                final_value_result = t_Expected<std::string, t_ErrorInfo>
+                                (
+                                    t_ErrorInfo
+                                    (
+                                        e_ErrorType::RUNTIME_ERROR, 
+                                        "Modulus by zero"
+                                    )
+                                );
+                            }
+                            else
+                            {
+                                final_value_result = t_Expected<std::string, t_ErrorInfo>(FormatNumber(std::fmod(left_val, right_val)));
+                            }
                         }
                         catch (...)
                         {
@@ -1979,6 +2017,41 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                     double left_val = std::stod(left_str);
                     double right_val = std::stod(right_str);
                     return t_Expected<std::string, t_ErrorInfo>(FormatNumber(left_val * right_val));
+                }
+                catch (...)
+                {
+                    return t_Expected<std::string, t_ErrorInfo>
+                    (
+                        t_ErrorInfo
+                        (
+                            e_ErrorType::RUNTIME_ERROR, 
+                            "Cannot perform arithmetic operation"
+                        )
+                    );
+                }
+            }
+            
+        case e_TokenType::MODULUS:
+            {
+                // Simple modulus implementation
+                try 
+                {
+                    double left_val = std::stod(left_str);
+                    double right_val = std::stod(right_str);
+                    
+                    if (right_val == 0)
+                    {
+                        return t_Expected<std::string, t_ErrorInfo>
+                        (
+                            t_ErrorInfo
+                            (
+                                e_ErrorType::RUNTIME_ERROR, 
+                                "Modulus by zero"
+                            )
+                        );
+                    }
+                    
+                    return t_Expected<std::string, t_ErrorInfo>(FormatNumber(std::fmod(left_val, right_val)));
                 }
                 catch (...)
                 {

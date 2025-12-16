@@ -1022,7 +1022,8 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Assignment()
                 e_TokenType::PLUS_EQUAL, 
                 e_TokenType::MINUS_EQUAL, 
                 e_TokenType::STAR_EQUAL, 
-                e_TokenType::SLASH_EQUAL
+                e_TokenType::SLASH_EQUAL,
+                e_TokenType::MODULUS_EQUAL
             }
         )
     )
@@ -1273,7 +1274,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Factor()
     }
     t_Expr *expr = expr_result.Value();
 
-    while (Match({e_TokenType::SLASH, e_TokenType::STAR}))
+    while (Match({e_TokenType::SLASH, e_TokenType::STAR, e_TokenType::MODULUS}))
     {
         t_Token op = Previous();
         t_Expected<t_Expr*, t_ErrorInfo> right_result = Unary();
@@ -1295,6 +1296,40 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Factor()
             if (op.type == e_TokenType::STAR)
             {
                 result = left_num * right_num;
+            }
+            else if (op.type == e_TokenType::MODULUS)
+            {
+                if (right_num == 0)
+                {
+                    return t_Expected<t_Expr*, t_ErrorInfo>
+                    (
+                        t_ErrorInfo
+                        (
+                            e_ErrorType::PARSING_ERROR, 
+                            "Modulus by zero",
+                            op.line,
+                            0
+                        )
+                    );
+                }
+                result = std::fmod(left_num, right_num);
+            }
+            else if (op.type == e_TokenType::MODULUS)
+            {
+                if (right_num == 0)
+                {
+                    return t_Expected<t_Expr*, t_ErrorInfo>
+                    (
+                        t_ErrorInfo
+                        (
+                            e_ErrorType::PARSING_ERROR, 
+                            "Modulus by zero",
+                            op.line,
+                            0
+                        )
+                    );
+                }
+                result = std::fmod(left_num, right_num);
             }
             else
             {

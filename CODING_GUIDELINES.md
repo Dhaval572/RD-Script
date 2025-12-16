@@ -213,6 +213,22 @@ for (auto i = 0; i < 10; i++) {
 }
 ```
 
+### Modulus Operator
+
+RD Script supports the modulus operator (`%`) for computing the remainder of division operations. The modulus operator works with both integer and floating-point numbers:
+
+```rubberduck
+auto x = 10 % 3;        // x = 1
+auto y = 10.5 % 3.2;   // y = 1.1
+auto z = 17 % 5;        // z = 2
+```
+
+Attempting to use modulus with zero as the divisor will result in a runtime error:
+
+```rubberduck
+auto a = 10 % 0;  // Error: Modulus by zero
+```
+
 ### Assignment Expressions
 
 RD Script supports assignment expressions using the `=` operator, but all variables must be declared with the `auto` keyword before they can be assigned to, and they maintain their declared type:
@@ -243,6 +259,23 @@ x = "Hello";     // Error: x is number, cannot assign string
 Attempting to assign to an undeclared variable will result in an error:
 ```rubberduck
 x = 10;  // Error: Variable 'x' must be declared with 'auto' keyword before use
+```
+
+RD Script also supports compound assignment with the modulus operator:
+
+```rubberduck
+auto x = 10;
+x %= 3;     // x = 1
+
+auto y = 17.5;
+y %= 4.2;   // y = 0.7
+```
+
+Attempting to use the modulus compound assignment with zero as the divisor will result in a runtime error:
+
+```rubberduck
+auto a = 10;
+a %= 0;  // Error: Modulus by zero
 ```
 
 ### Benchmarking

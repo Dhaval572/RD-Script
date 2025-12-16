@@ -15,6 +15,7 @@ enum class e_TokenType
     SEMICOLON,
     SLASH,
     STAR,
+    MODULUS,        // %
 
     // One or two character tokens
     BANG,
@@ -33,6 +34,7 @@ enum class e_TokenType
     MINUS_EQUAL,    // -=
     STAR_EQUAL,     // *=
     SLASH_EQUAL,    // /=
+    MODULUS_EQUAL,  // %=
 
     // Literals
     IDENTIFIER,

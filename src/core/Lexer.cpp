@@ -108,6 +108,9 @@ t_ParsingResult t_Lexer::ScanToken()
     case '*':
         AddToken(Match('=') ? e_TokenType::STAR_EQUAL : e_TokenType::STAR);
         break;
+    case '%':
+        AddToken(Match('=') ? e_TokenType::MODULUS_EQUAL : e_TokenType::MODULUS);
+        break;
     case '!':
         AddToken(Match('=') ? e_TokenType::BANG_EQUAL : e_TokenType::BANG);
         break;
