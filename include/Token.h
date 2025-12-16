@@ -15,7 +15,7 @@ enum class e_TokenType
     SEMICOLON,
     SLASH,
     STAR,
-    MODULUS,        // %
+    MODULUS,        
 
     // One or two character tokens
     BANG,
@@ -26,15 +26,15 @@ enum class e_TokenType
     GREATER_EQUAL,
     LESS,
     LESS_EQUAL,
-    PLUS_PLUS,      // ++
-    MINUS_MINUS,    // --
+    PLUS_PLUS,      
+    MINUS_MINUS,    
     
     // Compound assignment operators
-    PLUS_EQUAL,     // +=
-    MINUS_EQUAL,    // -=
-    STAR_EQUAL,     // *=
-    SLASH_EQUAL,    // /=
-    MODULUS_EQUAL,  // %=
+    PLUS_EQUAL,     
+    MINUS_EQUAL,    
+    STAR_EQUAL,     
+    SLASH_EQUAL,    
+    MODULUS_EQUAL,  
 
     // Literals
     IDENTIFIER,
@@ -61,13 +61,10 @@ enum class e_TokenType
     TRUE,
     WHILE,
 
-    // Rubber Duck specific keywords - keeping only essential ones
+    // Rubber Duck specific keywords 
     AUTO,
-
-    BENCHMARK,  // New benchmark keyword
-    GETIN,       // New getin keyword
-    // Removed advanced functionality keywords: LINKEDLIST, DYNAMIC_ARRAY
-
+    BENCHMARK,  
+    GETIN,      
     EOF_TOKEN
 };
 

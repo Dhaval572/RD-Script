@@ -1972,7 +1972,10 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                 {
                     double left_val = std::stod(left_str);
                     double right_val = std::stod(right_str);
-                    return t_Expected<std::string, t_ErrorInfo>(FormatNumber(left_val + right_val));
+                    return t_Expected<std::string, t_ErrorInfo>
+                    (
+                        FormatNumber(left_val + right_val)
+                    );
                 }
                 catch (...)
                 {
@@ -1994,7 +1997,10 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                 {
                     double left_val = std::stod(left_str);
                     double right_val = std::stod(right_str);
-                    return t_Expected<std::string, t_ErrorInfo>(FormatNumber(left_val - right_val));
+                    return t_Expected<std::string, t_ErrorInfo>
+                    (
+                        FormatNumber(left_val - right_val)
+                    );
                 }
                 catch (...)
                 {
@@ -2016,7 +2022,10 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                 {
                     double left_val = std::stod(left_str);
                     double right_val = std::stod(right_str);
-                    return t_Expected<std::string, t_ErrorInfo>(FormatNumber(left_val * right_val));
+                    return t_Expected<std::string, t_ErrorInfo>
+                    (
+                        FormatNumber(left_val * right_val)
+                    );
                 }
                 catch (...)
                 {
@@ -2051,7 +2060,10 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                         );
                     }
                     
-                    return t_Expected<std::string, t_ErrorInfo>(FormatNumber(std::fmod(left_val, right_val)));
+                    return t_Expected<std::string, t_ErrorInfo>
+                    (
+                        FormatNumber(std::fmod(left_val, right_val))
+                    );
                 }
                 catch (...)
                 {
@@ -2086,7 +2098,10 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                         );
                     }
                     
-                    return t_Expected<std::string, t_ErrorInfo>(FormatNumber(left_val / right_val));
+                    return t_Expected<std::string, t_ErrorInfo>
+                    (
+                        FormatNumber(left_val / right_val)
+                    );
                 }
                 catch (...)
                 {
@@ -2213,12 +2228,14 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::EvaluateFormatExpression
             right_str.erase(right_str.find_last_not_of(" \t") + 1);
             
             // Evaluate left and right operands
-            t_Expected<std::string, t_ErrorInfo> left_result = EvaluateFormatExpression(left_str);
+            t_Expected<std::string, t_ErrorInfo> left_result = 
+            EvaluateFormatExpression(left_str);
             if (!left_result.HasValue())
             {
                 return left_result;
             }
-            t_Expected<std::string, t_ErrorInfo> right_result = EvaluateFormatExpression(right_str);
+            t_Expected<std::string, t_ErrorInfo> right_result = 
+            EvaluateFormatExpression(right_str);
             if (!right_result.HasValue())
             {
                 return right_result;
@@ -2232,7 +2249,10 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::EvaluateFormatExpression
             {
                 double left_val = std::stod(left_value);
                 double right_val = std::stod(right_value);
-                return t_Expected<std::string, t_ErrorInfo>(FormatNumber(left_val * right_val));
+                return t_Expected<std::string, t_ErrorInfo>
+                (
+                    FormatNumber(left_val * right_val)
+                );
             }
             catch (...)
             {
@@ -2266,12 +2286,14 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::EvaluateFormatExpression
             right_str.erase(right_str.find_last_not_of(" \t") + 1);
             
             // Evaluate left and right operands
-            t_Expected<std::string, t_ErrorInfo> left_result = EvaluateFormatExpression(left_str);
+            t_Expected<std::string, t_ErrorInfo> left_result = 
+            EvaluateFormatExpression(left_str);
             if (!left_result.HasValue())
             {
                 return left_result;
             }
-            t_Expected<std::string, t_ErrorInfo> right_result = EvaluateFormatExpression(right_str);
+            t_Expected<std::string, t_ErrorInfo> right_result = 
+            EvaluateFormatExpression(right_str);
             if (!right_result.HasValue())
             {
                 return right_result;
@@ -2335,12 +2357,14 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::EvaluateFormatExpression
             right_str.erase(right_str.find_last_not_of(" \t") + 1);
             
             // Evaluate left and right operands
-            t_Expected<std::string, t_ErrorInfo> left_result = EvaluateFormatExpression(left_str);
+            t_Expected<std::string, t_ErrorInfo> left_result = 
+            EvaluateFormatExpression(left_str);
             if (!left_result.HasValue())
             {
                 return left_result;
             }
-            t_Expected<std::string, t_ErrorInfo> right_result = EvaluateFormatExpression(right_str);
+            t_Expected<std::string, t_ErrorInfo> right_result = 
+            EvaluateFormatExpression(right_str);
             if (!right_result.HasValue())
             {
                 return right_result;
@@ -2391,12 +2415,14 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::EvaluateFormatExpression
             right_str.erase(right_str.find_last_not_of(" \t") + 1);
             
             // Evaluate left and right operands
-            t_Expected<std::string, t_ErrorInfo> left_result = EvaluateFormatExpression(left_str);
+            t_Expected<std::string, t_ErrorInfo> left_result = 
+            EvaluateFormatExpression(left_str);
             if (!left_result.HasValue())
             {
                 return left_result;
             }
-            t_Expected<std::string, t_ErrorInfo> right_result = EvaluateFormatExpression(right_str);
+            t_Expected<std::string, t_ErrorInfo> right_result = 
+            EvaluateFormatExpression(right_str);
             if (!right_result.HasValue())
             {
                 return right_result;
@@ -2410,7 +2436,10 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::EvaluateFormatExpression
             {
                 double left_val = std::stod(left_value);
                 double right_val = std::stod(right_value);
-                return t_Expected<std::string, t_ErrorInfo>(FormatNumber(left_val - right_val));
+                return t_Expected<std::string, t_ErrorInfo>
+                (
+                    FormatNumber(left_val - right_val)
+                );
             }
             catch (...)
             {
@@ -2490,11 +2519,19 @@ bool t_Interpreter::IsSimpleNumericLoop(t_ForStmt* for_stmt)
     
     t_VariableExpr* condition_var = 
     dynamic_cast<t_VariableExpr*>(condition_binary->left.get());
-    if (!condition_var || condition_var->name != init_var->name) return false;
+    if 
+    (
+        !condition_var || 
+        condition_var->name != init_var->name
+    ) return false;
     
     t_LiteralExpr* condition_literal = 
     dynamic_cast<t_LiteralExpr*>(condition_binary->right.get());
-    if (!condition_literal || condition_literal->token_type != e_TokenType::NUMBER) return false;
+    if 
+    (
+        !condition_literal || 
+        condition_literal->token_type != e_TokenType::NUMBER
+    ) return false;
 
     int limit_value = 0;
     try
@@ -2602,8 +2639,14 @@ bool t_Interpreter::IsSimpleNumericLoop(t_ForStmt* for_stmt)
                 return false;
             }
 
-            t_VariableExpr* lhs = dynamic_cast<t_VariableExpr*>(assign->left.get());
-            t_LiteralExpr* rhs = dynamic_cast<t_LiteralExpr*>(assign->right.get());
+            t_VariableExpr* lhs = dynamic_cast<t_VariableExpr*>
+            (
+                assign->left.get()
+            );
+            t_LiteralExpr* rhs = dynamic_cast<t_LiteralExpr*>
+            (
+                assign->right.get()
+            );
             if
             (
                 !lhs ||
@@ -2795,7 +2838,9 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteAccumulationLoop
             t_ErrorInfo
             (
                 e_ErrorType::RUNTIME_ERROR, 
-                "Variable '" + acc_var_name + "' must be declared with 'auto' keyword before use"
+                "Variable '" + 
+                acc_var_name + 
+                "' must be declared with 'auto' keyword before use"
             )
         );
     }
@@ -2872,11 +2917,19 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
     e_TokenType condition_op = condition_binary->op.type;
 
     int step = 1;
-    if (t_PostfixExpr* postfix_inc = dynamic_cast<t_PostfixExpr*>(for_stmt->increment.get()))
+    if 
+    (
+        t_PostfixExpr* postfix_inc = 
+        dynamic_cast<t_PostfixExpr*>(for_stmt->increment.get())
+    )
     {
         step = (postfix_inc->op.type == e_TokenType::PLUS_PLUS) ? 1 : -1;
     }
-    else if (t_PrefixExpr* prefix_inc = dynamic_cast<t_PrefixExpr*>(for_stmt->increment.get()))
+    else if 
+    (
+        t_PrefixExpr* prefix_inc = 
+        dynamic_cast<t_PrefixExpr*>(for_stmt->increment.get())
+    )
     {
         step = (prefix_inc->op.type == e_TokenType::PLUS_PLUS) ? 1 : -1;
     }
@@ -2886,8 +2939,8 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
         int rhs_int = static_cast<int>(std::stod(rhs->value));
         step = 
         (
-            assign->op.type == e_TokenType::PLUS_EQUAL) ? 
-                rhs_int : -rhs_int;
+            assign->op.type == e_TokenType::PLUS_EQUAL
+        ) ? rhs_int : -rhs_int;
     }
 
     std::string loop_var_name = init_var->name;
