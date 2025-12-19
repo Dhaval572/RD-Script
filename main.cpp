@@ -12,14 +12,12 @@ static t_ASTContext ast_context;
 
 std::string ReadFile(const std::string &filename)
 {
-    // Check for .rd extension
     if (filename.find(".rd") == std::string::npos)
     {
         std::cerr << "Error: File name must contain .rd extension.\n";
         return "";
     }
 
-    // Open file in text mode (default, not binary)
     std::ifstream file(filename);
     if (!file.is_open())
     {
@@ -27,12 +25,26 @@ std::string ReadFile(const std::string &filename)
         return "";
     }
 
-    // Most efficient method for text files
-    return std::string
+    // Check size and decide whether to pre-allocate
+    file.seekg(0, std::ios::end);
+    std::streamsize size = file.tellg();
+    file.seekg(0, std::ios::beg);
+    
+    std::string content;
+    
+    // Optimize: pre-allocate only for files > 8KB
+    if (size > 8192)
+    {
+        content.reserve(size);
+    }
+    
+    content.assign
     (
         std::istreambuf_iterator<char>(file),
         std::istreambuf_iterator<char>()
     );
+    
+    return content;
 }
 
 int main(int argc, char* argv[])
