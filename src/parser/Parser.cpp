@@ -375,7 +375,6 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
     std::unique_ptr<t_Stmt> initializer;
     if (Match({e_TokenType::SEMICOLON}))
     {
-        // No initializer
         initializer = nullptr;
     }
     else if (Match({e_TokenType::AUTO}))

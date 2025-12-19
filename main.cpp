@@ -1,5 +1,4 @@
 #include <fstream>
-#include <sstream>
 #include <iostream>
 #include <memory>
 #include "include/Lexer.h"
@@ -13,22 +12,27 @@ static t_ASTContext ast_context;
 
 std::string ReadFile(const std::string &filename)
 {
+    // Check for .rd extension
     if (filename.find(".rd") == std::string::npos)
     {
         std::cerr << "Error: File name must contain .rd extension.\n";
         return "";
     }
 
-    std::ifstream file(filename, std::ios::binary);
+    // Open file in text mode (default, not binary)
+    std::ifstream file(filename);
     if (!file.is_open())
     {
         std::cerr << "Error: Could not open file '" << filename << "'\n";
         return "";
     }
 
-    std::ostringstream buffer;
-    buffer << file.rdbuf();
-    return buffer.str();
+    // Most efficient method for text files
+    return std::string
+    (
+        std::istreambuf_iterator<char>(file),
+        std::istreambuf_iterator<char>()
+    );
 }
 
 int main(int argc, char* argv[])
