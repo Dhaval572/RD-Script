@@ -202,6 +202,8 @@ auto total = CalculateSum(10, 20);
 display("Total:", total);
 ```
 
+## Benchmark Feature
+
 ### Benchmark Blocks
 
 Measure execution time of code blocks with automatic formatting:
@@ -224,6 +226,37 @@ benchmark
 * Microseconds (μs)
 * Milliseconds (ms)
 * Seconds (s)
+
+### Performance Comparison
+
+**Example Benchmark Results:**
+![Benchmark Output](Benchmark/print.jpeg)
+
+**Performance Test: Printing 1,000,000 numbers**
+
+**Python Execution:**
+```python
+start_time = time.time()
+for i in range(0, 1000000):
+    print(i)
+end_time = time.time()
+print(f"Time taken: {end_time - start_time}")
+```
+**Result:** 348.94 seconds
+
+**Rubber Duck Script Execution:**
+```cpp
+benchmark
+{
+    for(auto i = 0; i < 1000000; i++)
+    {
+        display(i);
+    }
+}
+```
+**Result:** 23.4382 seconds
+
+**Performance Improvement:** **14.9x faster than Python!**
 
 ## String Features
 
