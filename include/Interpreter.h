@@ -128,6 +128,13 @@ private:
     t_Expected<int, t_ErrorInfo> ExecuteAccumulationLoop
     (
         t_ForStmt* for_stmt
+    );
+    
+    // Ultra-fast native optimization for nested loops with arithmetic expressions
+    bool IsNestedArithmeticLoop(t_ForStmt* for_stmt);
+    t_Expected<int, t_ErrorInfo> ExecuteNestedArithmeticLoop
+    (
+        t_ForStmt* for_stmt
     ); 
 
     // Optimized arithmetic operations

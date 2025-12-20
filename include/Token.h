@@ -27,8 +27,7 @@ enum class e_TokenType
     LESS,
     LESS_EQUAL,
     PLUS_PLUS,      
-    MINUS_MINUS,    
-    
+    MINUS_MINUS,  
     // Compound assignment operators
     PLUS_EQUAL,     
     MINUS_EQUAL,    

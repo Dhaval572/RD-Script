@@ -7,6 +7,7 @@
 #include <iomanip>
 #include <unordered_set>
 #include <limits>
+#include <cmath>
 #include "../include/Lexer.h"
 #include "../include/Parser.h"
 #include "../include/ErrorHandling.h"
@@ -584,8 +585,19 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
     }
     else if (t_ForStmt *for_stmt = dynamic_cast<t_ForStmt *>(stmt))
     {
+        // Check for ultra-fast nested arithmetic loop pattern: nested loops with arithmetic
+        if (IsNestedArithmeticLoop(for_stmt))
+        {
+            t_Expected<int, t_ErrorInfo> result = 
+            ExecuteNestedArithmeticLoop(for_stmt);
+
+            if (!result.HasValue())
+            {
+                return result;
+            }
+        }
         // Check for ultra-fast accumulation loop pattern: for (auto i = 0; i < N; i++) { var += i; }
-        if (IsSimpleAccumulationLoop(for_stmt))
+        else if (IsSimpleAccumulationLoop(for_stmt))
         {
             t_Expected<int, t_ErrorInfo> result = 
             ExecuteAccumulationLoop(for_stmt);
@@ -2879,6 +2891,352 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteAccumulationLoop
     // Update the accumulation variable with the result
     environment[acc_var_name] = t_TypedValue(accumulator);
 
+    return t_Expected<int, t_ErrorInfo>(0);
+}
+
+// Check if a for loop contains a nested loop with arithmetic accumulation
+bool t_Interpreter::IsNestedArithmeticLoop(t_ForStmt* for_stmt)
+{
+    // First check if outer loop is a simple numeric loop
+    if (!IsSimpleNumericLoop(for_stmt)) return false;
+    
+    // Check if body is a block with exactly one statement (the inner loop)
+    t_BlockStmt* body_block = 
+    dynamic_cast<t_BlockStmt*>(for_stmt->body.get());
+
+    if (!body_block || body_block->statements.size() != 1) return false;
+    
+    // Check if the statement is a nested for loop
+    t_ForStmt* inner_for = 
+    dynamic_cast<t_ForStmt*>(body_block->statements[0].get());
+
+    if (!inner_for) return false;
+    
+    // Check if inner loop is also a simple numeric loop
+    if (!IsSimpleNumericLoop(inner_for)) return false;
+    
+    // Check if inner loop body contains arithmetic accumulation
+    t_BlockStmt* inner_body = dynamic_cast<t_BlockStmt*>(inner_for->body.get());
+    if (!inner_body || inner_body->statements.size() != 1) return false;
+    
+    t_ExpressionStmt* expr_stmt = 
+    dynamic_cast<t_ExpressionStmt*>(inner_body->statements[0].get());
+    if (!expr_stmt) return false;
+    
+    // Check if the expression is a binary assignment (+=, -=, *=, /=, %=)
+    t_BinaryExpr* binary_expr = 
+    dynamic_cast<t_BinaryExpr*>(expr_stmt->expression.get());
+    if 
+    (
+        !binary_expr || 
+        (
+            binary_expr->op.type != e_TokenType::PLUS_EQUAL &&
+            binary_expr->op.type != e_TokenType::MINUS_EQUAL &&
+            binary_expr->op.type != e_TokenType::STAR_EQUAL &&
+            binary_expr->op.type != e_TokenType::SLASH_EQUAL &&
+            binary_expr->op.type != e_TokenType::MODULUS_EQUAL
+        )
+    ) return false;
+    
+    // Check if left side is a variable
+    t_VariableExpr* left_var = 
+    dynamic_cast<t_VariableExpr*>(binary_expr->left.get());
+    if (!left_var) return false;
+    
+    // Check if right side is a binary expression with loop variables
+    t_BinaryExpr* right_binary = 
+    dynamic_cast<t_BinaryExpr*>(binary_expr->right.get());
+    if (!right_binary) return false;
+    
+    // Get loop variable names
+    t_VarStmt* outer_init = 
+    dynamic_cast<t_VarStmt*>(for_stmt->initializer.get());
+    
+    t_VarStmt* inner_init = 
+    dynamic_cast<t_VarStmt*>(inner_for->initializer.get());
+    if (!outer_init || !inner_init) return false;
+    
+    std::string outer_var = outer_init->name;
+    std::string inner_var = inner_init->name;
+    
+    // Check if right side is arithmetic with loop variables (i + j, i - j, etc.)
+    t_VariableExpr* right_left_var = 
+    dynamic_cast<t_VariableExpr*>(right_binary->left.get());
+
+    t_VariableExpr* right_right_var = 
+    dynamic_cast<t_VariableExpr*>(right_binary->right.get());
+    
+    if (!right_left_var || !right_right_var) return false;
+    
+    // Check if the binary expression uses loop variables
+    bool uses_outer = 
+    (
+        right_left_var->name == outer_var || 
+        right_right_var->name == outer_var
+    );
+    bool uses_inner = 
+    (
+        right_left_var->name == inner_var || 
+        right_right_var->name == inner_var
+    );
+    
+    // Must use at least one loop variable
+    if (!uses_outer && !uses_inner) return false;
+    
+    // Check if the operator is arithmetic (+, -, *, /, %)
+    e_TokenType op = right_binary->op.type;
+    if 
+    (
+        op != e_TokenType::PLUS &&
+        op != e_TokenType::MINUS &&
+        op != e_TokenType::STAR &&
+        op != e_TokenType::SLASH &&
+        op != e_TokenType::MODULUS
+    ) return false;
+    
+    return true;
+}
+
+// Ultra-fast native execution for nested loops with arithmetic expressions
+t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteNestedArithmeticLoop
+(
+    t_ForStmt* for_stmt
+)
+{
+    // Extract outer loop parameters
+    t_VarStmt* outer_init = 
+    dynamic_cast<t_VarStmt*>(for_stmt->initializer.get());
+    t_BinaryExpr* outer_condition = 
+    dynamic_cast<t_BinaryExpr*>(for_stmt->condition.get());
+    t_LiteralExpr* outer_limit_lit = 
+    dynamic_cast<t_LiteralExpr*>(outer_condition->right.get());
+    
+    int outer_limit = static_cast<int>(std::stod(outer_limit_lit->value));
+    std::string outer_var = outer_init->name;
+    
+    // Extract inner loop parameters
+    t_BlockStmt* body_block = dynamic_cast<t_BlockStmt*>(for_stmt->body.get());
+    t_ForStmt* inner_for = 
+    dynamic_cast<t_ForStmt*>(body_block->statements[0].get());
+    
+    t_VarStmt* inner_init = 
+    dynamic_cast<t_VarStmt*>(inner_for->initializer.get());
+    t_BinaryExpr* inner_condition = 
+    dynamic_cast<t_BinaryExpr*>(inner_for->condition.get());
+    t_LiteralExpr* inner_limit_lit = 
+    dynamic_cast<t_LiteralExpr*>(inner_condition->right.get());
+    
+    int inner_limit = static_cast<int>(std::stod(inner_limit_lit->value));
+    std::string inner_var = inner_init->name;
+    
+    // Extract accumulation variable and expression
+    t_BlockStmt* inner_body = dynamic_cast<t_BlockStmt*>(inner_for->body.get());
+    t_ExpressionStmt* expr_stmt = 
+    dynamic_cast<t_ExpressionStmt*>(inner_body->statements[0].get());
+    t_BinaryExpr* assign_expr = 
+    dynamic_cast<t_BinaryExpr*>(expr_stmt->expression.get());
+    
+    t_VariableExpr* acc_var_expr = 
+    dynamic_cast<t_VariableExpr*>(assign_expr->left.get());
+    std::string acc_var_name = acc_var_expr->name;
+    
+    t_BinaryExpr* arithmetic_expr = 
+    dynamic_cast<t_BinaryExpr*>(assign_expr->right.get());
+    e_TokenType arithmetic_op = arithmetic_expr->op.type;
+    
+    t_VariableExpr* arith_left = 
+    dynamic_cast<t_VariableExpr*>(arithmetic_expr->left.get());
+    t_VariableExpr* arith_right = 
+    dynamic_cast<t_VariableExpr*>(arithmetic_expr->right.get());
+    
+    // Check if accumulation variable exists and get its initial value
+    auto acc_it = environment.find(acc_var_name);
+    if (acc_it == environment.end())
+    {
+        return t_Expected<int, t_ErrorInfo>
+        (
+            t_ErrorInfo
+            (
+                e_ErrorType::RUNTIME_ERROR, 
+                "Variable '" + 
+                acc_var_name + 
+                "' must be declared with 'auto' keyword before use"
+            )
+        );
+    }
+    
+    // Get initial accumulator value
+    double accumulator = 0.0;
+    if (acc_it->second.has_numeric_value)
+    {
+        accumulator = acc_it->second.numeric_value;
+    }
+    else
+    {
+        try
+        {
+            accumulator = std::stod(acc_it->second.value);
+        }
+        catch (...)
+        {
+            return t_Expected<int, t_ErrorInfo>
+            (
+                t_ErrorInfo
+                (
+                    e_ErrorType::RUNTIME_ERROR, 
+                    "Variable '" + acc_var_name + "' must be numeric for accumulation"
+                )
+            );
+        }
+    }
+    
+    // NATIVE C++ NESTED LOOP: Direct arithmetic without interpretation overhead
+    e_TokenType assign_op = assign_expr->op.type;
+    
+    for (int i = 0; i < outer_limit; i++)
+    {
+        for (int j = 0; j < inner_limit; j++)
+        {
+            // Compute the arithmetic expression value
+            double left_val = 0.0;
+            double right_val = 0.0;
+            
+            if (arith_left->name == outer_var)
+            {
+                left_val = static_cast<double>(i);
+            }
+            else if (arith_left->name == inner_var)
+            {
+                left_val = static_cast<double>(j);
+            }
+            else
+            {
+                // Should not happen if IsNestedArithmeticLoop passed
+                left_val = 0.0;
+            }
+            
+            if (arith_right->name == outer_var)
+            {
+                right_val = static_cast<double>(i);
+            }
+            else if (arith_right->name == inner_var)
+            {
+                right_val = static_cast<double>(j);
+            }
+            else
+            {
+                // Should not happen if IsNestedArithmeticLoop passed
+                right_val = 0.0;
+            }
+            
+            // Compute arithmetic result
+            double arith_result = 0.0;
+            switch (arithmetic_op)
+            {
+            case e_TokenType::PLUS:
+                arith_result = left_val + right_val;
+                break;
+            case e_TokenType::MINUS:
+                arith_result = left_val - right_val;
+                break;
+            case e_TokenType::STAR:
+                arith_result = left_val * right_val;
+                break;
+            case e_TokenType::SLASH:
+                if (right_val == 0.0)
+                {
+                    return t_Expected<int, t_ErrorInfo>
+                    (
+                        t_ErrorInfo
+                        (
+                            e_ErrorType::RUNTIME_ERROR, 
+                            "Division by zero"
+                        )
+                    );
+                }
+                arith_result = left_val / right_val;
+                break;
+            case e_TokenType::MODULUS:
+                if (right_val == 0.0)
+                {
+                    return t_Expected<int, t_ErrorInfo>
+                    (
+                        t_ErrorInfo
+                        (
+                            e_ErrorType::RUNTIME_ERROR, 
+                            "Modulus by zero"
+                        )
+                    );
+                }
+                arith_result = std::fmod(left_val, right_val);
+                break;
+            default:
+                return t_Expected<int, t_ErrorInfo>
+                (
+                    t_ErrorInfo
+                    (
+                        e_ErrorType::RUNTIME_ERROR, 
+                        "Unsupported arithmetic operation in optimized loop"
+                    )
+                );
+            }
+            
+            // Apply assignment operation
+            switch (assign_op)
+            {
+            case e_TokenType::PLUS_EQUAL:
+                accumulator += arith_result;
+                break;
+            case e_TokenType::MINUS_EQUAL:
+                accumulator -= arith_result;
+                break;
+            case e_TokenType::STAR_EQUAL:
+                accumulator *= arith_result;
+                break;
+            case e_TokenType::SLASH_EQUAL:
+                if (arith_result == 0.0)
+                {
+                    return t_Expected<int, t_ErrorInfo>
+                    (
+                        t_ErrorInfo
+                        (
+                            e_ErrorType::RUNTIME_ERROR, 
+                            "Division by zero"
+                        )
+                    );
+                }
+                accumulator /= arith_result;
+                break;
+            case e_TokenType::MODULUS_EQUAL:
+                if (arith_result == 0.0)
+                {
+                    return t_Expected<int, t_ErrorInfo>
+                    (
+                        t_ErrorInfo
+                        (
+                            e_ErrorType::RUNTIME_ERROR, 
+                            "Modulus by zero"
+                        )
+                    );
+                }
+                accumulator = std::fmod(accumulator, arith_result);
+                break;
+            default:
+                return t_Expected<int, t_ErrorInfo>
+                (
+                    t_ErrorInfo
+                    (
+                        e_ErrorType::RUNTIME_ERROR, 
+                        "Unsupported assignment operation in optimized loop"
+                    )
+                );
+            }
+        }
+    }
+    
+    // Update the accumulation variable with the result
+    environment[acc_var_name] = t_TypedValue(accumulator);
+    
     return t_Expected<int, t_ErrorInfo>(0);
 }
 
