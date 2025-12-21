@@ -21,10 +21,7 @@ A statically-typed scripting language with C-like syntax, featuring automatic me
 ### Building the Project
 
 ```bash
-mkdir build
-cd build
-cmake ..
-cmake --build .
+./rd.bat
 ```
 
 > **Note:** When making changes to the project, delete the `build` folder before rebuilding.
