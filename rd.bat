@@ -1,40 +1,40 @@
 @echo off
-REM Simple RD Script Runner
-REM Usage: run_rd.bat <script_file.rd>
+REM RubberDuck RD Script Runner / Builder
 
 setlocal
 
-REM Check if script file is provided
-if "%1"=="" (
-    echo Usage: rd.bat ^<script_file.rd^>
-    echo Example: rd.bat test.rd
-    exit /b 1
-)
-
-REM Check if script file exists
-if not exist "%1" (
-    echo Error: Script file "%1" not found!
-    exit /b 1
-)
-
-REM Check if build directory exists, if not create it
+REM === Build if needed ===
 if not exist "build" (
+    echo [INFO] Build directory not found. Building...
     mkdir build >nul 2>&1
     cd build
-    cmake .. >nul 2>&1
-    cmake --build . >nul 2>&1
+    cmake .. || exit /b 1
+    cmake --build . || exit /b 1
     cd ..
 ) else (
-    REM Check if executable exists, if not build it
     if not exist "build\Debug\rubberduck.exe" (
+        echo [INFO] Executable not found. Building...
         cd build
-        cmake .. >nul 2>&1
-        cmake --build . >nul 2>&1
+        cmake .. || exit /b 1
+        cmake --build . || exit /b 1
         cd ..
     )
 )
 
-REM Run the RD Script interpreter with the provided script
-build\Debug\rubberduck.exe %1
+REM === If no RD file provided, stop after build ===
+if "%1"=="" (
+    echo [INFO] Build completed. No script provided to run.
+    exit /b 0
+)
+
+REM === If RD file provided, check existence ===
+if not exist "%1" (
+    echo [ERROR] Script file "%1" not found!
+    exit /b 1
+)
+
+REM === Run the RD script ===
+echo [INFO] Running script: %1
+build\Debug\rubberduck.exe "%1"
 
 endlocal
