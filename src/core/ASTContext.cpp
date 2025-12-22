@@ -1,9 +1,4 @@
 #include <rubberduck/ASTContext.h>
-#include <algorithm>
-#include <memory>  
-
-static std::unique_ptr<t_MemoryPool> stmt_pool_instance = nullptr;
-static std::unique_ptr<t_MemoryPool> expr_pool_instance = nullptr;
 
 namespace 
 {
@@ -49,54 +44,28 @@ namespace
 }
 
 t_ASTContext::t_ASTContext()
+    : m_StmtPool(std::make_unique<t_MemoryPool>(MaxStmtSize()))
+    , m_ExprPool(std::make_unique<t_MemoryPool>(MaxExprSize()))
 {
-    // Initialize memory pools only if they haven't been initialized yet
-    if (stmt_pool_instance == nullptr) 
-    {
-        stmt_pool_instance = std::make_unique<t_MemoryPool>(MaxStmtSize());
-    }
-    
-    if (expr_pool_instance == nullptr) 
-    {
-        expr_pool_instance = std::make_unique<t_MemoryPool>(MaxExprSize());
-    }
 }
 
 t_ASTContext::~t_ASTContext()
 {
-    // Reset the memory pools when the context is destroyed
     Reset();
 }
 
 t_MemoryPool& t_ASTContext::GetStmtPool()
 {
-    // Ensure pools are initialized
-    if (stmt_pool_instance == nullptr) 
-    {
-        stmt_pool_instance = std::make_unique<t_MemoryPool>(MaxStmtSize());
-    }
-    return *stmt_pool_instance;
+    return *m_StmtPool;
 }
 
 t_MemoryPool& t_ASTContext::GetExprPool()
 {
-    // Ensure pools are initialized
-    if (expr_pool_instance == nullptr) 
-    {
-        expr_pool_instance = std::make_unique<t_MemoryPool>(MaxExprSize());
-    }
-    return *expr_pool_instance;
+    return *m_ExprPool;
 }
 
 void t_ASTContext::Reset()
 {
-    if (stmt_pool_instance != nullptr) 
-    {
-        stmt_pool_instance->Reset();
-    }
-    
-    if (expr_pool_instance != nullptr) 
-    {
-        expr_pool_instance->Reset();
-    }
+    m_StmtPool->Reset();
+    m_ExprPool->Reset();
 }

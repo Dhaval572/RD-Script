@@ -7,9 +7,6 @@
 #include <rubberduck/ErrorHandling.h>
 #include <rubberduck/ASTContext.h>
 
-// Create a static instance of ASTContext to manage the lifecycle
-static t_ASTContext ast_context;
-
 static std::string ReadFile(const std::string &filename)
 {
     if (filename.find(".rd") == std::string::npos)
@@ -72,8 +69,11 @@ int main(int argc, char* argv[])
     }
     std::vector<t_Token> tokens = tokens_result.Value();
 
+    // Create AST context for memory pool management
+    t_ASTContext ast_context;
+
     // Parsing with memory pool optimization
-    t_Parser parser(tokens);
+    t_Parser parser(tokens, ast_context);
     t_Expected<std::vector<t_Stmt*>, t_ErrorInfo> statements_result = 
     parser.Parse();
     if (!statements_result.HasValue())

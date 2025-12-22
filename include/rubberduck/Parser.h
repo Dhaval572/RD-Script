@@ -12,10 +12,7 @@ class t_Parser
 private:
     std::vector<t_Token> tokens;
     int current;
-    
-    // Memory pool for statement allocations (now managed by ASTContext)
-    // static t_MemoryPool stmt_pool;
-    // static t_MemoryPool expr_pool;
+    t_ASTContext& m_Context;
 
     bool IsAtEnd();
     t_Token Advance();
@@ -59,9 +56,6 @@ private:
 
 public:
     t_Expected<t_Expr*, t_ErrorInfo> Expression();  // Moved from private to public section
-    explicit t_Parser(const std::vector<t_Token> &tokens);
+    explicit t_Parser(const std::vector<t_Token> &tokens, t_ASTContext& context);
     t_Expected<std::vector<t_Stmt*>, t_ErrorInfo> Parse();
-    
-    // Reset the memory pools (now delegated to ASTContext)
-    static void ResetPools();
 };
