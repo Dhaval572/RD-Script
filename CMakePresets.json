@@ -1,31 +1,67 @@
 {
-    "version": 8,
-    "configurePresets": [
-        {
-            "name": "Debug",
-            "displayName": "Debug",
-            "description": "Debug build using clang + Ninja",
-            "generator": "Ninja",
-            "binaryDir": "${sourceDir}/out/build/Debug",
-            "cacheVariables": {
-                "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/Debug",
-                "CMAKE_C_COMPILER": "C:/Program Files/LLVM/bin/clang.exe",
-                "CMAKE_CXX_COMPILER": "C:/Program Files/LLVM/bin/clang++.exe",
-                "CMAKE_BUILD_TYPE": "Debug"
-            }
-        },
-        {
-            "name": "Release",
-            "displayName": "Release",
-            "description": "Release build using clang + Ninja",
-            "generator": "Ninja",
-            "binaryDir": "${sourceDir}/out/build/Release",
-            "cacheVariables": {
-                "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/Release",
-                "CMAKE_C_COMPILER": "C:/Program Files/LLVM/bin/clang.exe",
-                "CMAKE_CXX_COMPILER": "C:/Program Files/LLVM/bin/clang++.exe",
-                "CMAKE_BUILD_TYPE": "Release"
-            }
-        }
-    ]
+  "version": 8,
+  "configurePresets": [
+    {
+      "name": "windows-msvc-debug",
+      "displayName": "Windows Debug (MSVC)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/out/build/msvc-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "windows-msvc-release",
+      "displayName": "Windows Release (MSVC)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/out/build/msvc-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "windows-clang-cl-debug",
+      "displayName": "Windows Debug (clang-cl + MSVC STL)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/out/build/clangcl-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_C_COMPILER": "clang-cl",
+        "CMAKE_CXX_COMPILER": "clang-cl"
+      }
+    },
+    {
+      "name": "windows-clang-cl-release",
+      "displayName": "Windows Release (clang-cl + MSVC STL)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/out/build/clangcl-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_C_COMPILER": "clang-cl",
+        "CMAKE_CXX_COMPILER": "clang-cl"
+      }
+    },
+    {
+      "name": "windows-llvm-clang-debug",
+      "displayName": "Windows Debug (LLVM clang + libc++)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/out/build/llvm-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_C_COMPILER": "clang",
+        "CMAKE_CXX_COMPILER": "clang++"
+      }
+    },
+    {
+      "name": "windows-llvm-clang-release",
+      "displayName": "Windows Release (LLVM clang + libc++)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/out/build/llvm-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_C_COMPILER": "clang",
+        "CMAKE_CXX_COMPILER": "clang++"
+      }
+    }
+  ]
 }
