@@ -358,7 +358,8 @@ Contributions are welcome! Please follow the coding guidelines and ensure all te
 ---
 
 ## Download
-➡️ [Download](Download/Rd%20script.zip)
+➡️ [Download RD Script](https://github.com/Dhaval572/RD-Script/releases/tag/v0.1.0-alpha)
+
 ---
 
 **Happy scripting with Rubber Duck!** 🦆
