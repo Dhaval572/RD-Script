@@ -41,6 +41,22 @@
 
 3. **Line Length**: Maximum 75 characters per line
 
+4. **Function Formmating:** If function argument is big and going to new line then do this:
+
+For example:
+```cpp
+void func(int a, int b, int c, int d, int e, int f, int g, int h, int i, int j, int k); // to long
+```
+
+```cpp
+Void func
+(
+    int a,
+    int b, 
+    // And so on
+)
+```
+
 ## File Organization
 
 1. **Header Files (.h)**:
