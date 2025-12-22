@@ -5,8 +5,8 @@
 #include <unordered_set>
 #include <string>
 #include <chrono>
-#include "AST.h"
-#include "ErrorHandling.h"
+#include <rubberduck/AST.h>
+#include <rubberduck/ErrorHandling.h>
 
 // Type enumeration for RD Script values
 enum class e_ValueType

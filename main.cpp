@@ -1,16 +1,16 @@
 #include <fstream>
 #include <iostream>
 #include <memory>
-#include "include/Lexer.h"
-#include "include/Parser.h"
-#include "include/Interpreter.h"
-#include "include/ErrorHandling.h"
-#include "include/ASTContext.h"  
+#include <rubberduck/Lexer.h>
+#include <rubberduck/Parser.h>
+#include <rubberduck/Interpreter.h>
+#include <rubberduck/ErrorHandling.h>
+#include <rubberduck/ASTContext.h>
 
 // Create a static instance of ASTContext to manage the lifecycle
 static t_ASTContext ast_context;
 
-std::string ReadFile(const std::string &filename)
+static std::string ReadFile(const std::string &filename)
 {
     if (filename.find(".rd") == std::string::npos)
     {

@@ -1,7 +1,7 @@
-#include "../include/Parser.h"
-#include "../include/AST.h"
-#include "../include/ErrorHandling.h"
-#include "../include/ASTContext.h"  // Include ASTContext
+#include <rubberduck/Parser.h>
+#include <rubberduck/AST.h>
+#include <rubberduck/ErrorHandling.h>
+#include <rubberduck/ASTContext.h> 
 #include <iostream>
 #include <string>
 #include <cctype>

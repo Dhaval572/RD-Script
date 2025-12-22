@@ -2,8 +2,8 @@
 
 #include <string>
 #include <vector>
-#include "Token.h"
-#include "ErrorHandling.h"
+#include <rubberduck/Token.h>
+#include <rubberduck/ErrorHandling.h>
 
 class t_Lexer
 {

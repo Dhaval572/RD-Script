@@ -1,4 +1,4 @@
-#include "../include/ASTContext.h"
+#include <rubberduck/ASTContext.h>
 #include <algorithm>
 #include <memory>  
 

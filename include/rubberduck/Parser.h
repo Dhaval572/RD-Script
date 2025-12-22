@@ -2,10 +2,10 @@
 
 #include <vector>
 #include <memory>
-#include "Token.h"
-#include "AST.h"
-#include "ASTContext.h"  // Include the new ASTContext header
-#include "ErrorHandling.h"
+#include <rubberduck/Token.h>
+#include <rubberduck/AST.h>
+#include <rubberduck/ASTContext.h>
+#include <rubberduck/ErrorHandling.h>
 
 class t_Parser
 {

@@ -3,8 +3,8 @@
 #include <string>
 #include <vector>
 #include <memory>
-#include "Token.h"
-#include "AST.h"
+#include <rubberduck/Token.h>
+#include <rubberduck/AST.h>
 
 struct t_Expr
 {

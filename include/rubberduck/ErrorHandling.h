@@ -3,7 +3,7 @@
 #include <string>
 #include <variant>
 #include <vector>
-#include "Token.h"
+#include <rubberduck/Token.h>
 
 // Error types for RD Script
 enum class e_ErrorType

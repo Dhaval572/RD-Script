@@ -1,4 +1,4 @@
-#include "Interpreter.h"
+#include <rubberduck/Interpreter.h>
 #include <iostream>
 #include <sstream>
 #include <regex>
@@ -8,9 +8,9 @@
 #include <unordered_set>
 #include <limits>
 #include <cmath>
-#include "../include/Lexer.h"
-#include "../include/Parser.h"
-#include "../include/ErrorHandling.h"
+#include <rubberduck/Lexer.h>
+#include <rubberduck/Parser.h>
+#include <rubberduck/ErrorHandling.h>
 
 // Helper: Assigns variable to its visible scope.
 static void AssignToVisibleVariable

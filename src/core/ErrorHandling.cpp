@@ -1,5 +1,6 @@
-#include "../include/ErrorHandling.h"
+#include <rubberduck/ErrorHandling.h>
 #include <iostream>
+#include <string_view>
 
 void ReportError(const t_ErrorInfo& error)
 {

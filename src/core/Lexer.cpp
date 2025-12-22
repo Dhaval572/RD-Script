@@ -1,7 +1,7 @@
-#include "Lexer.h"
+#include <rubberduck/Lexer.h>
 #include <unordered_map>
 #include <cctype>
-#include "ErrorHandling.h"
+#include <rubberduck/ErrorHandling.h>
 
 static const std::unordered_map<std::string, e_TokenType> keywords =
 {
