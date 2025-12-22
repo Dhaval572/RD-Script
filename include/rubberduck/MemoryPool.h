@@ -191,18 +191,6 @@ public:
         }
     }
 
-    template<typename U, typename... Args>
-    void construct(U* ptr, Args&&... args)
-    {
-        new(ptr) U(std::forward<Args>(args)...);
-    }
-
-    template<typename U>
-    void destroy(U* ptr)
-    {
-        ptr->~U();
-    }
-
     template<typename U>
     bool operator==(const t_PoolAllocator<U>& other) const noexcept
     {

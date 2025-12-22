@@ -537,7 +537,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
             !cond_var                                    || 
             cond_var->name != init_var->name             || 
             !cond_lit                                    ||
-            cond_lit->token_type != e_TokenType::NUMBER ||
+            cond_lit->token_type != e_TokenType::NUMBER  ||
             !IsIntegerLiteralValue(cond_lit->value)
         )
         {
@@ -710,7 +710,8 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::DisplayStatement()
 
 t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::GetinStatement()
 {
-    t_Token getin_identifier = Previous(); // Use Previous() instead of Advance()
+    // Use Previous() instead of Advance()
+    t_Token getin_identifier = Previous(); 
 
     t_Expected<t_Token, t_ErrorInfo> open_paren_result =
     Consume
