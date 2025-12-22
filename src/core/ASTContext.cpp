@@ -66,6 +66,13 @@ t_MemoryPool& t_ASTContext::GetExprPool()
 
 void t_ASTContext::Reset()
 {
-    m_StmtPool->Reset();
-    m_ExprPool->Reset();
+    if (m_StmtPool)
+    {
+        m_StmtPool->Reset();
+    }
+    
+    if (m_ExprPool)
+    {
+        m_ExprPool->Reset();
+    }
 }
