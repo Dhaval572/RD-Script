@@ -11,17 +11,14 @@ add_executable(
     main.cpp
 )
 
-
 # Require modern C++ (can be raised to cxx_std_23 when desired)
 target_compile_features(rubberduck PRIVATE cxx_std_20)
-
 
 # Include directories (scoped to the target)
 target_include_directories(
     rubberduck
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
-
 
 # Compiler-specific warnings
 if (MSVC)

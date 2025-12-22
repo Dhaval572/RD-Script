@@ -345,11 +345,11 @@ benchmark
 
 ## Coding Standards
 
-For detailed coding conventions and guidelines, see [CODING_GUIDELINES.md](CODING_GUIDELINES.md).
+For detailed coding conventions and guidelines, see [CODING_GUIDELINES.md](Documentation/Cpp_documentation/CODING_GUIDELINES.md).
 
 ## Memory Management
 
-Rubber Duck Script features automatic memory management. For implementation details, refer to [MEMORY_MANAGEMENT.md](MEMORY_MANAGEMENT.md).
+Rubber Duck Script features automatic memory management. For implementation details, refer to [MEMORY_MANAGEMENT.md](Documentation/Cpp_documentation/MEMORY_MANAGEMENT_IN_RD_SCRIPT.md)   
 
 ## Contributing
 
