@@ -98,7 +98,8 @@ struct t_BinaryExpr : public t_Expr
     t_Token op;
     std::unique_ptr<t_Expr> right;  // Owns right operand
     
-    t_BinaryExpr(
+    t_BinaryExpr
+    (
         std::unique_ptr<t_Expr> left, 
         t_Token op, 
         std::unique_ptr<t_Expr> right
