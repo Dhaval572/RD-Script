@@ -12,7 +12,7 @@
 #include <rubberduck/Parser.h>
 #include <rubberduck/ErrorHandling.h>
 
-// Helper: Assigns variable to its visible scope.
+// Helper: Assigns variable to all visible scopes where it exists.
 static void AssignToVisibleVariable
 (
     const std::string &name, 
@@ -23,22 +23,17 @@ static void AssignToVisibleVariable
     t_TypedValue>> &scope_stack
 )
 {
-    for
-    (
-        auto scope_it = scope_stack.rbegin(); 
-        scope_it != scope_stack.rend(); 
-        ++scope_it
-    )
+    // Update environment (used by PushScope)
+    environment[name] = value;
+    
+    // Update all scope_stack entries containing this variable
+    for (std::size_t i = 0; i < scope_stack.size(); ++i)
     {
-        auto &scope = *scope_it;
-        if (scope.find(name) != scope.end())
+        if (scope_stack[i].find(name) != scope_stack[i].end())
         {
-            scope[name] = value;
-            return;
+            scope_stack[i][name] = value;
         }
     }
-// Not found in stack: update current environment
-    environment[name] = value;
 }
 
 t_Interpreter::t_Interpreter()
