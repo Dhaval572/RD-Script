@@ -243,3 +243,20 @@ Benchmark Results:
 ```
 
 This provides an easy way to measure performance, similar to Python's timeit module but with the speed of C++ chrono.
+
+### Display Statement
+
+The `display` statement is used to output information. Here is the recommended usage summary:
+
+*   **With Parentheses**: Prefer using string interpolation (`$`) with `{}`.
+    ```rubberduck
+    display($"Hello {name}"); // Recommended
+    ```
+    *Note: Commas are not supported inside `display()`.*
+
+*   **Without Parentheses**: Use comma-separated values.
+    ```rubberduck
+    display "Hello ", name; // Recommended
+    ```
+
+Interpolation without parentheses is also supported: `display $"Hello {name}";`
