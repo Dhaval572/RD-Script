@@ -1840,7 +1840,8 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Primary()
             return t_Expected<t_Expr*, t_ErrorInfo>(call_expr);
         }
 
-        t_VariableExpr* expr_node = m_Context.CreateExpr<t_VariableExpr>(identifier.lexeme);
+        t_VariableExpr* expr_node = 
+        m_Context.CreateExpr<t_VariableExpr>(identifier.lexeme);
         if (!expr_node)
         {
             return t_Expected<t_Expr*, t_ErrorInfo>

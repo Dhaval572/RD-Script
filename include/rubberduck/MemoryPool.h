@@ -173,30 +173,6 @@ public:
     t_PoolAllocator(const t_PoolAllocator<U>& other) noexcept : 
         m_Pool(other.m_Pool) {}
 
-    pointer allocate(size_type n)
-    {
-        if (n == 1)
-        {
-            return static_cast<pointer>(m_Pool->Allocate());
-        }
-        else
-        {
-            return static_cast<pointer>(std::malloc(n * sizeof(T)));
-        }
-    }
-
-    void deallocate(pointer ptr, size_type n)
-    {
-        if (n == 1)
-        {
-            m_Pool->Deallocate(ptr);
-        }
-        else
-        {
-            std::free(ptr);
-        }
-    }
-
     template<typename U>
     bool operator==(const t_PoolAllocator<U>& other) const noexcept
     {
