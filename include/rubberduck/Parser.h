@@ -10,8 +10,8 @@
 class t_Parser
 {
 private:
-    std::vector<t_Token> tokens;
-    int current;
+    std::vector<t_Token> m_Tokens;
+    int m_Current;
     t_ASTContext& m_Context;
 
     bool IsAtEnd();

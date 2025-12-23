@@ -8,11 +8,11 @@
 class t_Lexer
 {
 private:
-    std::string source;
-    std::vector<t_Token> tokens;
-    int start;
-    int current;
-    int line;
+    std::string m_Source;
+    std::vector<t_Token> m_Tokens;
+    int m_Start;
+    int m_Current;
+    int m_Line;
 
     bool IsAtEnd();
     t_ParsingResult ScanToken();

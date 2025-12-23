@@ -18,20 +18,20 @@ static void AssignToVisibleVariable
     const std::string &name, 
     const t_TypedValue &value, 
     std::unordered_map<std::string, 
-    t_TypedValue> &environment, 
+    t_TypedValue> &m_Environment, 
     std::vector<std::unordered_map<std::string, 
-    t_TypedValue>> &scope_stack
+    t_TypedValue>> &m_ScopeStack
 )
 {
-    // Update environment (used by PushScope)
-    environment[name] = value;
+    // Update m_Environment (used by PushScope)
+    m_Environment[name] = value;
     
-    // Update all scope_stack entries containing this variable
-    for (std::size_t i = 0; i < scope_stack.size(); ++i)
+    // Update all m_ScopeStack entries containing this variable
+    for (std::size_t i = 0; i < m_ScopeStack.size(); ++i)
     {
-        if (scope_stack[i].find(name) != scope_stack[i].end())
+        if (m_ScopeStack[i].find(name) != m_ScopeStack[i].end())
         {
-            scope_stack[i][name] = value;
+            m_ScopeStack[i][name] = value;
         }
     }
 }
@@ -93,13 +93,13 @@ t_InterpretationResult t_Interpreter::Interpret
     const std::vector<t_Stmt *> &statements
 )
 {
-    functions.clear();
+    m_Functions.clear();
 
     for (t_Stmt *statement : statements)
     {
         if (t_FunStmt *fun_stmt = dynamic_cast<t_FunStmt *>(statement))
         {
-            functions[fun_stmt->name] = fun_stmt;
+            m_Functions[fun_stmt->name] = fun_stmt;
         }
     }
 
@@ -115,31 +115,7 @@ t_InterpretationResult t_Interpreter::Interpret
                 return t_InterpretationResult(result.Error());
             }
         }
-        catch (const std::string &control_flow)
-        {
-            // Handle misuse of break/continue outside of loops
-            if (control_flow == "break" || 
-                control_flow == "continue")
-            {
-                t_ErrorInfo err
-                (
-                    e_ErrorType::RUNTIME_ERROR,
-                    control_flow == "break" ?
-                    "'break' used outside of a loop" :
-                    "'continue' used outside of a loop"
-                );
-                ReportError(err);
-                return t_InterpretationResult(err);
-            }
-            // Convert to runtime error
-            t_ErrorInfo err
-            (
-                e_ErrorType::RUNTIME_ERROR,
-                "Unhandled control-flow exception"
-            );
-            ReportError(err);
-            return t_InterpretationResult(err);
-        }
+
         catch (const std::exception& ex)
         {
             t_ErrorInfo err
@@ -165,20 +141,20 @@ t_InterpretationResult t_Interpreter::Interpret
     return t_InterpretationResult(0); // Success represented by 0
 }
 
-// Scope management functions
+// Scope management m_Functions
 void t_Interpreter::PushScope()
 {
-    // Save the current state of the environment
-    scope_stack.emplace_back(environment);
+    // Save the current state of the m_Environment
+    m_ScopeStack.emplace_back(m_Environment);
 }
 
 void t_Interpreter::PopScope()
 {
-    if (!scope_stack.empty()) 
+    if (!m_ScopeStack.empty()) 
     {
-        // Restore the environment to its previous state
-        environment = std::move(scope_stack.back());
-        scope_stack.pop_back();
+        // Restore the m_Environment to its previous state
+        m_Environment = std::move(m_ScopeStack.back());
+        m_ScopeStack.pop_back();
     }
 }
 
@@ -188,18 +164,18 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::DeclareVariable
 )
 {
     // Check if variable is already declared in current scope
-    // We do this by checking if it exists in the current environment
-    // and comparing with the previous scope's environment if it exists
-    if (!environment.count(name)) 
+    // We do this by checking if it exists in the current m_Environment
+    // and comparing with the previous scope's m_Environment if it exists
+    if (!m_Environment.count(name)) 
     {
         // Variable not declared yet, this is fine
         return t_Expected<int, t_ErrorInfo>(0); // Success
     }
     
     // Variable already exists, check if it was declared in current scope
-    if (!scope_stack.empty()) 
+    if (!m_ScopeStack.empty()) 
     {
-        const auto& previous_scope = scope_stack.back();
+        const auto& previous_scope = m_ScopeStack.back();
         if (previous_scope.find(name) == previous_scope.end()) 
         {
             // Variable exists but was declared in current scope - this is an error
@@ -467,7 +443,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
 
                 // If a control signal was raised inside this block (break/continue),
                 // stop executing further statements in this block and propagate upward.
-                if (!control_signal.empty())
+                if (!m_ControlSignal.empty())
                 {
                     // Pop the scope to clean up variables declared in this block
                     PopScope();
@@ -476,7 +452,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                 
                 // If we're returning from a function, stop executing further statements
                 // and propagate the return signal upward.
-                if (is_returning)
+                if (m_IsReturning)
                 {
                     PopScope();
                     return t_Expected<int, t_ErrorInfo>(0);
@@ -503,7 +479,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
     else if (dynamic_cast<t_BreakStmt *>(stmt))
     {
         // Validate that we're inside a loop
-        if (loop_depth <= 0)
+        if (m_LoopDepth <= 0)
         {
             return t_Expected<int, t_ErrorInfo>
             (
@@ -515,13 +491,13 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
             );
         }
         // Signal break without throwing
-        control_signal = "break";
+        m_ControlSignal = "break";
         return t_Expected<int, t_ErrorInfo>(0);
     }
     else if (dynamic_cast<t_ContinueStmt *>(stmt))
     {
         // Validate that we're inside a loop
-        if (loop_depth <= 0)
+        if (m_LoopDepth <= 0)
         {
             return t_Expected<int, t_ErrorInfo>
             (
@@ -533,7 +509,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
             );
         }
         // Signal continue without throwing
-        control_signal = "continue";
+        m_ControlSignal = "continue";
         return t_Expected<int, t_ErrorInfo>(0);
     }
     else if (t_IfStmt *if_stmt = dynamic_cast<t_IfStmt *>(stmt))
@@ -556,7 +532,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
             }
             
             // If we're returning from a function, propagate the return
-            if (is_returning)
+            if (m_IsReturning)
             {
                 return t_Expected<int, t_ErrorInfo>(0);
             }
@@ -572,7 +548,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
             }
             
             // If we're returning from a function, propagate the return
-            if (is_returning)
+            if (m_IsReturning)
             {
                 return t_Expected<int, t_ErrorInfo>(0);
             }
@@ -617,14 +593,14 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
         {
             // Store variables that existed before the loop
             std::unordered_set<std::string> pre_loop_variables;
-            for (const auto& pair : environment) 
+            for (const auto& pair : m_Environment) 
             {
                 pre_loop_variables.insert(pair.first);
             }
 
             // Push a new scope for the loop
             PushScope();
-            loop_depth++;
+            m_LoopDepth++;
             try
             {
                 // Execute initializer (if any)
@@ -636,7 +612,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                     if (!init_result.HasValue())
                     {
                         PopScope(); // Clean up scope before returning
-                        loop_depth--;
+                        m_LoopDepth--;
                         return init_result;
                     }
                 }
@@ -652,7 +628,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                         if (!condition_result.HasValue())
                         {
                             PopScope(); // Clean up scope before returning
-                            loop_depth--;
+                            m_LoopDepth--;
                             return t_Expected<int, t_ErrorInfo>
                             (
                                 condition_result.Error()
@@ -671,39 +647,39 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
 
                     // Execute body
                     {
-                        control_signal.clear();
+                        m_ControlSignal.clear();
                         t_Expected<int, t_ErrorInfo> body_result = 
                         Execute(for_stmt->body.get());
 
                         if (!body_result.HasValue())
                         {
                             PopScope(); // Clean up scope before returning
-                            loop_depth--;
+                            m_LoopDepth--;
                             return body_result;
                         }
-                        if (control_signal == "break")
+                        if (m_ControlSignal == "break")
                         {
-                            control_signal.clear();
+                            m_ControlSignal.clear();
                             break;
                         }
-                        if (control_signal == "continue")
+                        if (m_ControlSignal == "continue")
                         {
                             // Skip increment and start next iteration
-                            control_signal.clear();
+                            m_ControlSignal.clear();
                             continue; // Continue to the next loop iteration without incrementing
                         }
                         
                         // If we're returning from a function, stop the loop and propagate the return
-                        if (is_returning)
+                        if (m_IsReturning)
                         {
                             PopScope();
-                            loop_depth--;
+                            m_LoopDepth--;
                             return t_Expected<int, t_ErrorInfo>(0);
                         }
                     }
 
                     // Execute increment (if any)
-                    if (for_stmt->increment && control_signal.empty())
+                    if (for_stmt->increment && m_ControlSignal.empty())
                     {
                         t_Expected<std::string, t_ErrorInfo> increment_result= 
                         Evaluate(for_stmt->increment.get());
@@ -711,7 +687,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                         if (!increment_result.HasValue())
                         {
                             PopScope(); // Clean up scope before returning
-                            loop_depth--;
+                            m_LoopDepth--;
                             return t_Expected<int, t_ErrorInfo>(increment_result.Error());
                         }
                     }
@@ -720,7 +696,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                 // Before popping scope, preserve modifications to pre-existing variables
                 std::unordered_map<std::string, t_TypedValue> modified_pre_existing;
 
-                for (const auto& pair : environment)
+                for (const auto& pair : m_Environment)
                 {
                     if (pre_loop_variables.count(pair.first) > 0)
                     {
@@ -734,16 +710,16 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                 // Restore the modified values of pre-existing variables
                 for (const auto& pair : modified_pre_existing)
                 {
-                    environment[pair.first] = pair.second;
+                    m_Environment[pair.first] = pair.second;
                 }
                 
-                loop_depth--;
+                m_LoopDepth--;
             }
 			catch (...)
 			{
 				// Ensure scope is cleaned and convert to runtime error
 				PopScope();
-				loop_depth--;
+				m_LoopDepth--;
 				return t_Expected<int, t_ErrorInfo>
 				(
 					t_ErrorInfo
@@ -785,7 +761,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
             // Use optimized TypedValue constructor
             typed_value = t_TypedValue(value, type);
         }
-        environment[var_stmt->name] = typed_value;
+        m_Environment[var_stmt->name] = typed_value;
     }
     else if (t_DisplayStmt *display_stmt = dynamic_cast<t_DisplayStmt *>(stmt))
     {
@@ -815,8 +791,8 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
     {
         const std::string &var_name = getin_stmt->variable_name;
 
-        auto it = environment.find(var_name);
-        if (it == environment.end())
+        auto it = m_Environment.find(var_name);
+        if (it == m_Environment.end())
         {
             return t_Expected<int, t_ErrorInfo>
             (
@@ -859,8 +835,8 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                 (
                     var_name,
                     t_TypedValue(number_value),
-                    environment,
-                    scope_stack
+                    m_Environment,
+                    m_ScopeStack
                 );
                 break;
             }
@@ -894,8 +870,8 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                 (
                     var_name,
                     t_TypedValue(stored_value, e_ValueType::BOOLEAN),
-                    environment,
-                    scope_stack
+                    m_Environment,
+                    m_ScopeStack
                 );
                 break;
             }
@@ -932,8 +908,8 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                 (
                     var_name,
                     t_TypedValue(input, e_ValueType::STRING),
-                    environment,
-                    scope_stack
+                    m_Environment,
+                    m_ScopeStack
                 );
                 break;
             }
@@ -973,8 +949,8 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                 (
                     var_name,
                     t_TypedValue(input, inferred_type),
-                    environment,
-                    scope_stack
+                    m_Environment,
+                    m_ScopeStack
                 );
                 break;
             }
@@ -1049,7 +1025,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
         dynamic_cast<t_FunStmt *>(stmt)
     )
     {
-        // Native functions are implemented in C++.
+        // Native m_Functions are implemented in C++.
         // The fun declaration is currently a no-op placeholder.
         (void)fun_stmt;
     }
@@ -1084,16 +1060,16 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                 return t_Expected<int, t_ErrorInfo>(result.Error());
             }
             
-            return_value = result.Value();
+            m_ReturnValue = result.Value();
         }
         else
         {
             // No return value specified, return nil
-            return_value = "nil";
+            m_ReturnValue = "nil";
         }
         
         // Set the returning flag to indicate we should stop execution
-        is_returning = true;
+        m_IsReturning = true;
         return t_Expected<int, t_ErrorInfo>(0);
     }
     
@@ -1166,9 +1142,9 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
 
     if (t_CallExpr *call_expr = dynamic_cast<t_CallExpr *>(expr))
     {
-        // User-defined functions
-        auto fun_it = functions.find(call_expr->callee);
-        if (fun_it != functions.end())
+        // User-defined m_Functions
+        auto fun_it = m_Functions.find(call_expr->callee);
+        if (fun_it != m_Functions.end())
         {
             t_FunStmt *fun_stmt = fun_it->second;
 
@@ -1204,7 +1180,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
 
             // Preserve modifications to pre-existing variables as in for-loops
             std::unordered_set<std::string> pre_call_variables;
-            for (const auto &pair : environment)
+            for (const auto &pair : m_Environment)
             {
                 pre_call_variables.insert(pair.first);
             }
@@ -1217,13 +1193,13 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                 for (size_t i = 0; i < fun_stmt->parameters.size(); ++i)
                 {
                     const std::string &param_name = fun_stmt->parameters[i];
-                    environment[param_name] = argument_values[i];
+                    m_Environment[param_name] = argument_values[i];
                 }
 
                 if (fun_stmt->body)
                 {
                     // Reset the return flag before executing the function body
-                    is_returning = false;
+                    m_IsReturning = false;
                     
                     t_Expected<int, t_ErrorInfo> body_result =
                     Execute(fun_stmt->body.get());
@@ -1238,14 +1214,14 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                     }
                     
                     // If we were returning from the function, use the return value
-                    if (is_returning)
+                    if (m_IsReturning)
                     {
-                        is_returning = false; // Reset the flag
-                        std::string result = return_value;
+                        m_IsReturning = false; // Reset the flag
+                        std::string result = m_ReturnValue;
                         
                         // Preserve modifications to variables that existed before the call
                         std::unordered_map<std::string, t_TypedValue> modified_pre_existing;
-                        for (const auto &pair : environment)
+                        for (const auto &pair : m_Environment)
                         {
                             if (pre_call_variables.count(pair.first) > 0)
                             {
@@ -1257,7 +1233,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
 
                         for (const auto &pair : modified_pre_existing)
                         {
-                            environment[pair.first] = pair.second;
+                            m_Environment[pair.first] = pair.second;
                         }
                         
                         return t_Expected<std::string, t_ErrorInfo>(result);
@@ -1266,7 +1242,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
 
                 // Preserve modifications to variables that existed before the call
                 std::unordered_map<std::string, t_TypedValue> modified_pre_existing;
-                for (const auto &pair : environment)
+                for (const auto &pair : m_Environment)
                 {
                     if (pre_call_variables.count(pair.first) > 0)
                     {
@@ -1278,10 +1254,10 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
 
                 for (const auto &pair : modified_pre_existing)
                 {
-                    environment[pair.first] = pair.second;
+                    m_Environment[pair.first] = pair.second;
                 }
 
-                // User-defined functions currently return nil
+                // User-defined m_Functions currently return nil
                 return t_Expected<std::string, t_ErrorInfo>("nil");
             }
             catch (...)
@@ -1373,9 +1349,9 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
         )
         {
             std::string var_name = var_expr->name;
-            auto it = environment.find(var_name);
+            auto it = m_Environment.find(var_name);
             
-            if (it == environment.end())
+            if (it == m_Environment.end())
             {
                 return t_Expected<std::string, t_ErrorInfo>
                 (
@@ -1395,7 +1371,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                 if (prefix->op.type == e_TokenType::PLUS_PLUS)
                 {
                     double new_value = current_value.numeric_value + 1.0;
-                    environment[var_name] = t_TypedValue(new_value);
+                    m_Environment[var_name] = t_TypedValue(new_value);
                     return t_Expected<std::string, t_ErrorInfo>
                     (
                         std::to_string(new_value)
@@ -1404,7 +1380,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                 else if (prefix->op.type == e_TokenType::MINUS_MINUS)
                 {
                     double new_value = current_value.numeric_value - 1.0;
-                    environment[var_name] = t_TypedValue(new_value);
+                    m_Environment[var_name] = t_TypedValue(new_value);
                     return t_Expected<std::string, t_ErrorInfo>
                     (
                         std::to_string(new_value)
@@ -1431,7 +1407,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                         (
                             new_value.find_last_not_of('.') + 1, std::string::npos
                         );
-                        environment[var_name] =
+                        m_Environment[var_name] =
                         t_TypedValue
                         (
                             new_value, e_ValueType::NUMBER
@@ -1452,7 +1428,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                         (
                             new_value.find_last_not_of('.') + 1, std::string::npos
                         );
-                        environment[var_name] = 
+                        m_Environment[var_name] = 
                         t_TypedValue
                         (
                             new_value, e_ValueType::NUMBER
@@ -1492,9 +1468,9 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
         )
         {
             std::string var_name = var_expr->name;
-            auto it = environment.find(var_name);
+            auto it = m_Environment.find(var_name);
             
-            if (it == environment.end())
+            if (it == m_Environment.end())
             {
                 return t_Expected<std::string, t_ErrorInfo>
                 (
@@ -1509,7 +1485,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
             t_TypedValue& current_value = it->second;
 
             // Return the value BEFORE increment/decrement
-            return_value = current_value.value;
+            m_ReturnValue = current_value.value;
             
             // Use direct numeric operations when possible
             if (current_value.has_numeric_value)
@@ -1517,7 +1493,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                 if (postfix->op.type == e_TokenType::PLUS_PLUS)
                 {
                     double new_value = current_value.numeric_value + 1.0;
-                    environment[var_name] = t_TypedValue(new_value);
+                    m_Environment[var_name] = t_TypedValue(new_value);
                     
                     return t_Expected<std::string, t_ErrorInfo>
                     (
@@ -1527,7 +1503,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                 else if (postfix->op.type == e_TokenType::MINUS_MINUS)
                 {
                     double new_value = current_value.numeric_value - 1.0;
-                    environment[var_name] = t_TypedValue(new_value);
+                    m_Environment[var_name] = t_TypedValue(new_value);
                     return t_Expected<std::string, t_ErrorInfo>
                     (
                         current_value.value
@@ -1555,7 +1531,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                         (
                             new_value.find_last_not_of('.') + 1, std::string::npos
                         );
-                        environment[var_name] = 
+                        m_Environment[var_name] = 
                         t_TypedValue(new_value, e_ValueType::NUMBER);
                     }
                     else if (postfix->op.type == e_TokenType::MINUS_MINUS)
@@ -1571,7 +1547,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                         (
                             new_value.find_last_not_of('.') + 1, std::string::npos
                         );
-                        environment[var_name] = 
+                        m_Environment[var_name] = 
                         t_TypedValue(new_value, e_ValueType::NUMBER);
                     }
                 }
@@ -1588,7 +1564,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                 }
             }
             
-            return t_Expected<std::string, t_ErrorInfo>(return_value);
+            return t_Expected<std::string, t_ErrorInfo>(m_ReturnValue);
         }
         return t_Expected<std::string, t_ErrorInfo>
         (
@@ -1624,7 +1600,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                 
                 // Check if variable was properly declared with 'auto' keyword
                 // All variables must be declared before use
-                if (environment.find(var_name) == environment.end())
+                if (m_Environment.find(var_name) == m_Environment.end())
                 {
                     return t_Expected<std::string, t_ErrorInfo>
                     (
@@ -1823,8 +1799,8 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                 e_ValueType type = DetectType(final_value);
                 
                 // Enforce static typing - check if the new value type matches the declared variable type
-                auto it = environment.find(var_name);
-                if (it != environment.end())
+                auto it = m_Environment.find(var_name);
+                if (it != m_Environment.end())
                 {
                     e_ValueType declared_type = it->second.type;
                     // Allow assignment only if types match or if assigning to a NIL typed variable (initial assignment)
@@ -1884,13 +1860,13 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                     }
                 }
                 
-                // Update the variable in the environment
+                // Update the variable in the m_Environment
                 AssignToVisibleVariable
                 (
                     var_name, 
                     t_TypedValue(final_value, type), 
-                    environment, 
-                    scope_stack
+                    m_Environment, 
+                    m_ScopeStack
                 );
                 
                 // Return the assigned value
@@ -2157,8 +2133,8 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
 
     if (t_VariableExpr *variable = dynamic_cast<t_VariableExpr *>(expr))
     {
-        auto it = environment.find(variable->name);
-        if (it != environment.end())
+        auto it = m_Environment.find(variable->name);
+        if (it != m_Environment.end())
         {
             return t_Expected<std::string, t_ErrorInfo>(it->second.value);
         }
@@ -2197,9 +2173,9 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::EvaluateFormatExpression
             return t_Expected<std::string, t_ErrorInfo>("");
         }
 
-        // For simple variable names, look them up directly in the environment
-        auto it = environment.find(expr_str);
-        if (it != environment.end())
+        // For simple variable names, look them up directly in the m_Environment
+        auto it = m_Environment.find(expr_str);
+        if (it != m_Environment.end())
         {
             return t_Expected<std::string, t_ErrorInfo>(it->second.value);
         }
@@ -2465,7 +2441,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::EvaluateFormatExpression
         // For other complex expressions, return the expression as a string
         return t_Expected<std::string, t_ErrorInfo>(expr_str);
     }
-    catch (const std::exception& e)
+    catch (const std::exception&)
     {
         // If parsing fails, treat as literal text
         return t_Expected<std::string, t_ErrorInfo>(expr_str);
@@ -2837,8 +2813,8 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteAccumulationLoop
     std::string loop_var_name = init_var->name;
     
     // Check if accumulation variable exists and get its initial value
-    auto acc_it = environment.find(acc_var_name);
-    if (acc_it == environment.end())
+    auto acc_it = m_Environment.find(acc_var_name);
+    if (acc_it == m_Environment.end())
     {
         return t_Expected<int, t_ErrorInfo>
         (
@@ -2884,7 +2860,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteAccumulationLoop
     }
     
     // Update the accumulation variable with the result
-    environment[acc_var_name] = t_TypedValue(accumulator);
+    m_Environment[acc_var_name] = t_TypedValue(accumulator);
 
     return t_Expected<int, t_ErrorInfo>(0);
 }
@@ -3045,8 +3021,8 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteNestedArithmeticLoop
     dynamic_cast<t_VariableExpr*>(arithmetic_expr->right.get());
     
     // Check if accumulation variable exists and get its initial value
-    auto acc_it = environment.find(acc_var_name);
-    if (acc_it == environment.end())
+    auto acc_it = m_Environment.find(acc_var_name);
+    if (acc_it == m_Environment.end())
     {
         return t_Expected<int, t_ErrorInfo>
         (
@@ -3230,7 +3206,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteNestedArithmeticLoop
     }
     
     // Update the accumulation variable with the result
-    environment[acc_var_name] = t_TypedValue(accumulator);
+    m_Environment[acc_var_name] = t_TypedValue(accumulator);
     
     return t_Expected<int, t_ErrorInfo>(0);
 }
@@ -3242,14 +3218,14 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
 {
     // Store variables that existed before the loop
     std::unordered_set<std::string> pre_loop_variables;
-    for (const auto& pair : environment) 
+    for (const auto& pair : m_Environment) 
     {
         pre_loop_variables.insert(pair.first);
     }
     
     // Push a new scope for the loop
     PushScope();
-    loop_depth++;
+    m_LoopDepth++;
     
     // Extract loop parameters
     t_VarStmt* init_var = dynamic_cast<t_VarStmt*>
@@ -3425,37 +3401,37 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
         for (int i = start; ConditionHolds(i);)
         {
             // Set loop variable directly as integer
-            environment[loop_var_name] = t_TypedValue(static_cast<double>(i));
+            m_Environment[loop_var_name] = t_TypedValue(static_cast<double>(i));
             
             // Execute body
-            control_signal.clear();
+            m_ControlSignal.clear();
             t_Expected<int, t_ErrorInfo> body_result = 
             Execute(for_stmt->body.get());
 
             if (!body_result.HasValue())
             {
                 PopScope(); // Clean up scope before returning
-                loop_depth--;
+                m_LoopDepth--;
                 return body_result;
             }
-            if (control_signal == "break")
+            if (m_ControlSignal == "break")
             {
-                control_signal.clear();
+                m_ControlSignal.clear();
                 break;
             }
-            if (control_signal == "continue")
+            if (m_ControlSignal == "continue")
             {
-                control_signal.clear();
+                m_ControlSignal.clear();
                 // Skip increment and go to next iteration when continue is encountered
                 i += step;
                 continue;
             }
             
             // If we're returning from a function, stop the loop and propagate the return
-            if (is_returning)
+            if (m_IsReturning)
             {
                 PopScope();
-                loop_depth--;
+                m_LoopDepth--;
                 return t_Expected<int, t_ErrorInfo>(0);
             }
             
@@ -3475,8 +3451,8 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
             final_i = limit - 1;
         }
 
-        control_signal.clear();
-        environment[loop_var_name] = t_TypedValue
+        m_ControlSignal.clear();
+        m_Environment[loop_var_name] = t_TypedValue
         (
             static_cast<double>(final_i)
         );
@@ -3484,7 +3460,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
 
     // Before popping scope, preserve modifications to pre-existing variables
     std::unordered_map<std::string, t_TypedValue> modified_pre_existing;
-    for (const auto& pair : environment)
+    for (const auto& pair : m_Environment)
     {
         if (pre_loop_variables.count(pair.first) > 0)
         {
@@ -3498,9 +3474,9 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
     // Restore the modified values of pre-existing variables
     for (const auto& pair : modified_pre_existing)
     {
-        environment[pair.first] = pair.second;
+        m_Environment[pair.first] = pair.second;
     }
-    loop_depth--;
+    m_LoopDepth--;
     
     return t_Expected<int, t_ErrorInfo>(0); 
 }

@@ -4,7 +4,22 @@
 #include <vector>
 #include <memory>
 #include <rubberduck/Token.h>
-#include <rubberduck/AST.h>
+
+
+template<typename T>
+struct t_PoolDeleter
+{
+    void operator()(T* ptr) const
+    {
+        if (ptr)
+        {
+            ptr->~T();
+        }
+    }
+};
+
+template<typename T>
+using t_PoolPtr = std::unique_ptr<T, t_PoolDeleter<T>>;
 
 struct t_Expr
 {
@@ -21,15 +36,15 @@ public:
 // Expression types
 struct t_BinaryExpr : public t_Expr
 {
-    std::unique_ptr<t_Expr> left;
+    t_PoolPtr<t_Expr> left;
     t_Token op;
-    std::unique_ptr<t_Expr> right;
+    t_PoolPtr<t_Expr> right;
 
     t_BinaryExpr
     (
-        std::unique_ptr<t_Expr> left, 
+        t_PoolPtr<t_Expr> left, 
         t_Token op, 
-        std::unique_ptr<t_Expr> right
+        t_PoolPtr<t_Expr> right
     )
         : left(std::move(left)), 
           op(op), 
@@ -51,17 +66,17 @@ struct t_LiteralExpr : public t_Expr
 struct t_UnaryExpr : public t_Expr
 {
     t_Token op;
-    std::unique_ptr<t_Expr> right;
+    t_PoolPtr<t_Expr> right;
 
-    t_UnaryExpr(t_Token op, std::unique_ptr<t_Expr> right)
+    t_UnaryExpr(t_Token op, t_PoolPtr<t_Expr> right)
         : op(op), right(std::move(right)) {}
 };
 
 struct t_GroupingExpr : public t_Expr
 {
-    std::unique_ptr<t_Expr> expression;
+    t_PoolPtr<t_Expr> expression;
 
-    t_GroupingExpr(std::unique_ptr<t_Expr> expression)
+    t_GroupingExpr(t_PoolPtr<t_Expr> expression)
         : expression(std::move(expression)) {}
 };
 
@@ -75,31 +90,31 @@ struct t_VariableExpr : public t_Expr
 struct t_PrefixExpr : public t_Expr
 {
     t_Token op;
-    std::unique_ptr<t_Expr> operand;
+    t_PoolPtr<t_Expr> operand;
 
-    t_PrefixExpr(t_Token op, std::unique_ptr<t_Expr> operand)
+    t_PrefixExpr(t_Token op, t_PoolPtr<t_Expr> operand)
         : op(op), operand(std::move(operand)) {}
 };
 
 struct t_PostfixExpr : public t_Expr
 {
-    std::unique_ptr<t_Expr> operand;
+    t_PoolPtr<t_Expr> operand;
     t_Token op;
 
-    t_PostfixExpr(std::unique_ptr<t_Expr> operand, t_Token op)
+    t_PostfixExpr(t_PoolPtr<t_Expr> operand, t_Token op)
         : operand(std::move(operand)), op(op) {}
 };
 
 struct t_CallExpr : public t_Expr
 {
     std::string callee;
-    std::vector<std::unique_ptr<t_Expr>> arguments;
+    std::vector<t_PoolPtr<t_Expr>> arguments;
     int line;
 
     t_CallExpr
     (
         const std::string &callee,
-        std::vector<std::unique_ptr<t_Expr>> arguments,
+        std::vector<t_PoolPtr<t_Expr>> arguments,
         int line = 0
     )
         : callee(callee),
@@ -110,8 +125,8 @@ struct t_CallExpr : public t_Expr
 // Statement types
 struct t_ExpressionStmt : public t_Stmt
 {
-    std::unique_ptr<t_Expr> expression;
-    t_ExpressionStmt(std::unique_ptr<t_Expr> expression)
+    t_PoolPtr<t_Expr> expression;
+    t_ExpressionStmt(t_PoolPtr<t_Expr> expression)
         : expression(std::move(expression)) {}
 };
 
@@ -125,9 +140,9 @@ struct t_EmptyStmt : public t_Stmt
 
 struct t_DisplayStmt : public t_Stmt
 {
-    std::vector<std::unique_ptr<t_Expr>> expressions;
+    std::vector<t_PoolPtr<t_Expr>> expressions;
 
-    t_DisplayStmt(std::vector<std::unique_ptr<t_Expr>> expressions)
+    t_DisplayStmt(std::vector<t_PoolPtr<t_Expr>> expressions)
         : expressions(std::move(expressions)) {}
 };
 
@@ -149,13 +164,13 @@ struct t_FunStmt : public t_Stmt
 {
     std::string name;
     std::vector<std::string> parameters;
-    std::unique_ptr<t_Stmt> body;
+    t_PoolPtr<t_Stmt> body;
 
     t_FunStmt
     (
         const std::string &name,
         std::vector<std::string> parameters,
-        std::unique_ptr<t_Stmt> body
+        t_PoolPtr<t_Stmt> body
     )
         : name(name),
           parameters(std::move(parameters)),
@@ -165,12 +180,12 @@ struct t_FunStmt : public t_Stmt
 struct t_VarStmt : public t_Stmt
 {
     std::string name;
-    std::unique_ptr<t_Expr> initializer;
+    t_PoolPtr<t_Expr> initializer;
 
     t_VarStmt
     (
         const std::string &name,
-        std::unique_ptr<t_Expr> initializer
+        t_PoolPtr<t_Expr> initializer
     )
         : name(name), 
           initializer(std::move(initializer)) {}
@@ -178,23 +193,23 @@ struct t_VarStmt : public t_Stmt
 
 struct t_BlockStmt : public t_Stmt
 {
-    std::vector<std::unique_ptr<t_Stmt>> statements;
+    std::vector<t_PoolPtr<t_Stmt>> statements;
 
-    t_BlockStmt(std::vector<std::unique_ptr<t_Stmt>> statements)
+    t_BlockStmt(std::vector<t_PoolPtr<t_Stmt>> statements)
         : statements(std::move(statements)) {}
 };
 
 struct t_IfStmt : public t_Stmt
 {
-    std::unique_ptr<t_Expr> condition;
-    std::unique_ptr<t_Stmt> then_branch;
-    std::unique_ptr<t_Stmt> else_branch;
+    t_PoolPtr<t_Expr> condition;
+    t_PoolPtr<t_Stmt> then_branch;
+    t_PoolPtr<t_Stmt> else_branch;
 
     t_IfStmt
     (
-        std::unique_ptr<t_Expr> condition, 
-        std::unique_ptr<t_Stmt> then_branch,
-        std::unique_ptr<t_Stmt> else_branch
+        t_PoolPtr<t_Expr> condition, 
+        t_PoolPtr<t_Stmt> then_branch,
+        t_PoolPtr<t_Stmt> else_branch
     )
         : condition(std::move(condition)), 
           then_branch(std::move(then_branch)),
@@ -203,17 +218,17 @@ struct t_IfStmt : public t_Stmt
 
 struct t_ForStmt : public t_Stmt
 {
-    std::unique_ptr<t_Stmt> initializer;
-    std::unique_ptr<t_Expr> condition;
-    std::unique_ptr<t_Expr> increment;
-    std::unique_ptr<t_Stmt> body;
+    t_PoolPtr<t_Stmt> initializer;
+    t_PoolPtr<t_Expr> condition;
+    t_PoolPtr<t_Expr> increment;
+    t_PoolPtr<t_Stmt> body;
 
     t_ForStmt
     (   
-        std::unique_ptr<t_Stmt> initializer,
-        std::unique_ptr<t_Expr> condition,
-        std::unique_ptr<t_Expr> increment,
-        std::unique_ptr<t_Stmt> body
+        t_PoolPtr<t_Stmt> initializer,
+        t_PoolPtr<t_Expr> condition,
+        t_PoolPtr<t_Expr> increment,
+        t_PoolPtr<t_Stmt> body
     )
         : initializer(std::move(initializer)),
           condition(std::move(condition)),
@@ -239,17 +254,17 @@ struct t_ContinueStmt : public t_Stmt
 
 struct t_BenchmarkStmt : public t_Stmt
 {
-    std::unique_ptr<t_Stmt> body;
+    t_PoolPtr<t_Stmt> body;
 
-    t_BenchmarkStmt(std::unique_ptr<t_Stmt> body)
+    t_BenchmarkStmt(t_PoolPtr<t_Stmt> body)
         : body(std::move(body)) {}
 };
 
 // Add ReturnStmt for handling return statements in functions
 struct t_ReturnStmt : public t_Stmt
 {
-    std::unique_ptr<t_Expr> value;
+    t_PoolPtr<t_Expr> value;
     
-    t_ReturnStmt(std::unique_ptr<t_Expr> value)
+    t_ReturnStmt(t_PoolPtr<t_Expr> value)
         : value(std::move(value)) {}
 };

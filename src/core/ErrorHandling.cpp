@@ -38,4 +38,5 @@ void ReportError(const t_ErrorInfo& error)
     {
         std::cerr << "[" << error_type << "] " << error.message << std::endl;
     }
+    std::cerr.flush();
 }

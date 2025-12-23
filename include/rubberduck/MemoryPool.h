@@ -20,24 +20,26 @@ private:
         char data[1];
     };
 
-    static const size_t BLOCK_SIZE = 1024 * 256; // 64KB chunks
+    static const size_t BLOCKS_PER_CHUNK = 16;
     static const size_t ALIGNMENT = alignof(std::max_align_t);
     
-    t_Chunk* chunks;
-    t_Block* free_blocks;
-    size_t block_size;
+    t_Chunk* m_Chunks;
+    t_Block* m_FreeBlocks;
+    size_t m_BlockSize;
 
     void AddChunk()
     {
-        size_t chunk_size = sizeof(t_Chunk) + (block_size * 16) - 1;
+        size_t chunk_size = sizeof(t_Chunk) + (m_BlockSize * BLOCKS_PER_CHUNK) - 1;
         t_Chunk* chunk = static_cast<t_Chunk*>(std::malloc(chunk_size));
         if (!chunk)
         {
-            throw std::bad_alloc();
+            // If malloc fails, we cannot add a chunk.
+            // Return to caller who should handle the memory exhaustion.
+            return;
         }
         
-        chunk->next = chunks;
-        chunks = chunk;
+        chunk->next = m_Chunks;
+        m_Chunks = chunk;
         
         char* data = chunk->data;
         size_t available = chunk_size - offsetof(t_Chunk, data);
@@ -51,29 +53,29 @@ private:
         available -= align_offset;
         
         // Create free blocks
-        while (available >= block_size)
+        while (available >= m_BlockSize)
         {
             t_Block* block = reinterpret_cast<t_Block*>(data);
-            block->next = free_blocks;
-            free_blocks = block;
-            data += block_size;
-            available -= block_size;
+            block->next = m_FreeBlocks;
+            m_FreeBlocks = block;
+            data += m_BlockSize;
+            available -= m_BlockSize;
         }
     }
 
 public:
-    t_MemoryPool(size_t block_size_) : chunks(nullptr), free_blocks(nullptr)
+    t_MemoryPool(size_t block_size_) : m_Chunks(nullptr), m_FreeBlocks(nullptr)
     {
         // Ensure block size is at least as large as a pointer and properly aligned
-        block_size = (block_size_ > sizeof(t_Block)) ? 
+        m_BlockSize = (block_size_ > sizeof(t_Block)) ? 
                       block_size_ : sizeof(t_Block);
 
-        block_size = (block_size + ALIGNMENT - 1) & ~(ALIGNMENT - 1);
+        m_BlockSize = (m_BlockSize + ALIGNMENT - 1) & ~(ALIGNMENT - 1);
     }
     
     ~t_MemoryPool()
     {
-        t_Chunk* chunk = chunks;
+        t_Chunk* chunk = m_Chunks;
         while (chunk)
         {
             t_Chunk* next = chunk->next;
@@ -84,13 +86,17 @@ public:
     
     void* Allocate()
     {
-        if (!free_blocks)
+        if (!m_FreeBlocks)
         {
             AddChunk();
+            if (!m_FreeBlocks)
+            {
+                return nullptr;
+            }
         }
         
-        t_Block* block = free_blocks;
-        free_blocks = block->next;
+        t_Block* block = m_FreeBlocks;
+        m_FreeBlocks = block->next;
         return block;
     }
     
@@ -99,20 +105,20 @@ public:
         if (ptr)
         {
             t_Block* block = static_cast<t_Block*>(ptr);
-            block->next = free_blocks;
-            free_blocks = block;
+            block->next = m_FreeBlocks;
+            m_FreeBlocks = block;
         }
     }
     
     // Reset the entire pool (invalidates all pointers)
     void Reset()
     {
-        free_blocks = nullptr;
-        t_Chunk* chunk = chunks;
+        m_FreeBlocks = nullptr;
+        t_Chunk* chunk = m_Chunks;
         while (chunk)
         {
             char* data = chunk->data;
-            size_t chunk_size = BLOCK_SIZE;
+            size_t chunk_size = sizeof(t_Chunk) + (m_BlockSize * BLOCKS_PER_CHUNK) - 1;
             size_t available = chunk_size - offsetof(t_Chunk, data);
             
             // Align the data pointer
@@ -124,13 +130,13 @@ public:
             available -= align_offset;
             
             // Create free blocks
-            while (available >= block_size)
+            while (available >= m_BlockSize)
             {
                 t_Block* block = reinterpret_cast<t_Block*>(data);
-                block->next = free_blocks;
-                free_blocks = block;
-                data += block_size;
-                available -= block_size;
+                block->next = m_FreeBlocks;
+                m_FreeBlocks = block;
+                data += m_BlockSize;
+                available -= m_BlockSize;
             }
             
             chunk = chunk->next;
@@ -143,7 +149,7 @@ template<typename T>
 class t_PoolAllocator
 {
 private:
-    t_MemoryPool* pool;
+    t_MemoryPool* m_Pool;
 
 public:
     typedef T value_type;
@@ -161,17 +167,17 @@ public:
     };
 
     t_PoolAllocator(t_MemoryPool* pool_) noexcept : 
-        pool(pool_) {}
+        m_Pool(pool_) {}
     
     template<typename U>
     t_PoolAllocator(const t_PoolAllocator<U>& other) noexcept : 
-        pool(other.pool) {}
+        m_Pool(other.m_Pool) {}
 
     pointer allocate(size_type n)
     {
         if (n == 1)
         {
-            return static_cast<pointer>(pool->Allocate());
+            return static_cast<pointer>(m_Pool->Allocate());
         }
         else
         {
@@ -183,7 +189,7 @@ public:
     {
         if (n == 1)
         {
-            pool->Deallocate(ptr);
+            m_Pool->Deallocate(ptr);
         }
         else
         {
@@ -194,7 +200,7 @@ public:
     template<typename U>
     bool operator==(const t_PoolAllocator<U>& other) const noexcept
     {
-        return pool == other.pool;
+        return m_Pool == other.m_Pool;
     }
 
     template<typename U>

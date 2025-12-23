@@ -89,13 +89,13 @@ struct t_TypedValue
 class t_Interpreter
 {
 private:
-    std::unordered_map<std::string, t_TypedValue> environment;
-    std::vector<std::unordered_map<std::string, t_TypedValue>> scope_stack; 
-    int loop_depth = 0; 
-    std::string control_signal; // "break" | "continue" | ""
-    std::unordered_map<std::string, t_FunStmt*> functions;
-    std::string return_value; 
-    bool is_returning = false;
+    std::unordered_map<std::string, t_TypedValue> m_Environment;
+    std::vector<std::unordered_map<std::string, t_TypedValue>> m_ScopeStack; 
+    int m_LoopDepth = 0; 
+    std::string m_ControlSignal; // "break" | "continue" | ""
+    std::unordered_map<std::string, t_FunStmt*> m_Functions;
+    std::string m_ReturnValue; 
+    bool m_IsReturning = false;
 
     bool m_BufferOutput = false;
     std::string m_OutputBuffer;
