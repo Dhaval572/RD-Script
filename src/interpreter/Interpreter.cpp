@@ -52,7 +52,6 @@ void t_Interpreter::WriteOutput(const std::string& text)
     if (m_BufferOutput)
     {
         m_OutputBuffer.append(text);
-
         static const std::size_t flush_threshold = 4 * 1024 * 1024;
         if (m_OutputBuffer.size() >= flush_threshold)
         {
@@ -184,7 +183,9 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::DeclareVariable
                 t_ErrorInfo
                 (
                     e_ErrorType::RUNTIME_ERROR, 
-                    "Variable '" + name + "' has already been declared in this scope", 
+                    "Variable '" 
+                    + name + 
+                    "' has already been declared in this scope", 
                     line
                 )
             );

@@ -600,7 +600,13 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
         }
 
         bool valid_increment = false;
-        if (t_PostfixExpr *post = dynamic_cast<t_PostfixExpr *>(stmt->increment.get()))
+        if 
+        (
+            t_PostfixExpr *post = dynamic_cast<t_PostfixExpr *>
+            (
+                stmt->increment.get()
+            )
+        )
         {
             t_VariableExpr *var = 
             dynamic_cast<t_VariableExpr *>(post->operand.get());
@@ -961,12 +967,12 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::FunDeclaration()
             return t_Expected<t_Stmt*, t_ErrorInfo>
             (
                 t_ErrorInfo
-            (
-                e_ErrorType::RUNTIME_ERROR, 
-                "Out of memory", 
-                name_token.line, 
-                0
-            )
+                (
+                    e_ErrorType::RUNTIME_ERROR, 
+                    "Out of memory", 
+                    name_token.line, 
+                    0
+                )
             );
         }
         return t_Expected<t_Stmt*, t_ErrorInfo>(stmt);
@@ -1224,12 +1230,12 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Or()
             return t_Expected<t_Expr*, t_ErrorInfo>
             (
                 t_ErrorInfo
-            (
-                e_ErrorType::RUNTIME_ERROR, 
-                "Out of memory", 
-                op.line, 
-                0
-            )
+                (
+                    e_ErrorType::RUNTIME_ERROR, 
+                    "Out of memory", 
+                    op.line, 
+                    0
+                )
             );
         }
         expr = expr_node;
@@ -1268,12 +1274,12 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::And()
             return t_Expected<t_Expr*, t_ErrorInfo>
             (
                 t_ErrorInfo
-            (
-                e_ErrorType::RUNTIME_ERROR, 
-                "Out of memory", 
-                op.line, 
-                0
-            )
+                (
+                    e_ErrorType::RUNTIME_ERROR, 
+                    "Out of memory", 
+                    op.line, 
+                    0
+                )
             );
         }
         expr = expr_node;
@@ -1312,12 +1318,12 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Equality()
             return t_Expected<t_Expr*, t_ErrorInfo>
             (
                 t_ErrorInfo
-            (
-                e_ErrorType::RUNTIME_ERROR, 
-                "Out of memory", 
-                op.line, 
-                0
-            )
+                (
+                    e_ErrorType::RUNTIME_ERROR, 
+                    "Out of memory", 
+                    op.line, 
+                    0
+                )
             );
         }
         expr = expr_node;
@@ -1367,12 +1373,12 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Comparison()
             return t_Expected<t_Expr*, t_ErrorInfo>
             (
                 t_ErrorInfo
-            (
-                e_ErrorType::RUNTIME_ERROR, 
-                "Out of memory", 
-                op.line, 
-                0
-            )
+                (
+                    e_ErrorType::RUNTIME_ERROR, 
+                    "Out of memory", 
+                    op.line, 
+                    0
+                )
             );
         }
         expr = expr_node;
@@ -1432,12 +1438,12 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Term()
                 return t_Expected<t_Expr*, t_ErrorInfo>
                 (
                     t_ErrorInfo
-            (
-                e_ErrorType::RUNTIME_ERROR, 
-                "Out of memory", 
-                op.line, 
-                0
-            )
+                    (
+                        e_ErrorType::RUNTIME_ERROR, 
+                        "Out of memory", 
+                        op.line, 
+                        0
+                    )
                 );
             }
             expr = expr_node;
@@ -1532,12 +1538,12 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Factor()
                 return t_Expected<t_Expr*, t_ErrorInfo>
                 (
                     t_ErrorInfo
-            (
-                e_ErrorType::RUNTIME_ERROR, 
-                "Out of memory", 
-                op.line, 
-                0
-            )
+                    (
+                        e_ErrorType::RUNTIME_ERROR, 
+                        "Out of memory", 
+                        op.line, 
+                        0
+                    )
                 );
             }
             expr = expr_node;
@@ -1577,12 +1583,12 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Unary()
             return t_Expected<t_Expr*, t_ErrorInfo>
             (
                 t_ErrorInfo
-            (
-                e_ErrorType::RUNTIME_ERROR, 
-                "Out of memory", 
-                op.line, 
-                0
-            )
+                (
+                    e_ErrorType::RUNTIME_ERROR, 
+                    "Out of memory", 
+                    op.line, 
+                    0
+                )
             );
         }
         return t_Expected<t_Expr*, t_ErrorInfo>(expr_node);
@@ -1604,18 +1610,22 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::FinishUnary()
     while (Match({e_TokenType::PLUS_PLUS, e_TokenType::MINUS_MINUS}))
     {
         t_Token op = Previous();
-        t_PostfixExpr* expr_node = m_Context.CreateExpr<t_PostfixExpr>(t_PoolPtr<t_Expr>(expr), op);
+        t_PostfixExpr* expr_node = 
+        m_Context.CreateExpr<t_PostfixExpr>
+        (
+            t_PoolPtr<t_Expr>(expr), op
+        );
         if (!expr_node)
         {
             return t_Expected<t_Expr*, t_ErrorInfo>
             (
                 t_ErrorInfo
-            (
-                e_ErrorType::RUNTIME_ERROR, 
-                "Out of memory", 
-                op.line, 
-                0
-            )
+                (
+                    e_ErrorType::RUNTIME_ERROR, 
+                    "Out of memory", 
+                    op.line, 
+                    0
+                )
             );
         }
         expr = expr_node;
@@ -1628,18 +1638,23 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Primary()
 {
     if (Match({e_TokenType::FALSE}))
     {
-        t_LiteralExpr* expr_node = m_Context.CreateExpr<t_LiteralExpr>("false", e_TokenType::FALSE);
+        t_LiteralExpr* expr_node = 
+        m_Context.CreateExpr<t_LiteralExpr>
+        (
+            "false", 
+            e_TokenType::FALSE
+        );
         if (!expr_node)
         {
             return t_Expected<t_Expr*, t_ErrorInfo>
             (
                 t_ErrorInfo
-            (
-                e_ErrorType::RUNTIME_ERROR, 
-                "Out of memory", 
-                Peek().line, 
-                0
-            )
+                (
+                    e_ErrorType::RUNTIME_ERROR, 
+                    "Out of memory", 
+                    Peek().line, 
+                    0
+                )
             );
         }
         return t_Expected<t_Expr*, t_ErrorInfo>(expr_node);
@@ -1647,18 +1662,23 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Primary()
 
     if (Match({e_TokenType::TRUE}))
     {
-        t_LiteralExpr* expr_node = m_Context.CreateExpr<t_LiteralExpr>("true", e_TokenType::TRUE);
+        t_LiteralExpr* expr_node = 
+        m_Context.CreateExpr<t_LiteralExpr>
+        (
+            "true", 
+            e_TokenType::TRUE
+        );
         if (!expr_node)
         {
             return t_Expected<t_Expr*, t_ErrorInfo>
             (
                 t_ErrorInfo
-            (
-                e_ErrorType::RUNTIME_ERROR, 
-                "Out of memory", 
-                Peek().line, 
-                0
-            )
+                (
+                    e_ErrorType::RUNTIME_ERROR, 
+                    "Out of memory", 
+                    Peek().line, 
+                    0
+                )
             );
         }
         return t_Expected<t_Expr*, t_ErrorInfo>(expr_node);
@@ -1666,18 +1686,23 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Primary()
 
     if (Match({e_TokenType::NIL}))
     {
-        t_LiteralExpr* expr_node = m_Context.CreateExpr<t_LiteralExpr>("nil", e_TokenType::NIL);
+        t_LiteralExpr* expr_node = 
+        m_Context.CreateExpr<t_LiteralExpr>
+        (
+            "nil", 
+            e_TokenType::NIL
+        );
         if (!expr_node)
         {
             return t_Expected<t_Expr*, t_ErrorInfo>
             (
                 t_ErrorInfo
-            (
-                e_ErrorType::RUNTIME_ERROR, 
-                "Out of memory", 
-                Peek().line, 
-                0
-            )
+                (
+                    e_ErrorType::RUNTIME_ERROR, 
+                    "Out of memory", 
+                    Peek().line, 
+                    0
+                )
             );
         }
         return t_Expected<t_Expr*, t_ErrorInfo>(expr_node);
@@ -1696,18 +1721,22 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Primary()
     )
     {
         t_Token previous = Previous();
-        t_LiteralExpr* expr_node = m_Context.CreateExpr<t_LiteralExpr>(previous.literal, previous.type);
+        t_LiteralExpr* expr_node = 
+        m_Context.CreateExpr<t_LiteralExpr>
+        (
+            previous.literal, previous.type
+        );
         if (!expr_node)
         {
             return t_Expected<t_Expr*, t_ErrorInfo>
             (
                 t_ErrorInfo
-            (
-                e_ErrorType::RUNTIME_ERROR, 
-                "Out of memory", 
-                previous.line, 
-                0
-            )
+                (
+                    e_ErrorType::RUNTIME_ERROR, 
+                    "Out of memory", 
+                    previous.line, 
+                    0
+                )
             );
         }
         return t_Expected<t_Expr*, t_ErrorInfo>(expr_node);
@@ -1730,12 +1759,12 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Primary()
             return t_Expected<t_Expr*, t_ErrorInfo>
             (
                 t_ErrorInfo
-            (
-                e_ErrorType::RUNTIME_ERROR, 
-                "Out of memory", 
-                op.line, 
-                0
-            )
+                (
+                    e_ErrorType::RUNTIME_ERROR, 
+                    "Out of memory", 
+                    op.line, 
+                    0
+                )
             );
         }
         return t_Expected<t_Expr*, t_ErrorInfo>(expr_node);
@@ -1797,12 +1826,12 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Primary()
                 return t_Expected<t_Expr*, t_ErrorInfo>
                 (
                     t_ErrorInfo
-            (
-                e_ErrorType::RUNTIME_ERROR, 
-                "Out of memory", 
-                identifier.line, 
-                0
-            )
+                    (
+                        e_ErrorType::RUNTIME_ERROR, 
+                        "Out of memory", 
+                        identifier.line, 
+                        0
+                    )
                 );
             }
             return t_Expected<t_Expr*, t_ErrorInfo>(call_expr);
@@ -1814,12 +1843,12 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Primary()
             return t_Expected<t_Expr*, t_ErrorInfo>
             (
                 t_ErrorInfo
-            (
-                e_ErrorType::RUNTIME_ERROR, 
-                "Out of memory", 
-                identifier.line, 
-                0
-            )
+                (
+                    e_ErrorType::RUNTIME_ERROR, 
+                    "Out of memory", 
+                    identifier.line, 
+                    0
+                )
             );
         }
         return t_Expected<t_Expr*, t_ErrorInfo>(expr_node);
@@ -1846,7 +1875,13 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Primary()
         {
             return t_Expected<t_Expr*, t_ErrorInfo>
             (
-                t_ErrorInfo(e_ErrorType::RUNTIME_ERROR, "Out of memory", Peek().line, 0)
+                t_ErrorInfo
+                (
+                    e_ErrorType::RUNTIME_ERROR, 
+                    "Out of memory", 
+                    Peek().line,
+                    0
+                )
             );
         }
         return t_Expected<t_Expr*, t_ErrorInfo>(expr_node);
@@ -1892,7 +1927,13 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ReturnStatement()
     {
         return t_Expected<t_Stmt*, t_ErrorInfo>
         (
-            t_ErrorInfo(e_ErrorType::RUNTIME_ERROR, "Out of memory", keyword.line, 0)
+            t_ErrorInfo
+            (
+                e_ErrorType::RUNTIME_ERROR, 
+                "Out of memory",
+                keyword.line, 
+                0
+            )
         );
     }
     return t_Expected<t_Stmt*, t_ErrorInfo>(stmt);
