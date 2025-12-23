@@ -69,23 +69,26 @@ namespace
 t_Parser::t_Parser(const std::vector<t_Token> &tokens, t_ASTContext& context)
     : m_Tokens(tokens), m_Current(0), m_Context(context) {}
 
-t_Expected<std::vector<t_Stmt*>, t_ErrorInfo> t_Parser::Parse()
+t_Expected<std::vector<t_PoolPtr<t_Stmt>>, t_ErrorInfo> t_Parser::Parse()
 {
-    std::vector<t_Stmt*> statements;
+    std::vector<t_PoolPtr<t_Stmt>> statements;
     while (!IsAtEnd())
     {
         t_Expected<t_Stmt*, t_ErrorInfo> result = Statement();
         if (!result.HasValue())
         {
-            return t_Expected<std::vector<t_Stmt*>, t_ErrorInfo>
+            return t_Expected<std::vector<t_PoolPtr<t_Stmt>>, t_ErrorInfo>
             (
                 result.Error()
             );
         }
-        statements.push_back(result.Value());
+        statements.push_back(t_PoolPtr<t_Stmt>(result.Value()));
     }
 
-    return t_Expected<std::vector<t_Stmt*>, t_ErrorInfo>(statements);
+    return t_Expected<std::vector<t_PoolPtr<t_Stmt>>, t_ErrorInfo>
+    (
+        std::move(statements)
+    );
 }
 
 

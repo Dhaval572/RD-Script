@@ -159,5 +159,5 @@ private:
 
 public:
     t_Interpreter();
-    t_InterpretationResult Interpret(const std::vector<t_Stmt *> &statements);
+    t_InterpretationResult Interpret(const std::vector<t_PoolPtr<t_Stmt>> &statements);
 };

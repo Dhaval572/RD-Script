@@ -89,24 +89,24 @@ void t_Interpreter::FlushOutput()
 
 t_InterpretationResult t_Interpreter::Interpret
 (
-    const std::vector<t_Stmt *> &statements
+    const std::vector<t_PoolPtr<t_Stmt>> &statements
 )
 {
     m_Functions.clear();
 
-    for (t_Stmt *statement : statements)
+    for (const auto &statement : statements)
     {
-        if (t_FunStmt *fun_stmt = dynamic_cast<t_FunStmt *>(statement))
+        if (t_FunStmt *fun_stmt = dynamic_cast<t_FunStmt *>(statement.get()))
         {
             m_Functions[fun_stmt->name] = fun_stmt;
         }
     }
 
-    for (t_Stmt *statement : statements)
+    for (const auto &statement : statements)
     {
         try
         {
-            t_Expected<int, t_ErrorInfo> result = Execute(statement);
+            t_Expected<int, t_ErrorInfo> result = Execute(statement.get());
             if (!result.HasValue())
             {
                 // Report the error and stop execution
@@ -114,7 +114,6 @@ t_InterpretationResult t_Interpreter::Interpret
                 return t_InterpretationResult(result.Error());
             }
         }
-
         catch (const std::exception& ex)
         {
             t_ErrorInfo err

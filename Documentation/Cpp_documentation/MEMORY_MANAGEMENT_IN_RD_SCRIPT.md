@@ -107,21 +107,34 @@ struct t_BinaryExpr : public t_Expr
 
 ## Memory Lifecycle
 
-1. **Initialization**: A `t_ASTContext` is created (e.g., in [main.cpp](file:///c:/Users/LENOVO/Documents/RD%20Script/RD-Script/main.cpp)). It calculates the maximum node size and initializes internal pools.
-2. **Parsing Phase**: The parser uses `CreateStmt` and `CreateExpr` to build the AST.
-3. **Interpretation**: The interpreter traverses the AST.
-4. **Cleanup**: When `t_ASTContext` is destroyed (at the end of `main`), all memory chunks are freed at once. Destructors for individual nodes are called as `t_PoolPtr` objects go out of scope or are reset.
+1.  **Initialization**: A `t_ASTContext` is created. It uses `sizeof(t_StmtVariant)` and `sizeof(t_ExprVariant)` to determine pool slot sizes accurately.
+
+2.  **Parsing Phase**: The parser build the AST and returns a `std::vector<t_PoolPtr<t_Stmt>>`. This vector now **owns** the root nodes.
+
+3.  **Interpretation**: The interpreter traverses the AST via these managed pointers.
+
+4.  **Cleanup**: When the `statements` vector goes out of scope in `main.cpp`, it triggers a recursive chain of destructors. This ensures that any heap-allocated metadata (like `std::string` values) is cleaned up before the memory pool itself is reclaimed by the `t_ASTContext` destructor.
 
 ## Key Points for Developers
 
-1. **Use Factory Methods**: Always use `context.CreateStmt<T>(...)` or `context.CreateExpr<T>(...)`. Never use `new` directly.
-2. **Use `t_PoolPtr`**: For any ownership of a pool-allocated AST node, use `t_PoolPtr<T>`.
-3. **Efficiency**: This design combines the safety of smart pointers with the performance of pool allocators.
-4. **Bulk Reset**: Calling `context.Reset()` can recycle all memory in the pools instantly, which is useful for long-running processes or multiple parsing passes.
+1.  **Use Factory Methods**: Always use `context.CreateStmt<T>(...)` or `context.CreateExpr<T>(...)`. Never use `new` directly.
+
+2.  **Use `t_PoolPtr`**: For any ownership of a pool-allocated AST node, use `t_PoolPtr<T>`.
+
+3.  **Efficiency**: This design combines the safety of smart pointers with the performance of pool allocators.
+
+4.  **Automated Sizing**: No need to manually update pool sizes. Just add your new node type to the `t_StmtVariant` or `t_ExprVariant` in `AST.h`.
+
+5.  **Bulk Reset**: Calling `context.Reset()` can recycle all memory in the pools instantly, which is useful for long-running processes or multiple parsing passes.
 
 ## Why This Design?
 
-- **Performance**: Pool allocation is much faster than the standard heap allocator.
-- **Safety**: `t_PoolPtr` prevents resource leaks (e.g., if an AST node owns a `std::string`) while maintaining the speed of pool deallocation.
-- **Cache Locality**: Nodes of similar types are grouped together in memory chunks.
-- **Simplicity**: Developers don't need to manually manage `delete` or placement `new`.
+-   **Zero-Leak Metadata**: By using `t_PoolPtr` for root ownership, we combine the speed of pool allocation with the completeness of recursive destruction for heap members.
+
+-   **Robustness**: The use of `std::variant` for size calculation prevents buffer overflow risks and manual maintenance errors.
+
+-   **Performance**: Pool allocation remains O(1) with great cache locality.
+
+-   **Safety**: `t_PoolPtr` prevents resource leaks (e.g., if an AST node owns a `std::string`) while maintaining the speed of pool deallocation.
+
+-   **Simplicity**: Developers don't need to manually manage `delete` or placement `new`.

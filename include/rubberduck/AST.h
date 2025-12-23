@@ -4,6 +4,7 @@
 #include <vector>
 #include <memory>
 #include <rubberduck/Token.h>
+#include <variant>
 
 
 template<typename T>
@@ -268,3 +269,33 @@ struct t_ReturnStmt : public t_Stmt
     t_ReturnStmt(t_PoolPtr<t_Expr> value)
         : value(std::move(value)) {}
 };
+
+// Variants to automate pool size calculation
+using t_StmtVariant = std::variant
+<
+    t_BlockStmt,
+    t_IfStmt,
+    t_ForStmt,
+    t_BreakStmt,
+    t_ContinueStmt,
+    t_VarStmt,
+    t_DisplayStmt,
+    t_GetinStmt,
+    t_FunStmt,
+    t_BenchmarkStmt,
+    t_EmptyStmt,
+    t_ExpressionStmt,
+    t_ReturnStmt
+>;
+
+using t_ExprVariant = std::variant
+<
+    t_BinaryExpr,
+    t_LiteralExpr,
+    t_UnaryExpr,
+    t_GroupingExpr,
+    t_VariableExpr,
+    t_PrefixExpr,
+    t_PostfixExpr,
+    t_CallExpr
+>;
