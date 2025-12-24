@@ -310,23 +310,6 @@ for (auto i = 1; i <= 100; ++i)
 }
 ```
 
-### Performance Test
-
-```cpp
-benchmark
-{
-    auto iterations = 1000000;
-    auto counter = 0;
-    
-    for (auto i = 0; i < iterations; ++i)
-    {
-        counter = counter + 1;
-    }
-    
-    display($"Completed {iterations} iterations");
-}
-```
-
 ## Implementation Status
 
 ### ✅ Current Features
