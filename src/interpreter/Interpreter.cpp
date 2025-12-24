@@ -314,7 +314,10 @@ bool t_Interpreter::IsFloat(const std::string& value)
         }
     }
     
-    return has_decimal && (static_cast<size_t>(value.length()) > static_cast<size_t>(start + 1));
+    return has_decimal && 
+    (
+        static_cast<size_t>(value.length()) > static_cast<size_t>(start + 1)
+    );
 }
 
 // Comparison operations are kept as they are more complex
@@ -434,7 +437,8 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
 		{
 			for (const auto &statement : block_stmt->statements)
 			{
-				t_Expected<int, t_ErrorInfo> result = Execute(statement.get());
+				t_Expected<int, t_ErrorInfo> result = 
+                Execute(statement.get());
 				if (!result.HasValue())
 				{
 					PopScope(); // Clean up scope before returning
@@ -525,7 +529,10 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
         
         if (IsTruthy(condition_result.Value()))
         {
-            t_Expected<int, t_ErrorInfo> then_result = Execute(if_stmt->then_branch.get());
+            t_Expected<int, t_ErrorInfo> then_result = Execute
+            (
+                if_stmt->then_branch.get()
+            );
             if (!then_result.HasValue())
             {
                 return then_result;
@@ -1422,11 +1429,13 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                         // Remove trailing zeros and decimal point if not needed
                         new_value.erase
                         (
-                            new_value.find_last_not_of('0') + 1, std::string::npos
+                            new_value.find_last_not_of('0') + 1,
+                            std::string::npos
                         );
                         new_value.erase
                         (
-                            new_value.find_last_not_of('.') + 1, std::string::npos
+                            new_value.find_last_not_of('.') + 1,
+                            std::string::npos
                         );
                         m_Environment[var_name] = 
                         t_TypedValue
@@ -2464,7 +2473,10 @@ bool t_Interpreter::IsSimpleNumericLoop(t_ForStmt* for_stmt)
     
     t_LiteralExpr* init_literal = 
     dynamic_cast<t_LiteralExpr*>(init_var->initializer.get());
-    if (!init_literal || init_literal->token_type != e_TokenType::NUMBER) return false;
+    if (!init_literal || init_literal->token_type != e_TokenType::NUMBER)
+    {
+        return false;
+    }
 
     int start_value = 0;
     try
@@ -2611,7 +2623,11 @@ bool t_Interpreter::IsSimpleNumericLoop(t_ForStmt* for_stmt)
 
     if (step == 0)
     {
-        if (t_BinaryExpr* assign = dynamic_cast<t_BinaryExpr*>(for_stmt->increment.get()))
+        if 
+        (
+            t_BinaryExpr* assign = 
+            dynamic_cast<t_BinaryExpr*>(for_stmt->increment.get())
+        )
         {
             if
             (
@@ -2661,7 +2677,10 @@ bool t_Interpreter::IsSimpleNumericLoop(t_ForStmt* for_stmt)
                 return false;
             }
 
-            step = (assign->op.type == e_TokenType::PLUS_EQUAL) ? rhs_int : -rhs_int;
+            step = 
+            (
+                assign->op.type == e_TokenType::PLUS_EQUAL
+            ) ? rhs_int : -rhs_int;
         }
         else
         {
@@ -2669,7 +2688,11 @@ bool t_Interpreter::IsSimpleNumericLoop(t_ForStmt* for_stmt)
         }
     }
 
-    if (condition_op == e_TokenType::LESS || condition_op == e_TokenType::LESS_EQUAL)
+    if
+    (
+        condition_op == e_TokenType::LESS || 
+        condition_op == e_TokenType::LESS_EQUAL
+    )
     {
         if (step <= 0)
         {
@@ -2683,9 +2706,6 @@ bool t_Interpreter::IsSimpleNumericLoop(t_ForStmt* for_stmt)
             return false;
         }
     }
-
-    (void)start_value;
-    (void)limit_value;
     return true;
 }
 
@@ -3343,9 +3363,11 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
 
                     if (!cond_var || !cond_lit)
                     {
-                        cond_var = dynamic_cast<t_VariableExpr*>(cond_binary->right.get());
+                        cond_var = 
+                        dynamic_cast<t_VariableExpr*>(cond_binary->right.get());
 
-                        cond_lit = dynamic_cast<t_LiteralExpr*>(cond_binary->left.get());
+                        cond_lit = 
+                        dynamic_cast<t_LiteralExpr*>(cond_binary->left.get());
                     }
 
                     if 
