@@ -6,11 +6,10 @@
 #include <rubberduck/Token.h>
 #include <variant>
 
-
 template<typename T>
 struct t_PoolDeleter
 {
-    void operator()(T* ptr) const
+    void operator()(T* ptr) const noexcept
     {
         if (ptr)
         {
@@ -121,6 +120,14 @@ struct t_CallExpr : public t_Expr
         : callee(callee),
           arguments(std::move(arguments)),
           line(line) {}
+};
+
+struct t_TypeofExpr : public t_Expr
+{
+    t_PoolPtr<t_Expr> operand;
+
+    t_TypeofExpr(t_PoolPtr<t_Expr> operand)
+        : operand(std::move(operand)) {}
 };
 
 // Statement types
@@ -297,5 +304,6 @@ using t_ExprVariant = std::variant
     t_VariableExpr,
     t_PrefixExpr,
     t_PostfixExpr,
-    t_CallExpr
+    t_CallExpr,
+    t_TypeofExpr
 >;

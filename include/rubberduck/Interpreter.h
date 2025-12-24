@@ -60,6 +60,7 @@ struct t_TypedValue
     {
         // Format the string representation properly
         value = std::to_string(num_val);
+
         // Remove trailing zeros and decimal point if not needed
         value.erase(value.find_last_not_of('0') + 1, std::string::npos);
         value.erase(value.find_last_not_of('.') + 1, std::string::npos);
@@ -159,5 +160,8 @@ private:
 
 public:
     t_Interpreter();
-    t_InterpretationResult Interpret(const std::vector<t_PoolPtr<t_Stmt>> &statements);
+    t_InterpretationResult Interpret
+    (
+        const std::vector<t_PoolPtr<t_Stmt>> &statements
+    );
 };

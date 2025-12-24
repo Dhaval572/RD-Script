@@ -64,6 +64,7 @@ enum class e_TokenType
     AUTO,
     BENCHMARK,  
     GETIN,      
+    TYPEOF, // TODO
     EOF_TOKEN
 };
 

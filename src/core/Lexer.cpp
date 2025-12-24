@@ -24,7 +24,8 @@ static const std::unordered_map<std::string, e_TokenType> keywords =
     {"while", e_TokenType::WHILE},
     {"auto", e_TokenType::AUTO},
     {"benchmark", e_TokenType::BENCHMARK},
-    {"getin", e_TokenType::GETIN} 
+    {"getin", e_TokenType::GETIN},
+    {"typeof", e_TokenType::TYPEOF} 
 };
 
 t_Lexer::t_Lexer(const std::string &source)

@@ -3,7 +3,6 @@
 #include <rubberduck/MemoryPool.h>
 #include <rubberduck/AST.h>
 #include <memory>
-#include <utility>
 
 // RAII wrapper for managing the lifecycle of memory pools
 class t_ASTContext
