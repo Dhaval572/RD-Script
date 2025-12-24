@@ -86,10 +86,10 @@ display($"{name} says: 'Quack!'");
 **Method 2: Comma-separated concatenation**
 
 ```cpp
-display("Hello, World!");
-display("Name:", name, "Age:", age);
-display("Sum of ", a, " and ", b, " is: ", a + b);
-display(name, " is ", age, " years old");
+display "Hello, World!";
+display "Name:", name, "Age:", age;
+display "Sum of ", a, " and ", b, " is: ", a + b;
+display name, " is ", age, " years old";
 ```
 
 **Method 3: Simple string literal**
@@ -104,7 +104,7 @@ display("Simple message");
 auto user_input = "";
 display("Enter your name:");
 getin(user_input);
-display("Hello,", user_input, "!");
+display ($"Hello {user_input}!");
 ```
 
 ### Conditional Statements
@@ -131,7 +131,7 @@ else
 ```cpp
 for (auto i = 0; i < 10; ++i)
 {
-    display("Iteration:", i);
+    display "Iteration:", i;
 }
 ```
 
@@ -151,7 +151,7 @@ for (;;)
 **Conditional for loop:**
 
 ```cpp
-for (auto i = 0; i < 100; i = i + 1)
+for (auto i = 0; i < 100; i++)
 {
     if (i == 50)
     {
@@ -163,7 +163,7 @@ for (auto i = 0; i < 100; i = i + 1)
         continue;   // Skip even numbers
     }
     
-    display("Odd number:", i);
+    display "Odd number:", i;
 }
 ```
 
@@ -196,7 +196,7 @@ fun CalculateSum(auto a, auto b)
 }
 
 auto total = CalculateSum(10, 20);
-display("Total:", total);
+display "Total:", total;
 ```
 
 ## Benchmark Feature
@@ -213,7 +213,7 @@ benchmark
     {
         sum = sum + i;
     }
-    display("Sum:", sum);
+    display "Sum:", sum;
 }
 ```
 
@@ -280,10 +280,10 @@ getin(num1);
 display("Enter second number:");
 getin(num2);
 
-display("Sum:", num1 + num2);
-display("Difference:", num1 - num2);
-display("Product:", num1 * num2);
-display("Quotient:", num1 / num2);
+display($"Sum:", {num1 + num2});
+display($"Difference:", {num1 - num2});
+display($"Product:", {num1 * num2});
+display($"Quotient:", {num1 / num2});
 ```
 
 ### FizzBuzz
@@ -323,7 +323,7 @@ benchmark
         counter = counter + 1;
     }
     
-    display("Completed", iterations, "iterations");
+    display($"Completed {iterations} iterations");
 }
 ```
 
