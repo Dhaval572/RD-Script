@@ -1,10 +1,10 @@
 #pragma once
 
+#include <variant>
+#include <rubberduck/Token.h>
+#include <memory>
 #include <string>
 #include <vector>
-#include <memory>
-#include <rubberduck/Token.h>
-#include <variant>
 
 template<typename T>
 struct t_PoolDeleter

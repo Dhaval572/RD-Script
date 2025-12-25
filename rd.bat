@@ -1,40 +1,45 @@
 @echo off
-REM RubberDuck RD Script Runner / Builder
+setlocal enabledelayedexpansion
 
-setlocal
+REM ===============================
+REM RubberDuck RD Script Runner
+REM ===============================
 
-REM === Build if needed ===
-if not exist "build" (
-    echo [INFO] Build directory not found. Building...
-    mkdir build >nul 2>&1
-    cd build
-    cmake .. || exit /b 1
-    cmake --build . || exit /b 1
-    cd ..
-) else (
-    if not exist "build\Debug\rubberduck.exe" (
-        echo [INFO] Executable not found. Building...
-        cd build
-        cmake .. || exit /b 1
-        cmake --build . || exit /b 1
-        cd ..
-    )
+set BUILD_DIR=build
+set CONFIG=Debug
+set EXE_NAME=rubberduck.exe
+set EXE_PATH=%BUILD_DIR%\%CONFIG%\%EXE_NAME%
+
+REM === Create build directory if missing ===
+if not exist "%BUILD_DIR%" (
+    echo [INFO] Creating build directory...
+    mkdir "%BUILD_DIR%" || exit /b 1
 )
 
-REM === If no RD file provided, stop after build ===
-if "%1"=="" (
-    echo [INFO] Build completed. No script provided to run.
+REM === Configure if not already configured ===
+if not exist "%BUILD_DIR%\CMakeCache.txt" (
+    echo [INFO] Configuring project...
+    cmake -S . -B "%BUILD_DIR%" || exit /b 1
+)
+
+REM === Build (incremental) ===
+@REM echo [INFO] Building (incremental)...
+cmake --build "%BUILD_DIR%" --config %CONFIG% || exit /b 1
+
+REM === If no script provided, stop here ===
+if "%~1"=="" (
+    echo [INFO] Build completed. No script provided.
     exit /b 0
 )
 
-REM === If RD file provided, check existence ===
-if not exist "%1" (
-    echo [ERROR] Script file "%1" not found!
+REM === Check RD script existence ===
+if not exist "%~1" (
+    echo [ERROR] Script file "%~1" not found!
     exit /b 1
 )
 
-REM === Run the RD script ===
-echo [INFO] Running script: %1
-build\Debug\rubberduck.exe "%1"
+REM === Run the script ===
+@REM echo [INFO] Running script: %~1
+"%EXE_PATH%" "%~1"
 
 endlocal

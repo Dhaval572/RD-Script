@@ -27,7 +27,7 @@ static void AssignToVisibleVariable
     m_Environment[name] = value;
     
     // Update all m_ScopeStack entries containing this variable
-    for (std::size_t i = 0; i < m_ScopeStack.size(); ++i)
+    for (size_t i = 0; i < m_ScopeStack.size(); ++i)
     {
         if (m_ScopeStack[i].find(name) != m_ScopeStack[i].end())
         {
@@ -41,10 +41,13 @@ t_Interpreter::t_Interpreter()
     std::ios::sync_with_stdio(false);
     std::cin.tie(nullptr);
     
-    // Initialize with global scope
     PushScope();
     m_BufferOutput = false;
     m_OutputBuffer.clear();
+
+    m_Functions.reserve(64);
+    m_Environment.reserve(256);
+    m_ScopeStack.reserve(32);
 }
 
 void t_Interpreter::WriteOutput(const std::string& text)
@@ -1186,31 +1189,31 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
             }
 
             // Preserve modifications to pre-existing variables as in for-loops
-            std::unordered_set<std::string> pre_call_variables;
-            for (const auto &pair : m_Environment)
+            std::unordered_set<std::string> pre_call_variables; 
+            pre_call_variables.reserve(m_Environment.size());
+            for (auto&& [key, _]: m_Environment)
             {
-                pre_call_variables.insert(pair.first);
+                pre_call_variables.insert(key);
             }
 
             PushScope();
-
             try
             {
                 // Bind parameters in the new scope
                 for (size_t i = 0; i < fun_stmt->parameters.size(); ++i)
                 {
-                    const std::string &param_name = fun_stmt->parameters[i];
+                    const std::string& param_name = fun_stmt->parameters[i];
                     m_Environment[param_name] = argument_values[i];
                 }
 
+                std::string return_value = "nil";
                 if (fun_stmt->body)
                 {
-                    // Reset the return flag before executing the function body
                     m_IsReturning = false;
-                    
+                
                     t_Expected<int, t_ErrorInfo> body_result =
-                    Execute(fun_stmt->body.get());
-
+                        Execute(fun_stmt->body.get());
+                
                     if (!body_result.HasValue())
                     {
                         PopScope();
@@ -1219,54 +1222,38 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                             body_result.Error()
                         );
                     }
-                    
-                    // If we were returning from the function, use the return value
+                
                     if (m_IsReturning)
                     {
-                        m_IsReturning = false; // Reset the flag
-                        std::string result = m_ReturnValue;
-                        
-                        // Preserve modifications to variables that existed before the call
-                        std::unordered_map<std::string, t_TypedValue> modified_pre_existing;
-                        for (const auto &pair : m_Environment)
-                        {
-                            if (pre_call_variables.count(pair.first) > 0)
-                            {
-                                modified_pre_existing[pair.first] = pair.second;
-                            }
-                        }
-
-                        PopScope();
-
-                        for (const auto &pair : modified_pre_existing)
-                        {
-                            m_Environment[pair.first] = pair.second;
-                        }
-                        
-                        return t_Expected<std::string, t_ErrorInfo>(result);
+                        return_value = m_ReturnValue;
+                        m_IsReturning = false;
                     }
                 }
-
+            
                 // Preserve modifications to variables that existed before the call
                 std::unordered_map<std::string, t_TypedValue> modified_pre_existing;
-                for (const auto &pair : m_Environment)
+                modified_pre_existing.reserve(pre_call_variables.size());
+            
+                for (auto&& [key, value] : m_Environment)
                 {
-                    if (pre_call_variables.count(pair.first) > 0)
+                    if (pre_call_variables.contains(key))
                     {
-                        modified_pre_existing[pair.first] = pair.second;
+                        modified_pre_existing.emplace(key, value);
                     }
                 }
-
+            
+                // Exit function scope
                 PopScope();
-
-                for (const auto &pair : modified_pre_existing)
+            
+                // Restore preserved variables
+                for (auto&& [key, value] : modified_pre_existing)
                 {
-                    m_Environment[pair.first] = pair.second;
+                    m_Environment.find(key)->second = value;
                 }
-
-                // User-defined m_Functions currently return nil
-                return t_Expected<std::string, t_ErrorInfo>("nil");
+            
+                return t_Expected<std::string, t_ErrorInfo>(return_value);
             }
+
             catch (...)
             {
                 PopScope();
@@ -3238,9 +3225,11 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
 {
     // Store variables that existed before the loop
     std::unordered_set<std::string> pre_loop_variables;
-    for (const auto& pair : m_Environment) 
+    pre_loop_variables.reserve(m_Environment.size());
+
+    for(auto&& [key, _] : m_Environment)
     {
-        pre_loop_variables.insert(pair.first);
+        pre_loop_variables.insert(key);
     }
     
     // Push a new scope for the loop
@@ -3482,6 +3471,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
 
     // Before popping scope, preserve modifications to pre-existing variables
     std::unordered_map<std::string, t_TypedValue> modified_pre_existing;
+    modified_pre_existing.reserve(pre_loop_variables.size());
     for (const auto& pair : m_Environment)
     {
         if (pre_loop_variables.count(pair.first) > 0)

@@ -2,7 +2,6 @@
 
 #include <vector>
 #include <unordered_map>
-#include <unordered_set>
 #include <string>
 #include <chrono>
 #include <rubberduck/AST.h>
@@ -95,6 +94,7 @@ private:
     int m_LoopDepth = 0; 
     std::string m_ControlSignal; // "break" | "continue" | ""
     std::unordered_map<std::string, t_FunStmt*> m_Functions;
+
     std::string m_ReturnValue; 
     bool m_IsReturning = false;
 
