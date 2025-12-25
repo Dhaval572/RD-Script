@@ -602,10 +602,11 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
         else
         {
             // Store variables that existed before the loop
-            std::unordered_set<std::string> pre_loop_variables;
-            for (const auto& pair : m_Environment) 
+            std::unordered_set<std::string_view> pre_loop_variables;
+            pre_loop_variables.reserve(m_Environment.size());
+            for (auto&& [key, _] : m_Environment) 
             {
-                pre_loop_variables.insert(pair.first);
+                pre_loop_variables.insert(key);
             }
 
             // Push a new scope for the loop
@@ -705,12 +706,12 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
 
                 // Before popping scope, preserve modifications to pre-existing variables
                 std::unordered_map<std::string, t_TypedValue> modified_pre_existing;
-
-                for (const auto& pair : m_Environment)
+                modified_pre_existing.reserve(m_Environment.size());
+                for (auto&& [key, value] : m_Environment)
                 {
-                    if (pre_loop_variables.count(pair.first) > 0)
+                    if (pre_loop_variables.contains(key))
                     {
-                        modified_pre_existing[pair.first] = pair.second;
+                        modified_pre_existing.try_emplace(key, value);
                     }
                 }
 
@@ -718,9 +719,9 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                 PopScope();
                 
                 // Restore the modified values of pre-existing variables
-                for (const auto& pair : modified_pre_existing)
+                for (auto&& [key, value] : modified_pre_existing)
                 {
-                    m_Environment[pair.first] = pair.second;
+                    m_Environment.try_emplace(key, value);
                 }
                 
                 m_LoopDepth--;
@@ -1189,7 +1190,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
             }
 
             // Preserve modifications to pre-existing variables as in for-loops
-            std::unordered_set<std::string> pre_call_variables; 
+            std::unordered_set<std::string_view> pre_call_variables; 
             pre_call_variables.reserve(m_Environment.size());
             for (auto&& [key, _]: m_Environment)
             {
@@ -1596,7 +1597,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                 
                 // Check if variable was properly declared with 'auto' keyword
                 // All variables must be declared before use
-                if (m_Environment.find(var_name) == m_Environment.end())
+                if (!m_Environment.contains(var_name))
                 {
                     return t_Expected<std::string, t_ErrorInfo>
                     (
@@ -1669,11 +1670,16 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                         {
                             double left_val = std::stod(left_value);
                             double right_val = std::stod(right_value);
-                            final_value_result = t_Expected<std::string, t_ErrorInfo>(FormatNumber(left_val - right_val));
+                            final_value_result = 
+                            t_Expected<std::string, t_ErrorInfo>
+                            (
+                                FormatNumber(left_val - right_val)
+                            );
                         }
                         catch (...)
                         {
-                            final_value_result = t_Expected<std::string, t_ErrorInfo>
+                            final_value_result = 
+                            t_Expected<std::string, t_ErrorInfo>
                             (
                                 t_ErrorInfo
                                 (
@@ -1691,7 +1697,11 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                         {
                             double left_val = std::stod(left_value);
                             double right_val = std::stod(right_value);
-                            final_value_result = t_Expected<std::string, t_ErrorInfo>(FormatNumber(left_val * right_val));
+                            final_value_result = 
+                            t_Expected<std::string, t_ErrorInfo>
+                            (
+                                FormatNumber(left_val * right_val)
+                            );
                         }
                         catch (...)
                         {
@@ -1727,7 +1737,11 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                             }
                             else
                             {
-                                final_value_result = t_Expected<std::string, t_ErrorInfo>(FormatNumber(std::fmod(left_val, right_val)));
+                                final_value_result = 
+                                t_Expected<std::string, t_ErrorInfo>
+                                (
+                                    FormatNumber(std::fmod(left_val, right_val))
+                                );
                             }
                         }
                         catch (...)
@@ -1764,7 +1778,11 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                             }
                             else
                             {
-                                final_value_result = t_Expected<std::string, t_ErrorInfo>(FormatNumber(left_val / right_val));
+                                final_value_result = 
+                                t_Expected<std::string, t_ErrorInfo>
+                                (
+                                    FormatNumber(left_val / right_val)
+                                );
                             }
                         }
                         catch (...)
@@ -1795,8 +1813,11 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                 e_ValueType type = DetectType(final_value);
                 
                 // Enforce static typing - check if the new value type matches the declared variable type
-                auto it = m_Environment.find(var_name);
-                if (it != m_Environment.end())
+                if 
+                (
+                    auto it = m_Environment.find(var_name); 
+                    it != m_Environment.end()
+                )
                 {
                     e_ValueType declared_type = it->second.type;
                     // Allow assignment only if types match or if assigning to a NIL typed variable (initial assignment)
@@ -3224,7 +3245,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
 )
 {
     // Store variables that existed before the loop
-    std::unordered_set<std::string> pre_loop_variables;
+    std::unordered_set<std::string_view> pre_loop_variables;
     pre_loop_variables.reserve(m_Environment.size());
 
     for(auto&& [key, _] : m_Environment)
@@ -3271,7 +3292,11 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
     {
         step = (prefix_inc->op.type == e_TokenType::PLUS_PLUS) ? 1 : -1;
     }
-    else if (t_BinaryExpr* assign = dynamic_cast<t_BinaryExpr*>(for_stmt->increment.get()))
+    else if 
+    (
+        t_BinaryExpr* assign = 
+        dynamic_cast<t_BinaryExpr*>(for_stmt->increment.get())
+    )
     {
         t_LiteralExpr* rhs = dynamic_cast<t_LiteralExpr*>(assign->right.get());
         int rhs_int = static_cast<int>(std::stod(rhs->value));
@@ -3472,11 +3497,11 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
     // Before popping scope, preserve modifications to pre-existing variables
     std::unordered_map<std::string, t_TypedValue> modified_pre_existing;
     modified_pre_existing.reserve(pre_loop_variables.size());
-    for (const auto& pair : m_Environment)
+    for (auto&& [key, value] : m_Environment)
     {
-        if (pre_loop_variables.count(pair.first) > 0)
+        if (pre_loop_variables.contains(key))
         {
-            modified_pre_existing[pair.first] = pair.second;
+            modified_pre_existing.try_emplace(key, value);
         }
     }
 
@@ -3484,9 +3509,9 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
     PopScope();
     
     // Restore the modified values of pre-existing variables
-    for (const auto& pair : modified_pre_existing)
+    for (auto&& [key, value] : modified_pre_existing)
     {
-        m_Environment[pair.first] = pair.second;
+        m_Environment.try_emplace(key, value);
     }
     m_LoopDepth--;
     
