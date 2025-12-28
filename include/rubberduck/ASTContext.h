@@ -8,8 +8,8 @@
 class t_ASTContext
 {
 private:
-    std::unique_ptr<t_MemoryPool> m_StmtPool;
-    std::unique_ptr<t_MemoryPool> m_ExprPool;
+    std::unique_ptr<MemoryPool> m_StmtPool;
+    std::unique_ptr<MemoryPool> m_ExprPool;
 
 public:
     t_ASTContext();
@@ -21,8 +21,8 @@ public:
     t_ASTContext(t_ASTContext&&) = default;
     t_ASTContext& operator=(t_ASTContext&&) = default;
 
-    t_MemoryPool& GetStmtPool();
-    t_MemoryPool& GetExprPool();
+    MemoryPool& GetStmtPool();
+    MemoryPool& GetExprPool();
     void Reset();
 
     template<typename T, typename... Args>

@@ -6,7 +6,7 @@
 #include <new>
 
 // Simple memory pool allocator for optimizing AST node allocations
-class t_MemoryPool
+class MemoryPool
 {
 private:
     struct t_Block
@@ -29,7 +29,8 @@ private:
 
     void AddChunk()
     {
-        size_t chunk_size = sizeof(t_Chunk) + (m_BlockSize * BLOCKS_PER_CHUNK) - 1;
+        size_t chunk_size = sizeof(t_Chunk) + 
+        (m_BlockSize * BLOCKS_PER_CHUNK) - 1;
         t_Chunk* chunk = static_cast<t_Chunk*>(std::malloc(chunk_size));
         if (!chunk)
         {
@@ -64,7 +65,8 @@ private:
     }
 
 public:
-    t_MemoryPool(size_t block_size_) : m_Chunks(nullptr), m_FreeBlocks(nullptr)
+    MemoryPool(size_t block_size_) 
+        : m_Chunks(nullptr), m_FreeBlocks(nullptr)
     {
         // Ensure block size is at least as large as a pointer and properly aligned
         m_BlockSize = (block_size_ > sizeof(t_Block)) ? 
@@ -73,7 +75,7 @@ public:
         m_BlockSize = (m_BlockSize + ALIGNMENT - 1) & ~(ALIGNMENT - 1);
     }
     
-    ~t_MemoryPool()
+    ~MemoryPool()
     {
         t_Chunk* chunk = m_Chunks;
         while (chunk)
@@ -118,7 +120,8 @@ public:
         while (chunk)
         {
             char* data = chunk->data;
-            size_t chunk_size = sizeof(t_Chunk) + (m_BlockSize * BLOCKS_PER_CHUNK) - 1;
+            size_t chunk_size = sizeof(t_Chunk) + 
+            (m_BlockSize * BLOCKS_PER_CHUNK) - 1;
             size_t available = chunk_size - offsetof(t_Chunk, data);
             
             // Align the data pointer
@@ -146,10 +149,10 @@ public:
 
 // Allocator that uses a memory pool
 template<typename T>
-class t_PoolAllocator
+class PoolAllocator
 {
 private:
-    t_MemoryPool* m_Pool;
+    MemoryPool* m_Pool;
 
 public:
     typedef T value_type;
@@ -160,27 +163,29 @@ public:
     typedef size_t size_type;
     typedef ptrdiff_t difference_type;
 
-    template<typename U>
-    struct rebind
-    {
-        typedef t_PoolAllocator<U> other;
-    };
+    // template<typename U>
+    // struct t_Rebind
+    // {
+    //     typedef PoolAllocator<U> other;
+    // };
 
-    t_PoolAllocator(t_MemoryPool* pool_) noexcept : 
+    PoolAllocator(MemoryPool* pool_) noexcept : 
         m_Pool(pool_) {}
     
     template<typename U>
-    t_PoolAllocator(const t_PoolAllocator<U>& other) noexcept : 
+    PoolAllocator(const PoolAllocator<U>& other) noexcept : 
         m_Pool(other.m_Pool) {}
 
     template<typename U>
-    bool operator==(const t_PoolAllocator<U>& other) const noexcept
+    bool operator==(const PoolAllocator<U>& other) 
+    const noexcept
     {
         return m_Pool == other.m_Pool;
     }
 
     template<typename U>
-    bool operator!=(const t_PoolAllocator<U>& other) const noexcept
+    bool operator!=(const PoolAllocator<U>& other) 
+    const noexcept
     {
         return !(*this == other);
     }
