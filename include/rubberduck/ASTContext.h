@@ -20,9 +20,6 @@ public:
     t_ASTContext& operator=(const t_ASTContext&) = delete;
     t_ASTContext(t_ASTContext&&) = default;
     t_ASTContext& operator=(t_ASTContext&&) = default;
-
-    MemoryPool& GetStmtPool();
-    MemoryPool& GetExprPool();
     void Reset();
 
     template<typename T, typename... Args>

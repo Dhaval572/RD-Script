@@ -11,16 +11,6 @@ t_ASTContext::~t_ASTContext()
     Reset();
 }
 
-MemoryPool& t_ASTContext::GetStmtPool()
-{
-    return *m_StmtPool;
-}
-
-MemoryPool& t_ASTContext::GetExprPool()
-{
-    return *m_ExprPool;
-}
-
 void t_ASTContext::Reset()
 {
     if (m_StmtPool)
