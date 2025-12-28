@@ -100,7 +100,7 @@ t_InterpretationResult t_Interpreter::Interpret
 
     for (const auto &statement : statements)
     {
-        if (t_FunStmt *fun_stmt = dynamic_cast<t_FunStmt *>(statement.get()))
+        if (t_FunStmt *fun_stmt = As<t_FunStmt>(statement.get()))
         {
             m_Functions[fun_stmt->name] = fun_stmt;
         }
@@ -433,7 +433,7 @@ t_Expected<bool, t_ErrorInfo> t_Interpreter::PerformComparison
 
 t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
 {
-    if (t_BlockStmt *block_stmt = dynamic_cast<t_BlockStmt *>(stmt))
+    if (t_BlockStmt* block_stmt = As<t_BlockStmt>(stmt))
     {
         // Push a new scope for the block
         PushScope();
@@ -484,7 +484,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
 			);
 		}
     }
-    else if (dynamic_cast<t_BreakStmt *>(stmt))
+    else if (As<t_BreakStmt>(stmt))
     {
         // Validate that we're inside a loop
         if (m_LoopDepth <= 0)
@@ -502,7 +502,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
         m_ControlSignal = "break";
         return t_Expected<int, t_ErrorInfo>(0);
     }
-    else if (dynamic_cast<t_ContinueStmt *>(stmt))
+    else if (As<t_ContinueStmt>(stmt))
     {
         // Validate that we're inside a loop
         if (m_LoopDepth <= 0)
@@ -520,7 +520,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
         m_ControlSignal = "continue";
         return t_Expected<int, t_ErrorInfo>(0);
     }
-    else if (t_IfStmt *if_stmt = dynamic_cast<t_IfStmt *>(stmt))
+    else if (t_IfStmt *if_stmt = As<t_IfStmt>(stmt))
     {
         t_Expected<std::string, t_ErrorInfo> condition_result = Evaluate
         (
@@ -565,7 +565,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
             }
         }
     }
-    else if (t_ForStmt *for_stmt = dynamic_cast<t_ForStmt *>(stmt))
+    else if (t_ForStmt *for_stmt = As<t_ForStmt>(stmt))
     {
         // Check for ultra-fast nested arithmetic loop pattern: nested loops with arithmetic
         if (IsNestedArithmeticLoop(for_stmt))
@@ -745,7 +745,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
     }
     else if 
     (
-        t_VarStmt *var_stmt = dynamic_cast<t_VarStmt *>(stmt)
+        t_VarStmt *var_stmt = As<t_VarStmt>(stmt)
     )
     {
         // Check if variable is already declared in current scope
@@ -775,7 +775,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
         }
         m_Environment[var_stmt->name] = typed_value;
     }
-    else if (t_DisplayStmt *display_stmt = dynamic_cast<t_DisplayStmt *>(stmt))
+    else if (t_DisplayStmt *display_stmt = As<t_DisplayStmt>(stmt))
     {
         bool first = true;
         for (const auto &expr : display_stmt->expressions)
@@ -799,7 +799,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
         }
         WriteOutput("\n");
     }
-    else if (t_GetinStmt *getin_stmt = dynamic_cast<t_GetinStmt *>(stmt))
+    else if (t_GetinStmt *getin_stmt = As<t_GetinStmt>(stmt))
     {
         const std::string &var_name = getin_stmt->variable_name;
 
@@ -970,8 +970,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
     }
     else if 
     (
-        t_BenchmarkStmt *benchmark_stmt = 
-        dynamic_cast<t_BenchmarkStmt *>(stmt)
+        t_BenchmarkStmt *benchmark_stmt = As<t_BenchmarkStmt>(stmt)
     )
     {
         bool previous_buffering = m_BufferOutput;
@@ -1027,14 +1026,14 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                   << duration.count() / 1000000000.0 
                   << " seconds\n";
     }
-    else if (dynamic_cast<t_EmptyStmt *>(stmt))
+    else if (As<t_EmptyStmt>(stmt))
     {
         // Do nothing for empty statements
     }
     else if 
     (
         t_FunStmt *fun_stmt =
-        dynamic_cast<t_FunStmt *>(stmt)
+        As<t_FunStmt>(stmt)
     )
     {
         // Native m_Functions are implemented in C++.
@@ -1044,7 +1043,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
     else if 
     (
         t_ExpressionStmt *expr_stmt = 
-        dynamic_cast<t_ExpressionStmt *>(stmt)
+        As<t_ExpressionStmt>(stmt)
     )
     {
         t_Expected<std::string, t_ErrorInfo> result =
@@ -1058,7 +1057,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
     else if 
     (
         t_ReturnStmt *return_stmt = 
-        dynamic_cast<t_ReturnStmt *>(stmt)
+        As<t_ReturnStmt>(stmt)
     )
     {
         // Evaluate the return value expression (if any)
@@ -1095,7 +1094,7 @@ bool t_Interpreter::IsTruthy(const std::string &value)
 
 t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
 {
-    if (t_LiteralExpr *literal = dynamic_cast<t_LiteralExpr *>(expr))
+    if (t_LiteralExpr *literal = As<t_LiteralExpr>(expr))
     {
         // Check if this is a format string based on token type
         if (literal->token_type == e_TokenType::FORMAT_STRING)
@@ -1147,12 +1146,12 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
         return t_Expected<std::string, t_ErrorInfo>(literal->value);
     }
 
-    if (t_GroupingExpr *grouping = dynamic_cast<t_GroupingExpr *>(expr))
+    if (t_GroupingExpr *grouping = As<t_GroupingExpr>(expr))
     {
         return Evaluate(grouping->expression.get());
     }
 
-    if (t_CallExpr *call_expr = dynamic_cast<t_CallExpr *>(expr))
+    if (t_CallExpr *call_expr = As<t_CallExpr>(expr))
     {
         // User-defined m_Functions
         auto fun_it = m_Functions.find(call_expr->callee);
@@ -1282,7 +1281,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
         );
     }
 
-    if (t_UnaryExpr *unary = dynamic_cast<t_UnaryExpr *>(expr))
+    if (t_UnaryExpr *unary = As<t_UnaryExpr>(expr))
     {
         t_Expected<std::string, t_ErrorInfo> right_result = 
         Evaluate(unary->right.get());
@@ -1299,7 +1298,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
             if 
             (
                 t_LiteralExpr* right_literal = 
-                dynamic_cast<t_LiteralExpr*>(unary->right.get())
+                As<t_LiteralExpr>(unary->right.get())
             )
             {
                 e_ValueType type = DetectType(right_literal->value);
@@ -1336,12 +1335,12 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
         }
     }
 
-    if (t_PrefixExpr *prefix = dynamic_cast<t_PrefixExpr *>(expr))
+    if (t_PrefixExpr *prefix = As<t_PrefixExpr>(expr))
     {
         if
         (
             t_VariableExpr *var_expr = 
-            dynamic_cast<t_VariableExpr *>(prefix->operand.get())
+            As<t_VariableExpr>(prefix->operand.get())
         )
         {
             std::string var_name = var_expr->name;
@@ -1457,12 +1456,12 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
         );
     }
 
-    if (t_PostfixExpr *postfix = dynamic_cast<t_PostfixExpr *>(expr))
+    if (t_PostfixExpr *postfix = As<t_PostfixExpr>(expr))
     {
         if 
         (
             t_VariableExpr *var_expr = 
-            dynamic_cast<t_VariableExpr *>(postfix->operand.get())
+            As<t_VariableExpr>(postfix->operand.get())
         )
         {
             std::string var_name = var_expr->name;
@@ -1574,7 +1573,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
         );
     }
 
-    if (t_BinaryExpr *binary = dynamic_cast<t_BinaryExpr *>(expr))
+    if (t_BinaryExpr *binary = As<t_BinaryExpr>(expr))
     {
         // Handle assignment expressions
         if 
@@ -1591,7 +1590,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
             if 
             (
                 t_VariableExpr *var_expr = 
-                dynamic_cast<t_VariableExpr *>(binary->left.get())
+                As<t_VariableExpr>(binary->left.get())
             )
             {
                 std::string var_name = var_expr->name;
@@ -2149,7 +2148,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
         }
     }
 
-    if (t_VariableExpr *variable = dynamic_cast<t_VariableExpr *>(expr))
+    if (t_VariableExpr *variable = As<t_VariableExpr>(expr))
     {
         auto it = m_Environment.find(variable->name);
         if (it != m_Environment.end())
@@ -2477,11 +2476,11 @@ bool t_Interpreter::IsSimpleNumericLoop(t_ForStmt* for_stmt)
     // Check if initializer is: auto var = 0
     if (!for_stmt->initializer) return false;
     
-    t_VarStmt* init_var = dynamic_cast<t_VarStmt*>(for_stmt->initializer.get());
+    t_VarStmt* init_var = As<t_VarStmt>(for_stmt->initializer.get());
     if (!init_var || !init_var->initializer) return false;
     
     t_LiteralExpr* init_literal = 
-    dynamic_cast<t_LiteralExpr*>(init_var->initializer.get());
+    As<t_LiteralExpr>(init_var->initializer.get());
     if (!init_literal || init_literal->token_type != e_TokenType::NUMBER)
     {
         return false;
@@ -2506,7 +2505,7 @@ bool t_Interpreter::IsSimpleNumericLoop(t_ForStmt* for_stmt)
     if (!for_stmt->condition) return false;
     
     t_BinaryExpr* condition_binary = 
-    dynamic_cast<t_BinaryExpr*>(for_stmt->condition.get());
+    As<t_BinaryExpr>(for_stmt->condition.get());
     if (!condition_binary) return false;
 
     e_TokenType condition_op = condition_binary->op.type;
@@ -2522,7 +2521,7 @@ bool t_Interpreter::IsSimpleNumericLoop(t_ForStmt* for_stmt)
     }
     
     t_VariableExpr* condition_var = 
-    dynamic_cast<t_VariableExpr*>(condition_binary->left.get());
+    As<t_VariableExpr>(condition_binary->left.get());
     if 
     (
         !condition_var || 
@@ -2530,7 +2529,7 @@ bool t_Interpreter::IsSimpleNumericLoop(t_ForStmt* for_stmt)
     ) return false;
     
     t_LiteralExpr* condition_literal = 
-    dynamic_cast<t_LiteralExpr*>(condition_binary->right.get());
+    As<t_LiteralExpr>(condition_binary->right.get());
     if 
     (
         !condition_literal || 
@@ -2569,11 +2568,11 @@ bool t_Interpreter::IsSimpleNumericLoop(t_ForStmt* for_stmt)
     
     // Check for postfix increment: var++
     t_PostfixExpr* postfix_inc = 
-    dynamic_cast<t_PostfixExpr*>(for_stmt->increment.get());
+    As<t_PostfixExpr>(for_stmt->increment.get());
     if (postfix_inc) 
     {
         t_VariableExpr* inc_var = 
-        dynamic_cast<t_VariableExpr*>(postfix_inc->operand.get());
+        As<t_VariableExpr>(postfix_inc->operand.get());
         if 
         (
             inc_var                         && 
@@ -2600,12 +2599,12 @@ bool t_Interpreter::IsSimpleNumericLoop(t_ForStmt* for_stmt)
     
     // Check for prefix increment: ++var
     t_PrefixExpr* prefix_inc = 
-    dynamic_cast<t_PrefixExpr*>(for_stmt->increment.get());
+    As<t_PrefixExpr>(for_stmt->increment.get());
 
     if (prefix_inc) 
     {
         t_VariableExpr* inc_var = 
-        dynamic_cast<t_VariableExpr*>(prefix_inc->operand.get());
+        As<t_VariableExpr>(prefix_inc->operand.get());
         if 
         (
             inc_var                         && 
@@ -2635,7 +2634,7 @@ bool t_Interpreter::IsSimpleNumericLoop(t_ForStmt* for_stmt)
         if 
         (
             t_BinaryExpr* assign = 
-            dynamic_cast<t_BinaryExpr*>(for_stmt->increment.get())
+            As<t_BinaryExpr>(for_stmt->increment.get())
         )
         {
             if
@@ -2647,11 +2646,11 @@ bool t_Interpreter::IsSimpleNumericLoop(t_ForStmt* for_stmt)
                 return false;
             }
 
-            t_VariableExpr* lhs = dynamic_cast<t_VariableExpr*>
+            t_VariableExpr* lhs = As<t_VariableExpr>
             (
                 assign->left.get()
             );
-            t_LiteralExpr* rhs = dynamic_cast<t_LiteralExpr*>
+            t_LiteralExpr* rhs = As<t_LiteralExpr>
             (
                 assign->right.get()
             );
@@ -2724,15 +2723,15 @@ bool t_Interpreter::IsSimpleAccumulationLoop(t_ForStmt* for_stmt)
     // First check if it's a simple numeric loop
     if (!IsSimpleNumericLoop(for_stmt)) return false;
 
-    t_VarStmt* init_var = dynamic_cast<t_VarStmt*>
+    t_VarStmt* init_var = As<t_VarStmt>
     (
         for_stmt->initializer.get()
     );
     t_LiteralExpr* init_literal =
-    dynamic_cast<t_LiteralExpr*>(init_var->initializer.get());
+    As<t_LiteralExpr>(init_var->initializer.get());
 
     t_BinaryExpr* condition_binary =
-    dynamic_cast<t_BinaryExpr*>(for_stmt->condition.get());
+    As<t_BinaryExpr>(for_stmt->condition.get());
 
     if
     (
@@ -2749,7 +2748,7 @@ bool t_Interpreter::IsSimpleAccumulationLoop(t_ForStmt* for_stmt)
     if 
     (
         t_PostfixExpr* postfix_inc = 
-        dynamic_cast<t_PostfixExpr*>(for_stmt->increment.get())
+        As<t_PostfixExpr>(for_stmt->increment.get())
     )
     {
         increment_is_plus_plus = 
@@ -2760,7 +2759,7 @@ bool t_Interpreter::IsSimpleAccumulationLoop(t_ForStmt* for_stmt)
     else if 
     (
         t_PrefixExpr* prefix_inc = 
-        dynamic_cast<t_PrefixExpr*>(for_stmt->increment.get())
+        As<t_PrefixExpr>(for_stmt->increment.get())
     )
     {
         increment_is_plus_plus = 
@@ -2775,16 +2774,16 @@ bool t_Interpreter::IsSimpleAccumulationLoop(t_ForStmt* for_stmt)
     }
     
     // Check if body is a block with exactly one statement
-    t_BlockStmt* body_block = dynamic_cast<t_BlockStmt*>(for_stmt->body.get());
+    t_BlockStmt* body_block = As<t_BlockStmt>(for_stmt->body.get());
     if (!body_block || body_block->statements.size() != 1) return false;
     
     t_ExpressionStmt* expr_stmt = 
-    dynamic_cast<t_ExpressionStmt*>(body_block->statements[0].get());
+    As<t_ExpressionStmt>(body_block->statements[0].get());
     if (!expr_stmt) return false;
     
     // Check if the expression is a binary assignment (+=)
     t_BinaryExpr* binary_expr = 
-    dynamic_cast<t_BinaryExpr*>(expr_stmt->expression.get());
+    As<t_BinaryExpr>(expr_stmt->expression.get());
     if 
     (
         !binary_expr || 
@@ -2793,12 +2792,12 @@ bool t_Interpreter::IsSimpleAccumulationLoop(t_ForStmt* for_stmt)
     
     // Check if left side is a variable
     t_VariableExpr* left_var = 
-    dynamic_cast<t_VariableExpr*>(binary_expr->left.get());
+    As<t_VariableExpr>(binary_expr->left.get());
     if (!left_var) return false;
     
     // Check if right side is the loop variable
     t_VariableExpr* right_var = 
-    dynamic_cast<t_VariableExpr*>(binary_expr->right.get());
+    As<t_VariableExpr>(binary_expr->right.get());
     if (!right_var) return false;
     
     // Check if right side matches loop variable
@@ -2814,29 +2813,29 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteAccumulationLoop
 )
 {
     // Extract loop parameters
-    t_VarStmt* init_var = dynamic_cast<t_VarStmt*>
+    t_VarStmt* init_var = As<t_VarStmt>
     (
         for_stmt->initializer.get()
     );
     t_BinaryExpr* condition_binary = 
-    dynamic_cast<t_BinaryExpr*>(for_stmt->condition.get());
+    As<t_BinaryExpr>(for_stmt->condition.get());
     
     t_LiteralExpr* condition_literal = 
-    dynamic_cast<t_LiteralExpr*>(condition_binary->right.get());
+    As<t_LiteralExpr>(condition_binary->right.get());
     
     // Get the loop limit
     int limit = static_cast<int>(std::stod(condition_literal->value));
     
     // Get accumulation variable name
-    t_BlockStmt* body_block = dynamic_cast<t_BlockStmt*>(for_stmt->body.get());
+    t_BlockStmt* body_block = As<t_BlockStmt>(for_stmt->body.get());
     t_ExpressionStmt* expr_stmt = 
-    dynamic_cast<t_ExpressionStmt*>(body_block->statements[0].get());
+    As<t_ExpressionStmt>(body_block->statements[0].get());
 
     t_BinaryExpr* binary_expr = 
-    dynamic_cast<t_BinaryExpr*>(expr_stmt->expression.get());
+    As<t_BinaryExpr>(expr_stmt->expression.get());
     
     t_VariableExpr* acc_var = 
-    dynamic_cast<t_VariableExpr*>(binary_expr->left.get());
+    As<t_VariableExpr>(binary_expr->left.get());
     
     std::string acc_var_name = acc_var->name;
     std::string loop_var_name = init_var->name;
@@ -2902,13 +2901,13 @@ bool t_Interpreter::IsNestedArithmeticLoop(t_ForStmt* for_stmt)
     
     // Check if body is a block with exactly one statement (the inner loop)
     t_BlockStmt* body_block = 
-    dynamic_cast<t_BlockStmt*>(for_stmt->body.get());
+    As<t_BlockStmt>(for_stmt->body.get());
 
     if (!body_block || body_block->statements.size() != 1) return false;
     
     // Check if the statement is a nested for loop
     t_ForStmt* inner_for = 
-    dynamic_cast<t_ForStmt*>(body_block->statements[0].get());
+    As<t_ForStmt>(body_block->statements[0].get());
 
     if (!inner_for) return false;
     
@@ -2916,16 +2915,16 @@ bool t_Interpreter::IsNestedArithmeticLoop(t_ForStmt* for_stmt)
     if (!IsSimpleNumericLoop(inner_for)) return false;
     
     // Check if inner loop body contains arithmetic accumulation
-    t_BlockStmt* inner_body = dynamic_cast<t_BlockStmt*>(inner_for->body.get());
+    t_BlockStmt* inner_body = As<t_BlockStmt>(inner_for->body.get());
     if (!inner_body || inner_body->statements.size() != 1) return false;
     
     t_ExpressionStmt* expr_stmt = 
-    dynamic_cast<t_ExpressionStmt*>(inner_body->statements[0].get());
+    As<t_ExpressionStmt>(inner_body->statements[0].get());
     if (!expr_stmt) return false;
     
     // Check if the expression is a binary assignment (+=, -=, *=, /=, %=)
     t_BinaryExpr* binary_expr = 
-    dynamic_cast<t_BinaryExpr*>(expr_stmt->expression.get());
+    As<t_BinaryExpr>(expr_stmt->expression.get());
     if 
     (
         !binary_expr || 
@@ -2940,20 +2939,20 @@ bool t_Interpreter::IsNestedArithmeticLoop(t_ForStmt* for_stmt)
     
     // Check if left side is a variable
     t_VariableExpr* left_var = 
-    dynamic_cast<t_VariableExpr*>(binary_expr->left.get());
+    As<t_VariableExpr>(binary_expr->left.get());
     if (!left_var) return false;
     
     // Check if right side is a binary expression with loop variables
     t_BinaryExpr* right_binary = 
-    dynamic_cast<t_BinaryExpr*>(binary_expr->right.get());
+    As<t_BinaryExpr>(binary_expr->right.get());
     if (!right_binary) return false;
     
     // Get loop variable names
     t_VarStmt* outer_init = 
-    dynamic_cast<t_VarStmt*>(for_stmt->initializer.get());
+    As<t_VarStmt>(for_stmt->initializer.get());
     
     t_VarStmt* inner_init = 
-    dynamic_cast<t_VarStmt*>(inner_for->initializer.get());
+    As<t_VarStmt>(inner_for->initializer.get());
     if (!outer_init || !inner_init) return false;
     
     std::string outer_var = outer_init->name;
@@ -2961,10 +2960,10 @@ bool t_Interpreter::IsNestedArithmeticLoop(t_ForStmt* for_stmt)
     
     // Check if right side is arithmetic with loop variables (i + j, i - j, etc.)
     t_VariableExpr* right_left_var = 
-    dynamic_cast<t_VariableExpr*>(right_binary->left.get());
+    As<t_VariableExpr>(right_binary->left.get());
 
     t_VariableExpr* right_right_var = 
-    dynamic_cast<t_VariableExpr*>(right_binary->right.get());
+    As<t_VariableExpr>(right_binary->right.get());
     
     if (!right_left_var || !right_right_var) return false;
     
@@ -3005,49 +3004,49 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteNestedArithmeticLoop
 {
     // Extract outer loop parameters
     t_VarStmt* outer_init = 
-    dynamic_cast<t_VarStmt*>(for_stmt->initializer.get());
+    As<t_VarStmt>(for_stmt->initializer.get());
     t_BinaryExpr* outer_condition = 
-    dynamic_cast<t_BinaryExpr*>(for_stmt->condition.get());
+    As<t_BinaryExpr>(for_stmt->condition.get());
     t_LiteralExpr* outer_limit_lit = 
-    dynamic_cast<t_LiteralExpr*>(outer_condition->right.get());
+    As<t_LiteralExpr>(outer_condition->right.get());
     
     int outer_limit = static_cast<int>(std::stod(outer_limit_lit->value));
     std::string outer_var = outer_init->name;
     
     // Extract inner loop parameters
-    t_BlockStmt* body_block = dynamic_cast<t_BlockStmt*>(for_stmt->body.get());
+    t_BlockStmt* body_block = As<t_BlockStmt>(for_stmt->body.get());
     t_ForStmt* inner_for = 
-    dynamic_cast<t_ForStmt*>(body_block->statements[0].get());
+    As<t_ForStmt>(body_block->statements[0].get());
     
     t_VarStmt* inner_init = 
-    dynamic_cast<t_VarStmt*>(inner_for->initializer.get());
+    As<t_VarStmt>(inner_for->initializer.get());
     t_BinaryExpr* inner_condition = 
-    dynamic_cast<t_BinaryExpr*>(inner_for->condition.get());
+    As<t_BinaryExpr>(inner_for->condition.get());
     t_LiteralExpr* inner_limit_lit = 
-    dynamic_cast<t_LiteralExpr*>(inner_condition->right.get());
+    As<t_LiteralExpr>(inner_condition->right.get());
     
     int inner_limit = static_cast<int>(std::stod(inner_limit_lit->value));
     std::string inner_var = inner_init->name;
     
     // Extract accumulation variable and expression
-    t_BlockStmt* inner_body = dynamic_cast<t_BlockStmt*>(inner_for->body.get());
+    t_BlockStmt* inner_body = As<t_BlockStmt>(inner_for->body.get());
     t_ExpressionStmt* expr_stmt = 
-    dynamic_cast<t_ExpressionStmt*>(inner_body->statements[0].get());
+    As<t_ExpressionStmt>(inner_body->statements[0].get());
     t_BinaryExpr* assign_expr = 
-    dynamic_cast<t_BinaryExpr*>(expr_stmt->expression.get());
+    As<t_BinaryExpr>(expr_stmt->expression.get());
     
     t_VariableExpr* acc_var_expr = 
-    dynamic_cast<t_VariableExpr*>(assign_expr->left.get());
+    As<t_VariableExpr>(assign_expr->left.get());
     std::string acc_var_name = acc_var_expr->name;
     
     t_BinaryExpr* arithmetic_expr = 
-    dynamic_cast<t_BinaryExpr*>(assign_expr->right.get());
+    As<t_BinaryExpr>(assign_expr->right.get());
     e_TokenType arithmetic_op = arithmetic_expr->op.type;
     
     t_VariableExpr* arith_left = 
-    dynamic_cast<t_VariableExpr*>(arithmetic_expr->left.get());
+    As<t_VariableExpr>(arithmetic_expr->left.get());
     t_VariableExpr* arith_right = 
-    dynamic_cast<t_VariableExpr*>(arithmetic_expr->right.get());
+    As<t_VariableExpr>(arithmetic_expr->right.get());
     
     // Check if accumulation variable exists and get its initial value
     auto acc_it = m_Environment.find(acc_var_name);
@@ -3259,18 +3258,18 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
     m_LoopDepth++;
     
     // Extract loop parameters
-    t_VarStmt* init_var = dynamic_cast<t_VarStmt*>
+    t_VarStmt* init_var = As<t_VarStmt>
     (
         for_stmt->initializer.get()
     );
     t_LiteralExpr* init_literal =
-    dynamic_cast<t_LiteralExpr*>(init_var->initializer.get());
+    As<t_LiteralExpr>(init_var->initializer.get());
 
     t_BinaryExpr* condition_binary = 
-    dynamic_cast<t_BinaryExpr*>(for_stmt->condition.get());
+    As<t_BinaryExpr>(for_stmt->condition.get());
 
     t_LiteralExpr* condition_literal = 
-    dynamic_cast<t_LiteralExpr*>(condition_binary->right.get());
+    As<t_LiteralExpr>(condition_binary->right.get());
 
     int start = static_cast<int>(std::stod(init_literal->value));
     int limit = static_cast<int>(std::stod(condition_literal->value));
@@ -3280,7 +3279,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
     if 
     (
         t_PostfixExpr* postfix_inc = 
-        dynamic_cast<t_PostfixExpr*>(for_stmt->increment.get())
+        As<t_PostfixExpr>(for_stmt->increment.get())
     )
     {
         step = (postfix_inc->op.type == e_TokenType::PLUS_PLUS) ? 1 : -1;
@@ -3288,7 +3287,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
     else if 
     (
         t_PrefixExpr* prefix_inc = 
-        dynamic_cast<t_PrefixExpr*>(for_stmt->increment.get())
+        As<t_PrefixExpr>(for_stmt->increment.get())
     )
     {
         step = (prefix_inc->op.type == e_TokenType::PLUS_PLUS) ? 1 : -1;
@@ -3296,10 +3295,10 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
     else if 
     (
         t_BinaryExpr* assign = 
-        dynamic_cast<t_BinaryExpr*>(for_stmt->increment.get())
+        As<t_BinaryExpr>(for_stmt->increment.get())
     )
     {
-        t_LiteralExpr* rhs = dynamic_cast<t_LiteralExpr*>(assign->right.get());
+        t_LiteralExpr* rhs = As<t_LiteralExpr>(assign->right.get());
         int rhs_int = static_cast<int>(std::stod(rhs->value));
         step = 
         (
@@ -3319,7 +3318,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
         condition_op == e_TokenType::LESS
     );
 
-    t_BlockStmt* body_block = dynamic_cast<t_BlockStmt*>(for_stmt->body.get());
+    t_BlockStmt* body_block = As<t_BlockStmt>(for_stmt->body.get());
     if 
     (
         allow_break_optimization && 
@@ -3327,7 +3326,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
         body_block->statements.size() == 1
     )
     {
-        t_IfStmt* if_stmt = dynamic_cast<t_IfStmt*>
+        t_IfStmt* if_stmt = As<t_IfStmt>
         (
             body_block->statements[0].get()
         );
@@ -3335,21 +3334,21 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
         {
             bool then_is_break = false;
 
-            if (dynamic_cast<t_BreakStmt*>(if_stmt->then_branch.get()))
+            if (As<t_BreakStmt>(if_stmt->then_branch.get()))
             {
                 then_is_break = true;
             }
             else if 
             (
                 t_BlockStmt* then_block = 
-                dynamic_cast<t_BlockStmt*>(if_stmt->then_branch.get())
+                As<t_BlockStmt>(if_stmt->then_branch.get())
             )
             {
                 if (then_block->statements.size() == 1)
                 {
                     if 
                     (
-                        dynamic_cast<t_BreakStmt*>
+                        As<t_BreakStmt>
                         (
                             then_block->statements[0].get()
                         )
@@ -3363,7 +3362,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
             if (then_is_break)
             {
                 t_BinaryExpr* cond_binary = 
-                dynamic_cast<t_BinaryExpr*>(if_stmt->condition.get());
+                As<t_BinaryExpr>(if_stmt->condition.get());
 
                 if 
                 (
@@ -3372,17 +3371,17 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
                 )
                 {
                     t_VariableExpr* cond_var = 
-                    dynamic_cast<t_VariableExpr*>(cond_binary->left.get());
+                    As<t_VariableExpr>(cond_binary->left.get());
                     t_LiteralExpr* cond_lit = 
-                    dynamic_cast<t_LiteralExpr*>(cond_binary->right.get());
+                    As<t_LiteralExpr>(cond_binary->right.get());
 
                     if (!cond_var || !cond_lit)
                     {
                         cond_var = 
-                        dynamic_cast<t_VariableExpr*>(cond_binary->right.get());
+                        As<t_VariableExpr>(cond_binary->right.get());
 
                         cond_lit = 
-                        dynamic_cast<t_LiteralExpr*>(cond_binary->left.get());
+                        As<t_LiteralExpr>(cond_binary->left.get());
                     }
 
                     if 

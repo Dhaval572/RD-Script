@@ -39,7 +39,7 @@ namespace
 
     bool TryGetNumberLiteral(t_Expr *expr, double &out_value)
     {
-        t_LiteralExpr *literal = dynamic_cast<t_LiteralExpr *>(expr);
+        t_LiteralExpr *literal = As<t_LiteralExpr>(expr);
         if (!literal || literal->token_type != e_TokenType::NUMBER)
         {
             return false;
@@ -120,7 +120,7 @@ bool t_Parser::Check(e_TokenType type)
 
 t_Token t_Parser::Peek()
 {
-    if (static_cast<size_t>(m_Current) >= m_Tokens.size())
+    if (static_cast<size_t>(m_Current)>= m_Tokens.size())
     {
         // Return EOF token if we're past the end of the tokens vector
         return t_Token(e_TokenType::EOF_TOKEN, "", "", 0);
@@ -427,8 +427,6 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
             return t_Expected<t_Stmt*, t_ErrorInfo>(var_result.Error());
         }
         initializer = t_PoolPtr<t_Stmt>(var_result.Value());
-        // Note: VarDeclaration already consumes the semicolon
-        // So we don't need to consume it here
     }
     else
     {
@@ -518,7 +516,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
     t_VarStmt *init_var = nullptr;
     if (stmt->initializer)
     {
-        init_var = dynamic_cast<t_VarStmt *>(stmt->initializer.get());
+        init_var = As<t_VarStmt>(stmt->initializer.get());
         if (!init_var || !init_var->initializer)
         {
             return t_Expected<t_Stmt*, t_ErrorInfo>
@@ -532,7 +530,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
         }
 
         t_LiteralExpr *init_literal =
-        dynamic_cast<t_LiteralExpr *>(init_var->initializer.get());
+        As<t_LiteralExpr>(init_var->initializer.get());
 
         if 
         (
@@ -559,7 +557,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
             );
         }
 
-        t_BinaryExpr *condi = dynamic_cast<t_BinaryExpr *>
+        t_BinaryExpr *condi = As<t_BinaryExpr>
         (
             stmt->condition.get()
         );
@@ -583,16 +581,16 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
             (
                 Error
                 (
-                    Previous(), "For-loop condition must be <, <=, >, or >=."
+                    Previous(), "For-loop condition must be <, <=,>, or>=."
                 )
             );
         }
 
         t_VariableExpr *cond_var = 
-        dynamic_cast<t_VariableExpr *>(condi->left.get());
+        As<t_VariableExpr>(condi->left.get());
 
         t_LiteralExpr *cond_lit = 
-        dynamic_cast<t_LiteralExpr *>(condi->right.get());
+        As<t_LiteralExpr>(condi->right.get());
 
         if 
         (
@@ -623,14 +621,14 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
         bool valid_increment = false;
         if 
         (
-            t_PostfixExpr *post = dynamic_cast<t_PostfixExpr *>
+            t_PostfixExpr *post = As<t_PostfixExpr>
             (
                 stmt->increment.get()
             )
         )
         {
             t_VariableExpr *var = 
-            dynamic_cast<t_VariableExpr *>(post->operand.get());
+            As<t_VariableExpr>(post->operand.get());
             if 
             (
                 var && var->name == init_var->name &&
@@ -646,11 +644,11 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
         else if 
         (
             t_PrefixExpr *pre = 
-            dynamic_cast<t_PrefixExpr *>(stmt->increment.get())
+            As<t_PrefixExpr>(stmt->increment.get())
         )
         {
             t_VariableExpr *var = 
-            dynamic_cast<t_VariableExpr *>(pre->operand.get());
+            As<t_VariableExpr>(pre->operand.get());
             if 
             (
                 var && var->name == init_var->name &&
@@ -666,16 +664,16 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
         else if 
         (
             t_BinaryExpr *assign = 
-            dynamic_cast<t_BinaryExpr *>(stmt->increment.get())
+            As<t_BinaryExpr>(stmt->increment.get())
         )
         {
             if (assign->op.type == e_TokenType::PLUS_EQUAL ||
                 assign->op.type == e_TokenType::MINUS_EQUAL)
             {
                 t_VariableExpr *lhs = 
-                dynamic_cast<t_VariableExpr *>(assign->left.get());
+                As<t_VariableExpr>(assign->left.get());
                 t_LiteralExpr *rhs = 
-                dynamic_cast<t_LiteralExpr *>(assign->right.get());
+                As<t_LiteralExpr>(assign->right.get());
                 
                 if 
                 (
@@ -1207,7 +1205,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Assignment()
         }
         t_Expr *value = value_result.Value();
 
-        if (t_VariableExpr *var_expr = dynamic_cast<t_VariableExpr *>(expr))
+        if (t_VariableExpr *var_expr = As<t_VariableExpr>(expr))
         {
             std::string name = var_expr->name;
             t_BinaryExpr* expr_node = m_Context.CreateExpr<t_BinaryExpr>
