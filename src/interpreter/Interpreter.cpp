@@ -23,15 +23,16 @@ static void AssignToVisibleVariable
     t_TypedValue>> &m_ScopeStack
 )
 {
-    // Update m_Environment (used by PushScope)
-    m_Environment[name] = value;
+    auto& env_entry = m_Environment[name];
+    env_entry = value;
     
-    // Update all m_ScopeStack entries containing this variable
-    for (size_t i = 0; i < m_ScopeStack.size(); ++i)
+    const auto& key_ref = name;
+    for(auto& scope : m_ScopeStack) 
     {
-        if (m_ScopeStack[i].find(name) != m_ScopeStack[i].end())
+        auto it = scope.find(key_ref);
+        if(it != scope.end())
         {
-            m_ScopeStack[i][name] = value;
+            it->second = value;
         }
     }
 }
