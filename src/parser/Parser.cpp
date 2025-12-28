@@ -80,6 +80,7 @@ t_Parser::t_Parser
 t_Expected<std::vector<t_PoolPtr<t_Stmt>>, t_ErrorInfo> t_Parser::Parse()
 {
     std::vector<t_PoolPtr<t_Stmt>> statements;
+    statements.reserve(64);
     while (!IsAtEnd())
     {
         t_Expected<t_Stmt*, t_ErrorInfo> result = Statement();
@@ -246,6 +247,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::Statement()
 t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::BlockStatement()
 {
     std::vector<t_PoolPtr<t_Stmt>> statements;
+    statements.reserve(64);
 
     while (!Check(e_TokenType::RIGHT_BRACE) && !IsAtEnd())
     {
@@ -759,6 +761,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::VarDeclaration()
 t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::DisplayStatement()
 {
     std::vector<t_PoolPtr<t_Expr>> values;
+    values.reserve(64);
 
     // Parse the first expression
     t_Expected<t_Expr*, t_ErrorInfo> first_expr_result = Expression();
@@ -766,7 +769,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::DisplayStatement()
     {
         return t_Expected<t_Stmt*, t_ErrorInfo>(first_expr_result.Error());
     }
-    values.push_back(t_PoolPtr<t_Expr>(first_expr_result.Value()));
+    values.emplace_back(t_PoolPtr<t_Expr>(first_expr_result.Value()));
 
     // Parse additional comma-separated expressions
     while (Match({e_TokenType::COMMA}))
@@ -776,7 +779,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::DisplayStatement()
         {
             return t_Expected<t_Stmt*, t_ErrorInfo>(expr_result.Error());
         }
-        values.push_back(t_PoolPtr<t_Expr>(expr_result.Value()));
+        values.emplace_back(t_PoolPtr<t_Expr>(expr_result.Value()));
     }
 
     t_Expected<t_Token, t_ErrorInfo> semicolon_result = 
@@ -920,7 +923,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::FunDeclaration()
     }
 
     std::vector<std::string> parameters;
-
+    parameters.reserve(128);
     if (!Check(e_TokenType::RIGHT_PAREN))
     {
         while (true)
@@ -953,7 +956,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::FunDeclaration()
                 );
             }
 
-            parameters.push_back(param_name_result.Value().lexeme);
+            parameters.emplace_back(param_name_result.Value().lexeme);
 
             if (!Match({e_TokenType::COMMA}))
             {
@@ -1115,6 +1118,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::BenchmarkStatement()
     
     // Parse the benchmark body
     std::vector<t_PoolPtr<t_Stmt>> statements;
+    statements.reserve(32);
     while (!Check(e_TokenType::RIGHT_BRACE) && !IsAtEnd())
     {
         t_Expected<t_Stmt*, t_ErrorInfo> stmt_result = Statement();
@@ -1122,7 +1126,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::BenchmarkStatement()
         {
             return t_Expected<t_Stmt*, t_ErrorInfo>(stmt_result.Error());
         }
-        statements.push_back(t_PoolPtr<t_Stmt>(stmt_result.Value()));
+        statements.emplace_back(t_PoolPtr<t_Stmt>(stmt_result.Value()));
     }
     
     t_Expected<t_Token, t_ErrorInfo> close_brace_result = 
