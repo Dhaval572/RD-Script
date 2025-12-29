@@ -6,7 +6,7 @@ This document explains how memory is managed in the RD Script interpreter, which
 
 The RD Script interpreter uses a **memory pool-based approach** with custom smart pointers for automatic ownership management:
 
-- **Memory Pools**: Both statement and expression objects are allocated from custom memory pools (`t_MemoryPool`) for better performance and cache locality.
+- **Memory Pools**: Both statement and expression objects are allocated from custom memory pools (`MemoryPool`) for better performance and cache locality.
 
 - **Factory Methods**: Objects are constructed via factory methods in `t_ASTContext` (`CreateStmt` and `CreateExpr`), which handle allocation and placement `new` internally.
 
