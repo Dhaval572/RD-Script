@@ -412,7 +412,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
         return t_Expected<t_Stmt*, t_ErrorInfo>(paren_result.Error());
     }
 
-    // Parse initializer (must be a variable declaration or empty)
+    // Parse initializer (can be variable declaration, expression statement, or empty)
     t_PoolPtr<t_Stmt> initializer;
     if (Match({e_TokenType::SEMICOLON}))
     {
@@ -430,14 +430,42 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
     }
     else
     {
-        return t_Expected<t_Stmt*, t_ErrorInfo>
+        // Allow expression statements as initializers (like "i = 0;")
+        // First, parse the expression
+        t_Expected<t_Expr*, t_ErrorInfo> expr_result = Expression();
+        if (!expr_result.HasValue())
+        {
+            return t_Expected<t_Stmt*, t_ErrorInfo>(expr_result.Error());
+        }
+        
+        // Create an expression statement
+        t_ExpressionStmt* expr_stmt = 
+        m_Context.CreateStmt<t_ExpressionStmt>
         (
-            Error
-            (
-                Peek(),
-                "Expect 'auto' variable declaration or ';' in for-loop initializer."
-            )
+            t_PoolPtr<t_Expr>(expr_result.Value())
         );
+        if (!expr_stmt)
+        {
+            return t_Expected<t_Stmt*, t_ErrorInfo>
+            (
+                t_ErrorInfo
+                (
+                    e_ErrorType::RUNTIME_ERROR, 
+                    "Out of memory", 
+                    Peek().line, 
+                    0
+                )
+            );
+        }
+        initializer = t_PoolPtr<t_Stmt>(expr_stmt);
+        
+        // Consume the semicolon after the expression
+        t_Expected<t_Token, t_ErrorInfo> semicolon_result = 
+        Consume(e_TokenType::SEMICOLON, "Expect ';' after for-loop initializer expression.");
+        if (!semicolon_result.HasValue())
+        {
+            return t_Expected<t_Stmt*, t_ErrorInfo>(semicolon_result.Error());
+        }
     }
 
     // Parse condition
@@ -513,11 +541,14 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
         );
     }
 
-    t_VarStmt *init_var = nullptr;
-    if (stmt->initializer)
+    // Check if the initializer is a variable declaration (for optimization purposes)
+    t_VarStmt *init_var = As<t_VarStmt>(stmt->initializer.get());
+    t_ExpressionStmt *expr_stmt = As<t_ExpressionStmt>(stmt->initializer.get());
+
+    // If it's a variable declaration, do the strict validation for optimization
+    if (init_var)
     {
-        init_var = As<t_VarStmt>(stmt->initializer.get());
-        if (!init_var || !init_var->initializer)
+        if (!init_var->initializer)
         {
             return t_Expected<t_Stmt*, t_ErrorInfo>
             (
@@ -619,13 +650,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
         }
 
         bool valid_increment = false;
-        if 
-        (
-            t_PostfixExpr *post = As<t_PostfixExpr>
-            (
-                stmt->increment.get()
-            )
-        )
+        if (t_PostfixExpr *post = As<t_PostfixExpr>(stmt->increment.get()))
         {
             t_VariableExpr *var = 
             As<t_VariableExpr>(post->operand.get());
@@ -698,6 +723,40 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
                 )
             );
         }
+    }
+    // If it's an expression statement, we can't apply the same strict validation
+    // but we should still check basic requirements
+    else if (expr_stmt && stmt->initializer)
+    {
+        // Basic checks for expression statement initializers
+        if (!stmt->condition)
+        {
+            return t_Expected<t_Stmt*, t_ErrorInfo>
+            (
+                Error(Previous(), "For-loop condition is required.")
+            );
+        }
+        
+        if (!stmt->increment)
+        {
+            return t_Expected<t_Stmt*, t_ErrorInfo>
+            (
+                Error(Previous(), "For-loop increment is required.")
+            );
+        }
+    }
+    // nullptr initializer (empty) is also valid
+    else if (stmt->initializer)
+    {
+        // Some other type of statement - might want to handle this case
+        return t_Expected<t_Stmt*, t_ErrorInfo>
+        (
+            Error
+            (
+                Previous(),
+                "For-loop initializer must be a variable declaration or expression statement."
+            )
+        );
     }
 
     return t_Expected<t_Stmt*, t_ErrorInfo>(stmt);
