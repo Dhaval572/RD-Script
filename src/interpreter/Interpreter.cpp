@@ -956,7 +956,6 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                 }
 
                 e_ValueType inferred_type = DetectType(input);
-
                 AssignToVisibleVariable
                 (
                     var_name,
@@ -1154,11 +1153,13 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
     if (t_CallExpr *call_expr = As<t_CallExpr>(expr))
     {
         // User-defined m_Functions
-        auto fun_it = m_Functions.find(call_expr->callee);
-        if (fun_it != m_Functions.end())
+        if 
+        (
+            auto fun_it = m_Functions.find(call_expr->callee);
+            fun_it != m_Functions.end()
+        )
         {
             t_FunStmt *fun_stmt = fun_it->second;
-
             if (call_expr->arguments.size() != fun_stmt->parameters.size())
             {
                 return t_Expected<std::string, t_ErrorInfo>
@@ -1466,7 +1467,6 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
         {
             std::string var_name = var_expr->name;
             auto it = m_Environment.find(var_name);
-            
             if (it == m_Environment.end())
             {
                 return t_Expected<std::string, t_ErrorInfo>
@@ -1800,7 +1800,8 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                     break;
                     
                 default:
-                    final_value_result = t_Expected<std::string, t_ErrorInfo>(right_value);
+                    final_value_result = 
+                    t_Expected<std::string, t_ErrorInfo>(right_value);
                     break;
                 }
                 
@@ -2150,8 +2151,11 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
 
     if (t_VariableExpr *variable = As<t_VariableExpr>(expr))
     {
-        auto it = m_Environment.find(variable->name);
-        if (it != m_Environment.end())
+        if 
+        (
+            auto it = m_Environment.find(variable->name);
+            it != m_Environment.end()
+        )
         {
             return t_Expected<std::string, t_ErrorInfo>(it->second.value);
         }
@@ -2191,8 +2195,11 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::EvaluateFormatExpression
         }
 
         // For simple variable names, look them up directly in the m_Environment
-        auto it = m_Environment.find(expr_str);
-        if (it != m_Environment.end())
+        if 
+        (
+            auto it = m_Environment.find(expr_str);
+            it != m_Environment.end()
+        )
         {
             return t_Expected<std::string, t_ErrorInfo>(it->second.value);
         }
@@ -2202,7 +2209,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::EvaluateFormatExpression
         {
             return t_Expected<std::string, t_ErrorInfo>(expr_str);
         }
-        
+
         // Handle simple arithmetic expressions
         // Look for operators in order of precedence (multiplication and division first)
         size_t mul_pos = expr_str.find('*');
@@ -2452,15 +2459,9 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::EvaluateFormatExpression
                     )
                 );
             }
-
         }
         
         // For other complex expressions, return the expression as a string
-        return t_Expected<std::string, t_ErrorInfo>(expr_str);
-    }
-    catch (const std::exception&)
-    {
-        // If parsing fails, treat as literal text
         return t_Expected<std::string, t_ErrorInfo>(expr_str);
     }
     catch (...)
