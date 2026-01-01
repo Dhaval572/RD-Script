@@ -86,7 +86,7 @@ struct t_TypedValue
     }
 };
 
-class t_Interpreter
+class Interpreter
 {
 private:
     std::unordered_map<std::string, t_TypedValue> m_Environment;
@@ -101,11 +101,11 @@ private:
     bool m_BufferOutput = false;
     std::string m_OutputBuffer;
 
-    t_Expected<std::string, t_ErrorInfo> Evaluate(t_Expr *expr);
-    t_Expected<int, t_ErrorInfo> Execute(t_Stmt *stmt);
+    Expected<std::string, t_ErrorInfo> Evaluate(t_Expr *expr);
+    Expected<int, t_ErrorInfo> Execute(t_Stmt *stmt);
     bool IsTruthy(const std::string &value);
     std::string Stringify(const std::string &value);
-    t_Expected<std::string, t_ErrorInfo> EvaluateFormatExpression
+    Expected<std::string, t_ErrorInfo> EvaluateFormatExpression
     (
         const std::string &expr_str
     );
@@ -119,27 +119,27 @@ private:
     
     // Optimized loop execution methods
     bool IsSimpleNumericLoop(t_ForStmt* for_stmt);
-    t_Expected<int, t_ErrorInfo> ExecuteSimpleNumericLoop
+    Expected<int, t_ErrorInfo> ExecuteSimpleNumericLoop
     (
         t_ForStmt* for_stmt
     ); 
     
     // Ultra-fast native loop optimization for simple accumulation patterns
     bool IsSimpleAccumulationLoop(t_ForStmt* for_stmt);
-    t_Expected<int, t_ErrorInfo> ExecuteAccumulationLoop
+    Expected<int, t_ErrorInfo> ExecuteAccumulationLoop
     (
         t_ForStmt* for_stmt
     );
     
     // Ultra-fast native optimization for nested loops with arithmetic expressions
     bool IsNestedArithmeticLoop(t_ForStmt* for_stmt);
-    t_Expected<int, t_ErrorInfo> ExecuteNestedArithmeticLoop
+    Expected<int, t_ErrorInfo> ExecuteNestedArithmeticLoop
     (
         t_ForStmt* for_stmt
     ); 
 
     // Optimized arithmetic operations
-    t_Expected<bool, t_ErrorInfo> PerformComparison
+    Expected<bool, t_ErrorInfo> PerformComparison
     (
         const t_TypedValue& left, 
         const e_TokenType op, 
@@ -152,15 +152,15 @@ private:
 
     void WriteOutput(const std::string& text);
     void FlushOutput();
-    t_Expected<int, t_ErrorInfo> DeclareVariable
+    Expected<int, t_ErrorInfo> DeclareVariable
     (
         const std::string& name, 
         int line
     ); 
 
 public:
-    t_Interpreter();
-    t_InterpretationResult Interpret
+    Interpreter();
+    InterpretationResult Interpret
     (
         const std::vector<PoolPtr<t_Stmt>> &statements
     );

@@ -60,8 +60,8 @@ int main(int argc, char* argv[])
     }
 
     // Lexical analysis
-    t_Lexer lexer(source);
-    t_ParsingResult tokens_result = lexer.ScanTokens();
+    Lexer lexer(source);
+    ParsingResult tokens_result = lexer.ScanTokens();
     if (!tokens_result.HasValue())
     {
         ReportError(tokens_result.Error());
@@ -70,11 +70,11 @@ int main(int argc, char* argv[])
     std::vector<t_Token> tokens = tokens_result.Value();
 
     // Create AST context for memory pool management
-    t_ASTContext ast_context;
+    ASTContext ast_context;
 
     // Parsing with memory pool optimization
-    t_Parser parser(tokens, ast_context);
-    t_Expected<std::vector<PoolPtr<t_Stmt>>, t_ErrorInfo> statements_result = 
+    Parser parser(tokens, ast_context);
+    Expected<std::vector<PoolPtr<t_Stmt>>, t_ErrorInfo> statements_result = 
     parser.Parse();
     if (!statements_result.HasValue())
     {
@@ -85,8 +85,8 @@ int main(int argc, char* argv[])
     std::move(statements_result.Value());
 
     // Interpretation
-    t_Interpreter interpreter;
-    t_InterpretationResult interpret_result = 
+    Interpreter interpreter;
+    InterpretationResult interpret_result = 
     interpreter.Interpret(statements);
     if (!interpret_result.HasValue())
     {

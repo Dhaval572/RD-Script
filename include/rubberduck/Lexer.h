@@ -5,7 +5,7 @@
 #include <rubberduck/Token.h>
 #include <rubberduck/ErrorHandling.h>
 
-class t_Lexer
+class Lexer
 {
 private:
     std::string m_Source;
@@ -15,7 +15,7 @@ private:
     int m_Line;
 
     bool IsAtEnd();
-    t_ParsingResult ScanToken();
+    ParsingResult ScanToken();
     char Advance();
     void AddToken(e_TokenType type);
     void AddToken(e_TokenType type, const std::string &literal);
@@ -24,8 +24,8 @@ private:
     char PeekNext();
 
     // Helpers for literals
-    t_Expected<std::string, t_ErrorInfo> String();
-    t_Expected<std::string, t_ErrorInfo> FormatString(); 
+    Expected<std::string, t_ErrorInfo> String();
+    Expected<std::string, t_ErrorInfo> FormatString(); 
     void Number();
     void Identifier();
 
@@ -33,6 +33,6 @@ private:
     e_TokenType IdentifierType();
 
 public:
-    t_Lexer(const std::string &source);
-    t_ParsingResult ScanTokens();
+    Lexer(const std::string &source);
+    ParsingResult ScanTokens();
 };

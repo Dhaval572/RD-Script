@@ -2,25 +2,28 @@
 
 ## Naming Conventions
 
-1. **Struct/Class Names**: Use `t_` prefix followed by PascalCase
-   - Example: `t_Token`, `t_Lexer`, `t_Parser`
+1. **Struct Names**: Use `t_` prefix followed by PascalCase
+   - Example: `t_Token`
 
-2. **Variable Names**: Use snake_case
+2. **Class Names**: Use PascalCase
+   - Example: `Parser`, `Interpreter`
+
+3. **Variable Names**: Use snake_case
    - Example: `token_type`, `current_line`, `file_content`
 
-3. **Function Names**: Use PascalCase
+4. **Function Names**: Use PascalCase
    - Example: `ScanTokens`, `ParseExpression`, `EvaluateNode`
 
-4. **Private Member Variables**: Use `m_` prefix followed by PascalCase
+5. **Private Member Variables**: Use `m_` prefix followed by PascalCase
    - Example: `m_CurrentLine`, `m_FileContent`
 
-4. **Constants**: Use UPPER_SNAKE_CASE
+6. **Constants**: Use UPPER_SNAKE_CASE
    - Example: `MAX_TOKENS`, `DEFAULT_BUFFER_SIZE`
 
-5. **Enum Names**: Use PascalCase
-   - Example: `TokenType`, `ParserState`
+7. **Enum Names**: Use PascalCase
+   - Example: `e_TokenType`, `e_ParserState`
 
-6. **Enum Values**: Use UPPER_SNAKE_CASE
+8. **Enum Values**: Use UPPER_SNAKE_CASE
    - Example: `TOKEN_EOF`, `PARSER_ERROR`
 
 ## Formatting Style
@@ -49,7 +52,7 @@ void func(int a, int b, int c, int d, int e, int f, int g, int h, int i, int j, 
 ```
 
 ```cpp
-Void func
+void func
 (
     int a,
     int b, 
@@ -99,6 +102,7 @@ Void func
 ## Memory Management
 - **Smart pointers only**: Use `std::unique_ptr` and `std::shared_ptr`
 - No raw `new`/`delete` operations
+- And here you can use `PoolPtr<>` which is custom memory pool for AST. ( Automatically manages memory )
 
 ## Concurrency
 - **No multithreading**: Avoid `std::thread`, mutexes, atomics

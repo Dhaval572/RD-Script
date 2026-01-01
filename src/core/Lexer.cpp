@@ -28,15 +28,15 @@ static const std::unordered_map<std::string, e_TokenType> keywords =
     {"typeof", e_TokenType::TYPEOF} 
 };
 
-t_Lexer::t_Lexer(const std::string &source)
+Lexer::Lexer(const std::string &source)
     : m_Source(source), m_Start(0), m_Current(0), m_Line(1) {}
 
-t_ParsingResult t_Lexer::ScanTokens()
+ParsingResult Lexer::ScanTokens()
 {
     while (!IsAtEnd())
     {
         m_Start = m_Current;
-        t_ParsingResult result = ScanToken();
+        ParsingResult result = ScanToken();
         if (!result.HasValue())
         {
             return result; 
@@ -44,15 +44,15 @@ t_ParsingResult t_Lexer::ScanTokens()
     }
 
     m_Tokens.emplace_back(e_TokenType::EOF_TOKEN, "", "", m_Line);
-    return t_ParsingResult(m_Tokens);
+    return ParsingResult(m_Tokens);
 }
 
-bool t_Lexer::IsAtEnd()
+bool Lexer::IsAtEnd()
 {
     return m_Current >= static_cast<int>(m_Source.length());
 }
 
-t_ParsingResult t_Lexer::ScanToken()
+ParsingResult Lexer::ScanToken()
 {
     char c = Advance();
     switch (c)
@@ -125,7 +125,7 @@ t_ParsingResult t_Lexer::ScanToken()
         } 
         else 
         {
-            return t_ParsingResult
+            return ParsingResult
             (
                 t_ErrorInfo
                 (
@@ -144,7 +144,7 @@ t_ParsingResult t_Lexer::ScanToken()
         }
         else
         {
-            return t_ParsingResult
+            return ParsingResult
             (
                 t_ErrorInfo
                 (
@@ -183,10 +183,10 @@ t_ParsingResult t_Lexer::ScanToken()
         break;
     case '"':
         {
-            t_Expected<std::string, t_ErrorInfo> result = String();
+            Expected<std::string, t_ErrorInfo> result = String();
             if (!result.HasValue())
             {
-                return t_ParsingResult(result.Error());
+                return ParsingResult(result.Error());
             }
             AddToken(e_TokenType::STRING, result.Value());
         }
@@ -195,16 +195,16 @@ t_ParsingResult t_Lexer::ScanToken()
         if (Peek() == '"') 
         {
             Advance(); 
-            t_Expected<std::string, t_ErrorInfo> result = FormatString();
+            Expected<std::string, t_ErrorInfo> result = FormatString();
             if (!result.HasValue())
             {
-                return t_ParsingResult(result.Error());
+                return ParsingResult(result.Error());
             }
             AddToken(e_TokenType::FORMAT_STRING, result.Value());
         }
         else
         {
-            return t_ParsingResult
+            return ParsingResult
             (
                 t_ErrorInfo
                 (
@@ -227,7 +227,7 @@ t_ParsingResult t_Lexer::ScanToken()
         }
         else
         {
-            return t_ParsingResult
+            return ParsingResult
             (
                 t_ErrorInfo
                 (
@@ -241,10 +241,10 @@ t_ParsingResult t_Lexer::ScanToken()
         break;
     }
     
-    return t_ParsingResult(m_Tokens);
+    return ParsingResult(m_Tokens);
 }
 
-bool t_Lexer::Match(char expected)
+bool Lexer::Match(char expected)
 {
     if (IsAtEnd()) return false;
     if (m_Source[m_Current] != expected) return false;
@@ -253,13 +253,13 @@ bool t_Lexer::Match(char expected)
     return true;
 }
 
-char t_Lexer::Peek()
+char Lexer::Peek()
 {
     if (IsAtEnd()) return '\0';
     return m_Source[m_Current];
 }
 
-char t_Lexer::PeekNext()
+char Lexer::PeekNext()
 {
     return 
     (
@@ -267,7 +267,7 @@ char t_Lexer::PeekNext()
     ) ? m_Source[m_Current + 1] : '\0';
 }
 
-t_Expected<std::string, t_ErrorInfo> t_Lexer::String()
+Expected<std::string, t_ErrorInfo> Lexer::String()
 {
     std::string value;
     while (Peek() != '"' && !IsAtEnd())
@@ -312,7 +312,7 @@ t_Expected<std::string, t_ErrorInfo> t_Lexer::String()
 
     if (IsAtEnd())
     {
-        return t_Expected<std::string, t_ErrorInfo>
+        return Expected<std::string, t_ErrorInfo>
         (
             t_ErrorInfo
             (
@@ -328,10 +328,10 @@ t_Expected<std::string, t_ErrorInfo> t_Lexer::String()
     Advance();
 
     // Return the processed string value (without surrounding quotes)
-    return t_Expected<std::string, t_ErrorInfo>(value);
+    return Expected<std::string, t_ErrorInfo>(value);
 }
 
-t_Expected<std::string, t_ErrorInfo> t_Lexer::FormatString()
+Expected<std::string, t_ErrorInfo> Lexer::FormatString()
 {
     std::string value;
     while (Peek() != '"' && !IsAtEnd())
@@ -376,7 +376,7 @@ t_Expected<std::string, t_ErrorInfo> t_Lexer::FormatString()
 
     if (IsAtEnd())
     {
-        return t_Expected<std::string, t_ErrorInfo>
+        return Expected<std::string, t_ErrorInfo>
         (
             t_ErrorInfo
             (
@@ -391,10 +391,10 @@ t_Expected<std::string, t_ErrorInfo> t_Lexer::FormatString()
     Advance();
 
     // Return the processed string value (without surrounding quotes)
-    return t_Expected<std::string, t_ErrorInfo>(value);
+    return Expected<std::string, t_ErrorInfo>(value);
 }
 
-void t_Lexer::Number()
+void Lexer::Number()
 {
     while (std::isdigit(Peek())) Advance();
 
@@ -408,7 +408,7 @@ void t_Lexer::Number()
     AddToken(e_TokenType::NUMBER, m_Source.substr(m_Start, m_Current - m_Start));
 }
 
-void t_Lexer::Identifier()
+void Lexer::Identifier()
 {
     while (std::isalnum(Peek()) || Peek() == '_') Advance();
 
@@ -417,7 +417,7 @@ void t_Lexer::Identifier()
     AddToken(type, text);
 }
 
-e_TokenType t_Lexer::IdentifierType()
+e_TokenType Lexer::IdentifierType()
 {
     std::string text = m_Source.substr(m_Start, m_Current - m_Start);
     
@@ -425,17 +425,17 @@ e_TokenType t_Lexer::IdentifierType()
     return (it != keywords.end()) ? it->second : e_TokenType::IDENTIFIER;
 }
 
-char t_Lexer::Advance()
+char Lexer::Advance()
 {
     return m_Source[m_Current++];
 }
 
-void t_Lexer::AddToken(e_TokenType type)
+void Lexer::AddToken(e_TokenType type)
 {
     AddToken(type, "");
 }
 
-void t_Lexer::AddToken(e_TokenType type, const std::string &literal)
+void Lexer::AddToken(e_TokenType type, const std::string &literal)
 {
     std::string text = m_Source.substr(m_Start, m_Current - m_Start);
     m_Tokens.emplace_back(type, text, literal, m_Line);

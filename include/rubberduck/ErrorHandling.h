@@ -43,17 +43,17 @@ struct t_ErrorInfo
 
 // Expected type for error handling - similar to C++23's std::expected
 template<typename T, typename E>
-class t_Expected
+class Expected
 {
 private:
     std::variant<T, E> m_Value;
 
 public:
     // Constructors
-    t_Expected(const T& value) : m_Value(value) {}
-    t_Expected(T&& value) : m_Value(std::move(value)) {}
-    t_Expected(const E& error) : m_Value(error) {}
-    t_Expected(E&& error) : m_Value(std::move(error)) {}
+    Expected(const T& value) : m_Value(value) {}
+    Expected(T&& value) : m_Value(std::move(value)) {}
+    Expected(const E& error) : m_Value(error) {}
+    Expected(E&& error) : m_Value(std::move(error)) {}
 
     // Check if the result is a value or an error
     bool HasValue() const { return std::holds_alternative<T>(m_Value); }
@@ -74,8 +74,8 @@ public:
 };
 
 // Convenience type aliases
-using t_ParsingResult = t_Expected<std::vector<t_Token>, t_ErrorInfo>;
-using t_InterpretationResult = t_Expected<int, t_ErrorInfo>; 
+using ParsingResult = Expected<std::vector<t_Token>, t_ErrorInfo>;
+using InterpretationResult = Expected<int, t_ErrorInfo>; 
 
 // Error reporting function
 void ReportError(const t_ErrorInfo& error);

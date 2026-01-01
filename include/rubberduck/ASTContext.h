@@ -5,21 +5,21 @@
 #include <memory>
 
 // RAII wrapper for managing the lifecycle of memory pools
-class t_ASTContext
+class ASTContext
 {
 private:
     std::unique_ptr<MemoryPool> m_StmtPool;
     std::unique_ptr<MemoryPool> m_ExprPool;
 
 public:
-    t_ASTContext();
-    ~t_ASTContext();
+    ASTContext();
+    ~ASTContext();
 
     // Non-copyable, but movable
-    t_ASTContext(const t_ASTContext&) = delete;
-    t_ASTContext& operator=(const t_ASTContext&) = delete;
-    t_ASTContext(t_ASTContext&&) = default;
-    t_ASTContext& operator=(t_ASTContext&&) = default;
+    ASTContext(const ASTContext&) = delete;
+    ASTContext& operator=(const ASTContext&) = delete;
+    ASTContext(ASTContext&&) = default;
+    ASTContext& operator=(ASTContext&&) = default;
     void Reset();
 
     template<typename T, typename... Args>

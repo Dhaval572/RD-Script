@@ -1,17 +1,17 @@
 #include <rubberduck/ASTContext.h>
 
-t_ASTContext::t_ASTContext()
-    : m_StmtPool(std::make_unique<MemoryPool>(sizeof(t_StmtVariant)))
-    , m_ExprPool(std::make_unique<MemoryPool>(sizeof(t_ExprVariant)))
+ASTContext::ASTContext()
+    : m_StmtPool(std::make_unique<MemoryPool>(sizeof(StmtVariant)))
+    , m_ExprPool(std::make_unique<MemoryPool>(sizeof(ExprVariant)))
 {
 }
 
-t_ASTContext::~t_ASTContext()
+ASTContext::~ASTContext()
 {
     Reset();
 }
 
-void t_ASTContext::Reset()
+void ASTContext::Reset()
 {
     if (m_StmtPool)
     {

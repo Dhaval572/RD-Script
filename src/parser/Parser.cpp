@@ -56,7 +56,7 @@ namespace
         }
     }
 
-    t_LiteralExpr *MakeNumberLiteral(double value, t_ASTContext& context)
+    t_LiteralExpr *MakeNumberLiteral(double value, ASTContext& context)
     {
         std::string text = std::to_string(value);
         text.erase(text.find_last_not_of('0') + 1, std::string::npos);
@@ -70,23 +70,23 @@ namespace
     }
 }
 
-t_Parser::t_Parser
+Parser::Parser
 (
     const std::vector<t_Token> &tokens, 
-    t_ASTContext& context
+    ASTContext& context
 )
     : m_Tokens(tokens), m_Current(0), m_Context(context) {}
 
-t_Expected<std::vector<PoolPtr<t_Stmt>>, t_ErrorInfo> t_Parser::Parse()
+Expected<std::vector<PoolPtr<t_Stmt>>, t_ErrorInfo> Parser::Parse()
 {
     std::vector<PoolPtr<t_Stmt>> statements;
     statements.reserve(64);
     while (!IsAtEnd())
     {
-        t_Expected<t_Stmt*, t_ErrorInfo> result = Statement();
+        Expected<t_Stmt*, t_ErrorInfo> result = Statement();
         if (!result.HasValue())
         {
-            return t_Expected<std::vector<PoolPtr<t_Stmt>>, t_ErrorInfo>
+            return Expected<std::vector<PoolPtr<t_Stmt>>, t_ErrorInfo>
             (
                 result.Error()
             );
@@ -94,31 +94,31 @@ t_Expected<std::vector<PoolPtr<t_Stmt>>, t_ErrorInfo> t_Parser::Parse()
         statements.push_back(PoolPtr<t_Stmt>(result.Value()));
     }
 
-    return t_Expected<std::vector<PoolPtr<t_Stmt>>, t_ErrorInfo>
+    return Expected<std::vector<PoolPtr<t_Stmt>>, t_ErrorInfo>
     (
         std::move(statements)
     );
 }
 
 
-bool t_Parser::IsAtEnd()
+bool Parser::IsAtEnd()
 {
     return Peek().type == e_TokenType::EOF_TOKEN;
 }
 
-t_Token t_Parser::Advance()
+t_Token Parser::Advance()
 {
     if (!IsAtEnd()) m_Current++;
     return Previous();
 }
 
-bool t_Parser::Check(e_TokenType type)
+bool Parser::Check(e_TokenType type)
 {
     if (IsAtEnd()) return false;
     return Peek().type == type;
 }
 
-t_Token t_Parser::Peek()
+t_Token Parser::Peek()
 {
     if (static_cast<size_t>(m_Current)>= m_Tokens.size())
     {
@@ -128,7 +128,7 @@ t_Token t_Parser::Peek()
     return m_Tokens[m_Current];
 }
 
-t_Token t_Parser::Previous()
+t_Token Parser::Previous()
 {
     if (m_Current <= 0)
     {
@@ -138,7 +138,7 @@ t_Token t_Parser::Previous()
     return m_Tokens[m_Current - 1];
 }
 
-bool t_Parser::Match(std::initializer_list<e_TokenType> types)
+bool Parser::Match(std::initializer_list<e_TokenType> types)
 {
     for (e_TokenType type : types)
     {
@@ -152,23 +152,23 @@ bool t_Parser::Match(std::initializer_list<e_TokenType> types)
     return false;
 }
 
-t_Expected<t_Token, t_ErrorInfo> t_Parser::Consume
+Expected<t_Token, t_ErrorInfo> Parser::Consume
 (
     e_TokenType type, const std::string &message
 )
 {
     if (Check(type))
     {
-        return t_Expected<t_Token, t_ErrorInfo>(Advance());
+        return Expected<t_Token, t_ErrorInfo>(Advance());
     }
 
-    return t_Expected<t_Token, t_ErrorInfo>
+    return Expected<t_Token, t_ErrorInfo>
     (
         t_ErrorInfo(e_ErrorType::PARSING_ERROR, message, Peek().line, 0)
     );
 }
 
-t_ErrorInfo t_Parser::Error(t_Token token, const std::string &message)
+t_ErrorInfo Parser::Error(t_Token token, const std::string &message)
 {
     std::cerr << "Error: " 
               << message 
@@ -179,7 +179,7 @@ t_ErrorInfo t_Parser::Error(t_Token token, const std::string &message)
     return t_ErrorInfo(e_ErrorType::PARSING_ERROR, message, token.line, 0);
 }
 
-t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::Statement()
+Expected<t_Stmt*, t_ErrorInfo> Parser::Statement()
 {
     if (Match({e_TokenType::LEFT_BRACE}))
     {
@@ -244,33 +244,33 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::Statement()
     return ExpressionStatement();
 }
 
-t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::BlockStatement()
+Expected<t_Stmt*, t_ErrorInfo> Parser::BlockStatement()
 {
     std::vector<PoolPtr<t_Stmt>> statements;
     statements.reserve(64);
 
     while (!Check(e_TokenType::RIGHT_BRACE) && !IsAtEnd())
     {
-        t_Expected<t_Stmt*, t_ErrorInfo> result = Statement();
+        Expected<t_Stmt*, t_ErrorInfo> result = Statement();
         if (!result.HasValue())
         {
-            return t_Expected<t_Stmt*, t_ErrorInfo>(result.Error());
+            return Expected<t_Stmt*, t_ErrorInfo>(result.Error());
         }
         statements.push_back(PoolPtr<t_Stmt>(result.Value()));
     }
 
-    t_Expected<t_Token, t_ErrorInfo> consume_result = 
+    Expected<t_Token, t_ErrorInfo> consume_result = 
     Consume(e_TokenType::RIGHT_BRACE, "Expect '}' after block.");
     if (!consume_result.HasValue())
     {
-        return t_Expected<t_Stmt*, t_ErrorInfo>(consume_result.Error());
+        return Expected<t_Stmt*, t_ErrorInfo>(consume_result.Error());
     }
     
     t_BlockStmt* stmt = 
     m_Context.CreateStmt<t_BlockStmt>(std::move(statements));
     if (!stmt)
     {
-        return t_Expected<t_Stmt*, t_ErrorInfo>
+        return Expected<t_Stmt*, t_ErrorInfo>
         (
             t_ErrorInfo
             (
@@ -281,23 +281,23 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::BlockStatement()
             )
         );
     }
-    return t_Expected<t_Stmt*, t_ErrorInfo>(stmt);
+    return Expected<t_Stmt*, t_ErrorInfo>(stmt);
 } 
 
-t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::BreakStatement()
+Expected<t_Stmt*, t_ErrorInfo> Parser::BreakStatement()
 {
     t_Token keyword = Previous();
-    t_Expected<t_Token, t_ErrorInfo> result = 
+    Expected<t_Token, t_ErrorInfo> result = 
     Consume(e_TokenType::SEMICOLON, "Expect ';' after 'break'.");
     if (!result.HasValue())
     {
-        return t_Expected<t_Stmt*, t_ErrorInfo>(result.Error());
+        return Expected<t_Stmt*, t_ErrorInfo>(result.Error());
     }
     
     t_BreakStmt* stmt = m_Context.CreateStmt<t_BreakStmt>(keyword);
     if (!stmt)
     {
-        return t_Expected<t_Stmt*, t_ErrorInfo>
+        return Expected<t_Stmt*, t_ErrorInfo>
         (
             t_ErrorInfo
             (
@@ -308,23 +308,23 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::BreakStatement()
             )
         );
     }
-    return t_Expected<t_Stmt*, t_ErrorInfo>(stmt);
+    return Expected<t_Stmt*, t_ErrorInfo>(stmt);
 }
 
-t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ContinueStatement()
+Expected<t_Stmt*, t_ErrorInfo> Parser::ContinueStatement()
 {
     t_Token keyword = Previous();
-    t_Expected<t_Token, t_ErrorInfo> result = 
+    Expected<t_Token, t_ErrorInfo> result = 
     Consume(e_TokenType::SEMICOLON, "Expect ';' after 'continue'.");
     if (!result.HasValue())
     {
-        return t_Expected<t_Stmt*, t_ErrorInfo>(result.Error());
+        return Expected<t_Stmt*, t_ErrorInfo>(result.Error());
     }
     
     t_ContinueStmt* stmt = m_Context.CreateStmt<t_ContinueStmt>(keyword);
     if (!stmt)
     {
-        return t_Expected<t_Stmt*, t_ErrorInfo>
+        return Expected<t_Stmt*, t_ErrorInfo>
         (
             t_ErrorInfo
             (
@@ -335,37 +335,37 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ContinueStatement()
             )
         );
     }
-    return t_Expected<t_Stmt*, t_ErrorInfo>(stmt);
+    return Expected<t_Stmt*, t_ErrorInfo>(stmt);
 }
 
-t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::IfStatement()
+Expected<t_Stmt*, t_ErrorInfo> Parser::IfStatement()
 {
-    t_Expected<t_Token, t_ErrorInfo> paren_result = 
+    Expected<t_Token, t_ErrorInfo> paren_result = 
     Consume(e_TokenType::LEFT_PAREN, "Expect '(' after 'if'.");
     if (!paren_result.HasValue())
     {
-        return t_Expected<t_Stmt*, t_ErrorInfo>(paren_result.Error());
+        return Expected<t_Stmt*, t_ErrorInfo>(paren_result.Error());
     }
     
-    t_Expected<t_Expr*, t_ErrorInfo> condition_result = Expression();
+    Expected<t_Expr*, t_ErrorInfo> condition_result = Expression();
     if (!condition_result.HasValue())
     {
-        return t_Expected<t_Stmt*, t_ErrorInfo>(condition_result.Error());
+        return Expected<t_Stmt*, t_ErrorInfo>(condition_result.Error());
     }
     t_Expr *condition = condition_result.Value();
     
-    t_Expected<t_Token, t_ErrorInfo> close_paren_result = 
+    Expected<t_Token, t_ErrorInfo> close_paren_result = 
     Consume(e_TokenType::RIGHT_PAREN, "Expect ')' after if condition.");
     if (!close_paren_result.HasValue())
     {
-        return t_Expected<t_Stmt*, t_ErrorInfo>(close_paren_result.Error());
+        return Expected<t_Stmt*, t_ErrorInfo>(close_paren_result.Error());
     }
 
     // Parse the then branch
-    t_Expected<t_Stmt*, t_ErrorInfo> then_result = Statement();
+    Expected<t_Stmt*, t_ErrorInfo> then_result = Statement();
     if (!then_result.HasValue())
     {
-        return t_Expected<t_Stmt*, t_ErrorInfo>(then_result.Error());
+        return Expected<t_Stmt*, t_ErrorInfo>(then_result.Error());
     }
     t_Stmt *then_branch = then_result.Value();
 
@@ -373,10 +373,10 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::IfStatement()
     PoolPtr<t_Stmt> else_branch = nullptr;
     if (Match({e_TokenType::ELSE}))
     {
-        t_Expected<t_Stmt*, t_ErrorInfo> else_result = Statement();
+        Expected<t_Stmt*, t_ErrorInfo> else_result = Statement();
         if (!else_result.HasValue())
         {
-            return t_Expected<t_Stmt*, t_ErrorInfo>(else_result.Error());
+            return Expected<t_Stmt*, t_ErrorInfo>(else_result.Error());
         }
         else_branch = PoolPtr<t_Stmt>(else_result.Value());
     }
@@ -389,7 +389,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::IfStatement()
     );
     if (!stmt)
     {
-        return t_Expected<t_Stmt*, t_ErrorInfo>
+        return Expected<t_Stmt*, t_ErrorInfo>
         (
             t_ErrorInfo
             (
@@ -400,16 +400,16 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::IfStatement()
             )
         );
     }
-    return t_Expected<t_Stmt*, t_ErrorInfo>(stmt);
+    return Expected<t_Stmt*, t_ErrorInfo>(stmt);
 }
 
-t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
+Expected<t_Stmt*, t_ErrorInfo> Parser::ForStatement()
 {
-    t_Expected<t_Token, t_ErrorInfo> paren_result = 
+    Expected<t_Token, t_ErrorInfo> paren_result = 
     Consume(e_TokenType::LEFT_PAREN, "Expect '(' after 'for'.");
     if (!paren_result.HasValue())
     {
-        return t_Expected<t_Stmt*, t_ErrorInfo>(paren_result.Error());
+        return Expected<t_Stmt*, t_ErrorInfo>(paren_result.Error());
     }
 
     // Parse initializer (can be variable declaration, expression statement, or empty)
@@ -421,10 +421,10 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
     else if (Match({e_TokenType::AUTO}))
     {
         // Variable declaration
-        t_Expected<t_Stmt*, t_ErrorInfo> var_result = VarDeclaration();
+        Expected<t_Stmt*, t_ErrorInfo> var_result = VarDeclaration();
         if (!var_result.HasValue())
         {
-            return t_Expected<t_Stmt*, t_ErrorInfo>(var_result.Error());
+            return Expected<t_Stmt*, t_ErrorInfo>(var_result.Error());
         }
         initializer = PoolPtr<t_Stmt>(var_result.Value());
     }
@@ -432,10 +432,10 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
     {
         // Allow expression statements as initializers (like "i = 0;")
         // First, parse the expression
-        t_Expected<t_Expr*, t_ErrorInfo> expr_result = Expression();
+        Expected<t_Expr*, t_ErrorInfo> expr_result = Expression();
         if (!expr_result.HasValue())
         {
-            return t_Expected<t_Stmt*, t_ErrorInfo>(expr_result.Error());
+            return Expected<t_Stmt*, t_ErrorInfo>(expr_result.Error());
         }
         
         // Create an expression statement
@@ -446,7 +446,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
         );
         if (!expr_stmt)
         {
-            return t_Expected<t_Stmt*, t_ErrorInfo>
+            return Expected<t_Stmt*, t_ErrorInfo>
             (
                 t_ErrorInfo
                 (
@@ -460,11 +460,15 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
         initializer = PoolPtr<t_Stmt>(expr_stmt);
         
         // Consume the semicolon after the expression
-        t_Expected<t_Token, t_ErrorInfo> semicolon_result = 
-        Consume(e_TokenType::SEMICOLON, "Expect ';' after for-loop initializer expression.");
+        Expected<t_Token, t_ErrorInfo> semicolon_result = 
+        Consume
+        (
+            e_TokenType::SEMICOLON, 
+            "Expect ';' after for-loop initializer expression."
+        );
         if (!semicolon_result.HasValue())
         {
-            return t_Expected<t_Stmt*, t_ErrorInfo>(semicolon_result.Error());
+            return Expected<t_Stmt*, t_ErrorInfo>(semicolon_result.Error());
         }
     }
 
@@ -472,10 +476,10 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
     PoolPtr<t_Expr> condition;
     if (!Check(e_TokenType::SEMICOLON))
     {
-        t_Expected<t_Expr*, t_ErrorInfo> condition_result = Expression();
+        Expected<t_Expr*, t_ErrorInfo> condition_result = Expression();
         if (!condition_result.HasValue())
         {
-            return t_Expected<t_Stmt*, t_ErrorInfo>
+            return Expected<t_Stmt*, t_ErrorInfo>
             (
                 condition_result.Error()
             );
@@ -483,21 +487,21 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
         condition = PoolPtr<t_Expr>(condition_result.Value());
     }
     
-    t_Expected<t_Token, t_ErrorInfo> semicolon_result = 
+    Expected<t_Token, t_ErrorInfo> semicolon_result = 
     Consume(e_TokenType::SEMICOLON, "Expect ';' after loop condition.");
     if (!semicolon_result.HasValue())
     {
-        return t_Expected<t_Stmt*, t_ErrorInfo>(semicolon_result.Error());
+        return Expected<t_Stmt*, t_ErrorInfo>(semicolon_result.Error());
     }
 
     // Parse increment
     PoolPtr<t_Expr> increment;
     if (!Check(e_TokenType::RIGHT_PAREN))
     {
-        t_Expected<t_Expr*, t_ErrorInfo> increment_result = Expression();
+        Expected<t_Expr*, t_ErrorInfo> increment_result = Expression();
         if (!increment_result.HasValue())
         {
-            return t_Expected<t_Stmt*, t_ErrorInfo>
+            return Expected<t_Stmt*, t_ErrorInfo>
             (
                 increment_result.Error()
             );
@@ -505,18 +509,18 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
         increment = PoolPtr<t_Expr>(increment_result.Value());
     }
     
-    t_Expected<t_Token, t_ErrorInfo> close_paren_result = 
+    Expected<t_Token, t_ErrorInfo> close_paren_result = 
     Consume(e_TokenType::RIGHT_PAREN, "Expect ')' after for clauses.");
     if (!close_paren_result.HasValue())
     {
-        return t_Expected<t_Stmt*, t_ErrorInfo>(close_paren_result.Error());
+        return Expected<t_Stmt*, t_ErrorInfo>(close_paren_result.Error());
     }
 
     // Parse body
-    t_Expected<t_Stmt*, t_ErrorInfo> body_result = Statement();
+    Expected<t_Stmt*, t_ErrorInfo> body_result = Statement();
     if (!body_result.HasValue())
     {
-        return t_Expected<t_Stmt*, t_ErrorInfo>(body_result.Error());
+        return Expected<t_Stmt*, t_ErrorInfo>(body_result.Error());
     }
     t_Stmt *body = body_result.Value();
 
@@ -529,7 +533,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
     );
     if (!stmt)
     {
-        return t_Expected<t_Stmt*, t_ErrorInfo>
+        return Expected<t_Stmt*, t_ErrorInfo>
         (
             t_ErrorInfo
             (
@@ -550,7 +554,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
     {
         if (!init_var->initializer)
         {
-            return t_Expected<t_Stmt*, t_ErrorInfo>
+            return Expected<t_Stmt*, t_ErrorInfo>
             (
                 Error
                 (
@@ -570,7 +574,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
             !IsIntegerLiteralValue(init_literal->value)
         )
         {
-            return t_Expected<t_Stmt*, t_ErrorInfo>
+            return Expected<t_Stmt*, t_ErrorInfo>
             (
                 Error
                 (
@@ -582,7 +586,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
 
         if (!stmt->condition)
         {
-            return t_Expected<t_Stmt*, t_ErrorInfo>
+            return Expected<t_Stmt*, t_ErrorInfo>
             (
                 Error(Previous(), "For-loop condition is required.")
             );
@@ -594,7 +598,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
         );
         if (!condi)
         {
-            return t_Expected<t_Stmt*, t_ErrorInfo>
+            return Expected<t_Stmt*, t_ErrorInfo>
             (
                 Error(Previous(), "For-loop condition must be a comparison.")
             );
@@ -608,7 +612,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
             condi->op.type != e_TokenType::GREATER_EQUAL
         )
         {
-            return t_Expected<t_Stmt*, t_ErrorInfo>
+            return Expected<t_Stmt*, t_ErrorInfo>
             (
                 Error
                 (
@@ -632,7 +636,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
             !IsIntegerLiteralValue(cond_lit->value)
         )
         {
-            return t_Expected<t_Stmt*, t_ErrorInfo>
+            return Expected<t_Stmt*, t_ErrorInfo>
             (
                 Error
                 (
@@ -643,7 +647,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
 
         if (!stmt->increment)
         {
-            return t_Expected<t_Stmt*, t_ErrorInfo>
+            return Expected<t_Stmt*, t_ErrorInfo>
             (
                 Error(Previous(), "For-loop increment is required.")
             );
@@ -714,7 +718,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
 
         if (!valid_increment)
         {
-            return t_Expected<t_Stmt*, t_ErrorInfo>
+            return Expected<t_Stmt*, t_ErrorInfo>
             (
                 Error
                 (
@@ -731,7 +735,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
         // Basic checks for expression statement initializers
         if (!stmt->condition)
         {
-            return t_Expected<t_Stmt*, t_ErrorInfo>
+            return Expected<t_Stmt*, t_ErrorInfo>
             (
                 Error(Previous(), "For-loop condition is required.")
             );
@@ -739,7 +743,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
         
         if (!stmt->increment)
         {
-            return t_Expected<t_Stmt*, t_ErrorInfo>
+            return Expected<t_Stmt*, t_ErrorInfo>
             (
                 Error(Previous(), "For-loop increment is required.")
             );
@@ -749,7 +753,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
     else if (stmt->initializer)
     {
         // Some other type of statement - might want to handle this case
-        return t_Expected<t_Stmt*, t_ErrorInfo>
+        return Expected<t_Stmt*, t_ErrorInfo>
         (
             Error
             (
@@ -759,31 +763,31 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
         );
     }
 
-    return t_Expected<t_Stmt*, t_ErrorInfo>(stmt);
+    return Expected<t_Stmt*, t_ErrorInfo>(stmt);
 }
 
-t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::VarDeclaration()
+Expected<t_Stmt*, t_ErrorInfo> Parser::VarDeclaration()
 {
-    t_Expected<t_Token, t_ErrorInfo> name_result = 
+    Expected<t_Token, t_ErrorInfo> name_result = 
     Consume(e_TokenType::IDENTIFIER, "Expect variable name.");
     if (!name_result.HasValue())
     {
-        return t_Expected<t_Stmt*, t_ErrorInfo>(name_result.Error());
+        return Expected<t_Stmt*, t_ErrorInfo>(name_result.Error());
     }
     t_Token name = name_result.Value();
 
     PoolPtr<t_Expr> initializer = nullptr;
     if (Match({e_TokenType::EQUAL}))
     {
-        t_Expected<t_Expr*, t_ErrorInfo> init_result = Expression();
+        Expected<t_Expr*, t_ErrorInfo> init_result = Expression();
         if (!init_result.HasValue())
         {
-            return t_Expected<t_Stmt*, t_ErrorInfo>(init_result.Error());
+            return Expected<t_Stmt*, t_ErrorInfo>(init_result.Error());
         }
         initializer = PoolPtr<t_Expr>(init_result.Value());
     }
 
-    t_Expected<t_Token, t_ErrorInfo> semicolon_result = 
+    Expected<t_Token, t_ErrorInfo> semicolon_result = 
     Consume
     (
         e_TokenType::SEMICOLON, 
@@ -791,7 +795,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::VarDeclaration()
     );
     if (!semicolon_result.HasValue())
     {
-        return t_Expected<t_Stmt*, t_ErrorInfo>(semicolon_result.Error());
+        return Expected<t_Stmt*, t_ErrorInfo>(semicolon_result.Error());
     }
     
     t_VarStmt* stmt = m_Context.CreateStmt<t_VarStmt>
@@ -801,7 +805,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::VarDeclaration()
     );
     if (!stmt)
     {
-        return t_Expected<t_Stmt*, t_ErrorInfo>
+        return Expected<t_Stmt*, t_ErrorInfo>
         (
             t_ErrorInfo
             (
@@ -812,38 +816,38 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::VarDeclaration()
             )
         );
     }
-    return t_Expected<t_Stmt*, t_ErrorInfo>(stmt);
+    return Expected<t_Stmt*, t_ErrorInfo>(stmt);
 }
 
-t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::DisplayStatement()
+Expected<t_Stmt*, t_ErrorInfo> Parser::DisplayStatement()
 {
     std::vector<PoolPtr<t_Expr>> values;
     values.reserve(64);
 
     // Parse the first expression
-    t_Expected<t_Expr*, t_ErrorInfo> first_expr_result = Expression();
+    Expected<t_Expr*, t_ErrorInfo> first_expr_result = Expression();
     if (!first_expr_result.HasValue())
     {
-        return t_Expected<t_Stmt*, t_ErrorInfo>(first_expr_result.Error());
+        return Expected<t_Stmt*, t_ErrorInfo>(first_expr_result.Error());
     }
     values.emplace_back(PoolPtr<t_Expr>(first_expr_result.Value()));
 
     // Parse additional comma-separated expressions
     while (Match({e_TokenType::COMMA}))
     {
-        t_Expected<t_Expr*, t_ErrorInfo> expr_result = Expression();
+        Expected<t_Expr*, t_ErrorInfo> expr_result = Expression();
         if (!expr_result.HasValue())
         {
-            return t_Expected<t_Stmt*, t_ErrorInfo>(expr_result.Error());
+            return Expected<t_Stmt*, t_ErrorInfo>(expr_result.Error());
         }
         values.emplace_back(PoolPtr<t_Expr>(expr_result.Value()));
     }
 
-    t_Expected<t_Token, t_ErrorInfo> semicolon_result = 
+    Expected<t_Token, t_ErrorInfo> semicolon_result = 
     Consume(e_TokenType::SEMICOLON, "Expect ';' after value.");
     if (!semicolon_result.HasValue())
     {
-        return t_Expected<t_Stmt*, t_ErrorInfo>(semicolon_result.Error());
+        return Expected<t_Stmt*, t_ErrorInfo>(semicolon_result.Error());
     }
 
     // Use the new t_DisplayStmt instead of t_PrintStmt
@@ -851,7 +855,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::DisplayStatement()
     m_Context.CreateStmt<t_DisplayStmt>(std::move(values));
     if (!stmt)
     {
-        return t_Expected<t_Stmt*, t_ErrorInfo>
+        return Expected<t_Stmt*, t_ErrorInfo>
         (
             t_ErrorInfo
             (
@@ -862,15 +866,15 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::DisplayStatement()
             )
         );
     }
-    return t_Expected<t_Stmt*, t_ErrorInfo>(stmt);
+    return Expected<t_Stmt*, t_ErrorInfo>(stmt);
 }
 
-t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::GetinStatement()
+Expected<t_Stmt*, t_ErrorInfo> Parser::GetinStatement()
 {
     // Use Previous() instead of Advance()
     t_Token getin_identifier = Previous(); 
 
-    t_Expected<t_Token, t_ErrorInfo> open_paren_result =
+    Expected<t_Token, t_ErrorInfo> open_paren_result =
     Consume
     (
         e_TokenType::LEFT_PAREN,
@@ -878,13 +882,13 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::GetinStatement()
     );
     if (!open_paren_result.HasValue())
     {
-        return t_Expected<t_Stmt*, t_ErrorInfo>
+        return Expected<t_Stmt*, t_ErrorInfo>
         (
             open_paren_result.Error()
         );
     }
 
-    t_Expected<t_Token, t_ErrorInfo> name_result =
+    Expected<t_Token, t_ErrorInfo> name_result =
     Consume
     (
         e_TokenType::IDENTIFIER,
@@ -892,14 +896,14 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::GetinStatement()
     );
     if (!name_result.HasValue())
     {
-        return t_Expected<t_Stmt*, t_ErrorInfo>
+        return Expected<t_Stmt*, t_ErrorInfo>
         (
             name_result.Error()
         );
     }
     t_Token variable_token = name_result.Value();
 
-    t_Expected<t_Token, t_ErrorInfo> close_paren_result =
+    Expected<t_Token, t_ErrorInfo> close_paren_result =
     Consume
     (
         e_TokenType::RIGHT_PAREN,
@@ -907,13 +911,13 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::GetinStatement()
     );
     if (!close_paren_result.HasValue())
     {
-        return t_Expected<t_Stmt*, t_ErrorInfo>
+        return Expected<t_Stmt*, t_ErrorInfo>
         (
             close_paren_result.Error()
         );
     }
 
-    t_Expected<t_Token, t_ErrorInfo> semicolon_result =
+    Expected<t_Token, t_ErrorInfo> semicolon_result =
     Consume
     (
         e_TokenType::SEMICOLON,
@@ -921,7 +925,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::GetinStatement()
     );
     if (!semicolon_result.HasValue())
     {
-        return t_Expected<t_Stmt*, t_ErrorInfo>
+        return Expected<t_Stmt*, t_ErrorInfo>
         (
             semicolon_result.Error()
         );
@@ -934,7 +938,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::GetinStatement()
     );
     if (!stmt)
     {
-        return t_Expected<t_Stmt*, t_ErrorInfo>
+        return Expected<t_Stmt*, t_ErrorInfo>
         (
             t_ErrorInfo
             (
@@ -945,12 +949,12 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::GetinStatement()
             )
         );
     }
-    return t_Expected<t_Stmt*, t_ErrorInfo>(stmt);
+    return Expected<t_Stmt*, t_ErrorInfo>(stmt);
 }
 
-t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::FunDeclaration()
+Expected<t_Stmt*, t_ErrorInfo> Parser::FunDeclaration()
 {
-    t_Expected<t_Token, t_ErrorInfo> name_result =
+    Expected<t_Token, t_ErrorInfo> name_result =
     Consume
     (
         e_TokenType::IDENTIFIER,
@@ -958,14 +962,14 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::FunDeclaration()
     );
     if (!name_result.HasValue())
     {
-        return t_Expected<t_Stmt*, t_ErrorInfo>
+        return Expected<t_Stmt*, t_ErrorInfo>
         (
             name_result.Error()
         );
     }
     t_Token name_token = name_result.Value();
 
-    t_Expected<t_Token, t_ErrorInfo> open_paren_result =
+    Expected<t_Token, t_ErrorInfo> open_paren_result =
     Consume
     (
         e_TokenType::LEFT_PAREN,
@@ -973,7 +977,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::FunDeclaration()
     );
     if (!open_paren_result.HasValue())
     {
-        return t_Expected<t_Stmt*, t_ErrorInfo>
+        return Expected<t_Stmt*, t_ErrorInfo>
         (
             open_paren_result.Error()
         );
@@ -985,7 +989,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::FunDeclaration()
     {
         while (true)
         {
-            t_Expected<t_Token, t_ErrorInfo> auto_result =
+            Expected<t_Token, t_ErrorInfo> auto_result =
             Consume
             (
                 e_TokenType::AUTO,
@@ -993,13 +997,13 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::FunDeclaration()
             );
             if (!auto_result.HasValue())
             {
-                return t_Expected<t_Stmt*, t_ErrorInfo>
+                return Expected<t_Stmt*, t_ErrorInfo>
                 (
                     auto_result.Error()
                 );
             }
 
-            t_Expected<t_Token, t_ErrorInfo> param_name_result =
+            Expected<t_Token, t_ErrorInfo> param_name_result =
             Consume
             (
                 e_TokenType::IDENTIFIER,
@@ -1007,7 +1011,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::FunDeclaration()
             );
             if (!param_name_result.HasValue())
             {
-                return t_Expected<t_Stmt*, t_ErrorInfo>
+                return Expected<t_Stmt*, t_ErrorInfo>
                 (
                     param_name_result.Error()
                 );
@@ -1022,7 +1026,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::FunDeclaration()
         }
     }
 
-    t_Expected<t_Token, t_ErrorInfo> close_paren_result =
+    Expected<t_Token, t_ErrorInfo> close_paren_result =
     Consume
     (
         e_TokenType::RIGHT_PAREN,
@@ -1030,7 +1034,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::FunDeclaration()
     );
     if (!close_paren_result.HasValue())
     {
-        return t_Expected<t_Stmt*, t_ErrorInfo>
+        return Expected<t_Stmt*, t_ErrorInfo>
         (
             close_paren_result.Error()
         );
@@ -1041,10 +1045,10 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::FunDeclaration()
     // require a terminating semicolon.
     if (Check(e_TokenType::LEFT_BRACE))
     {
-        t_Expected<t_Stmt*, t_ErrorInfo> body_result = Statement();
+        Expected<t_Stmt*, t_ErrorInfo> body_result = Statement();
         if (!body_result.HasValue())
         {
-            return t_Expected<t_Stmt*, t_ErrorInfo>
+            return Expected<t_Stmt*, t_ErrorInfo>
             (
                 body_result.Error()
             );
@@ -1060,7 +1064,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::FunDeclaration()
         );
         if (!stmt)
         {
-            return t_Expected<t_Stmt*, t_ErrorInfo>
+            return Expected<t_Stmt*, t_ErrorInfo>
             (
                 t_ErrorInfo
                 (
@@ -1071,10 +1075,10 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::FunDeclaration()
                 )
             );
         }
-        return t_Expected<t_Stmt*, t_ErrorInfo>(stmt);
+        return Expected<t_Stmt*, t_ErrorInfo>(stmt);
     }
 
-    t_Expected<t_Token, t_ErrorInfo> semicolon_result =
+    Expected<t_Token, t_ErrorInfo> semicolon_result =
     Consume
     (
         e_TokenType::SEMICOLON,
@@ -1082,7 +1086,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::FunDeclaration()
     );
     if (!semicolon_result.HasValue())
     {
-        return t_Expected<t_Stmt*, t_ErrorInfo>
+        return Expected<t_Stmt*, t_ErrorInfo>
         (
             semicolon_result.Error()
         );
@@ -1096,7 +1100,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::FunDeclaration()
     );
     if (!stmt)
     {
-        return t_Expected<t_Stmt*, t_ErrorInfo>
+        return Expected<t_Stmt*, t_ErrorInfo>
         (
             t_ErrorInfo
             (
@@ -1107,30 +1111,30 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::FunDeclaration()
             )
         );
     }
-    return t_Expected<t_Stmt*, t_ErrorInfo>(stmt);
+    return Expected<t_Stmt*, t_ErrorInfo>(stmt);
 }
 
-t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ExpressionStatement()
+Expected<t_Stmt*, t_ErrorInfo> Parser::ExpressionStatement()
 {
-    t_Expected<t_Expr*, t_ErrorInfo> expr_result = Expression();
+    Expected<t_Expr*, t_ErrorInfo> expr_result = Expression();
     if (!expr_result.HasValue())
     {
-        return t_Expected<t_Stmt*, t_ErrorInfo>(expr_result.Error());
+        return Expected<t_Stmt*, t_ErrorInfo>(expr_result.Error());
     }
     t_Expr *expr = expr_result.Value();
     
-    t_Expected<t_Token, t_ErrorInfo> semicolon_result = 
+    Expected<t_Token, t_ErrorInfo> semicolon_result = 
     Consume(e_TokenType::SEMICOLON, "Expect ';' after expression.");
     if (!semicolon_result.HasValue())
     {
-        return t_Expected<t_Stmt*, t_ErrorInfo>(semicolon_result.Error());
+        return Expected<t_Stmt*, t_ErrorInfo>(semicolon_result.Error());
     }
     
     t_ExpressionStmt* stmt = 
     m_Context.CreateStmt<t_ExpressionStmt>(PoolPtr<t_Expr>(expr));
     if (!stmt)
     {
-        return t_Expected<t_Stmt*, t_ErrorInfo>
+        return Expected<t_Stmt*, t_ErrorInfo>
         (
             t_ErrorInfo
             (
@@ -1141,16 +1145,16 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ExpressionStatement()
             )
         );
     }
-    return t_Expected<t_Stmt*, t_ErrorInfo>(stmt);
+    return Expected<t_Stmt*, t_ErrorInfo>(stmt);
 }
 
-t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::EmptyStatement()
+Expected<t_Stmt*, t_ErrorInfo> Parser::EmptyStatement()
 {
     t_Token semicolon = Previous();
     t_EmptyStmt* stmt = m_Context.CreateStmt<t_EmptyStmt>(semicolon);
     if (!stmt)
     {
-        return t_Expected<t_Stmt*, t_ErrorInfo>
+        return Expected<t_Stmt*, t_ErrorInfo>
         (
             t_ErrorInfo
             (
@@ -1161,16 +1165,16 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::EmptyStatement()
             )
         );
     }
-    return t_Expected<t_Stmt*, t_ErrorInfo>(stmt);
+    return Expected<t_Stmt*, t_ErrorInfo>(stmt);
 }
 
-t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::BenchmarkStatement()
+Expected<t_Stmt*, t_ErrorInfo> Parser::BenchmarkStatement()
 {
-    t_Expected<t_Token, t_ErrorInfo> open_brace_result = 
+    Expected<t_Token, t_ErrorInfo> open_brace_result = 
     Consume(e_TokenType::LEFT_BRACE, "Expect '{' after 'benchmark'.");
     if (!open_brace_result.HasValue())
     {
-        return t_Expected<t_Stmt*, t_ErrorInfo>(open_brace_result.Error());
+        return Expected<t_Stmt*, t_ErrorInfo>(open_brace_result.Error());
     }
     
     // Parse the benchmark body
@@ -1178,26 +1182,26 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::BenchmarkStatement()
     statements.reserve(32);
     while (!Check(e_TokenType::RIGHT_BRACE) && !IsAtEnd())
     {
-        t_Expected<t_Stmt*, t_ErrorInfo> stmt_result = Statement();
+        Expected<t_Stmt*, t_ErrorInfo> stmt_result = Statement();
         if (!stmt_result.HasValue())
         {
-            return t_Expected<t_Stmt*, t_ErrorInfo>(stmt_result.Error());
+            return Expected<t_Stmt*, t_ErrorInfo>(stmt_result.Error());
         }
         statements.emplace_back(PoolPtr<t_Stmt>(stmt_result.Value()));
     }
     
-    t_Expected<t_Token, t_ErrorInfo> close_brace_result = 
+    Expected<t_Token, t_ErrorInfo> close_brace_result = 
     Consume(e_TokenType::RIGHT_BRACE, "Expect '}' after benchmark body.");
     if (!close_brace_result.HasValue())
     {
-        return t_Expected<t_Stmt*, t_ErrorInfo>(close_brace_result.Error());
+        return Expected<t_Stmt*, t_ErrorInfo>(close_brace_result.Error());
     }
     
     // Create a block statement for the body
     t_Stmt *body = m_Context.CreateStmt<t_BlockStmt>(std::move(statements));
     if (!body)
     {
-        return t_Expected<t_Stmt*, t_ErrorInfo>
+        return Expected<t_Stmt*, t_ErrorInfo>
         (
             t_ErrorInfo
             (
@@ -1213,7 +1217,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::BenchmarkStatement()
     m_Context.CreateStmt<t_BenchmarkStmt>(PoolPtr<t_Stmt>(body));
     if (!stmt)
     {
-        return t_Expected<t_Stmt*, t_ErrorInfo>
+        return Expected<t_Stmt*, t_ErrorInfo>
         (
             t_ErrorInfo
             (
@@ -1224,17 +1228,17 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::BenchmarkStatement()
             )
         );
     }
-    return t_Expected<t_Stmt*, t_ErrorInfo>(stmt);
+    return Expected<t_Stmt*, t_ErrorInfo>(stmt);
 }
 
-t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Expression()
+Expected<t_Expr*, t_ErrorInfo> Parser::Expression()
 {
     return Assignment();
 }
 
-t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Assignment()
+Expected<t_Expr*, t_ErrorInfo> Parser::Assignment()
 {
-    t_Expected<t_Expr*, t_ErrorInfo> expr_result = Or();
+    Expected<t_Expr*, t_ErrorInfo> expr_result = Or();
     if (!expr_result.HasValue())
     {
         return expr_result;
@@ -1257,7 +1261,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Assignment()
     )
     {
         t_Token equals = Previous();
-        t_Expected<t_Expr*, t_ErrorInfo> value_result = Assignment();
+        Expected<t_Expr*, t_ErrorInfo> value_result = Assignment();
         if (!value_result.HasValue())
         {
             return value_result;
@@ -1275,7 +1279,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Assignment()
             );
             if (!expr_node)
             {
-                return t_Expected<t_Expr*, t_ErrorInfo>
+                return Expected<t_Expr*, t_ErrorInfo>
                 (
                     t_ErrorInfo
                     (
@@ -1286,11 +1290,11 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Assignment()
                     )
                 );
             }
-            return t_Expected<t_Expr*, t_ErrorInfo>(expr_node);
+            return Expected<t_Expr*, t_ErrorInfo>(expr_node);
         }
 
         // If we get here, we're trying to assign to a non-variable
-        return t_Expected<t_Expr*, t_ErrorInfo>
+        return Expected<t_Expr*, t_ErrorInfo>
         (
             t_ErrorInfo
             (
@@ -1302,12 +1306,12 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Assignment()
         );
     }
 
-    return t_Expected<t_Expr*, t_ErrorInfo>(expr);
+    return Expected<t_Expr*, t_ErrorInfo>(expr);
 }
 
-t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Or()
+Expected<t_Expr*, t_ErrorInfo> Parser::Or()
 {
-    t_Expected<t_Expr*, t_ErrorInfo> expr_result = And();
+    Expected<t_Expr*, t_ErrorInfo> expr_result = And();
     if (!expr_result.HasValue())
     {
         return expr_result;
@@ -1317,7 +1321,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Or()
     while (Match({e_TokenType::OR}))
     {
         t_Token op = Previous();
-        t_Expected<t_Expr*, t_ErrorInfo> right_result = And();
+        Expected<t_Expr*, t_ErrorInfo> right_result = And();
         if (!right_result.HasValue())
         {
             return right_result;
@@ -1332,7 +1336,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Or()
         );
         if (!expr_node)
         {
-            return t_Expected<t_Expr*, t_ErrorInfo>
+            return Expected<t_Expr*, t_ErrorInfo>
             (
                 t_ErrorInfo
                 (
@@ -1346,12 +1350,12 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Or()
         expr = expr_node;
     }
 
-    return t_Expected<t_Expr*, t_ErrorInfo>(expr);
+    return Expected<t_Expr*, t_ErrorInfo>(expr);
 }
 
-t_Expected<t_Expr*, t_ErrorInfo> t_Parser::And()
+Expected<t_Expr*, t_ErrorInfo> Parser::And()
 {
-    t_Expected<t_Expr*, t_ErrorInfo> expr_result = Equality();
+    Expected<t_Expr*, t_ErrorInfo> expr_result = Equality();
     if (!expr_result.HasValue())
     {
         return expr_result;
@@ -1361,7 +1365,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::And()
     while (Match({e_TokenType::AND}))
     {
         t_Token op = Previous();
-        t_Expected<t_Expr*, t_ErrorInfo> right_result = Equality();
+        Expected<t_Expr*, t_ErrorInfo> right_result = Equality();
         if (!right_result.HasValue())
         {
             return right_result;
@@ -1376,7 +1380,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::And()
         );
         if (!expr_node)
         {
-            return t_Expected<t_Expr*, t_ErrorInfo>
+            return Expected<t_Expr*, t_ErrorInfo>
             (
                 t_ErrorInfo
                 (
@@ -1390,12 +1394,12 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::And()
         expr = expr_node;
     }
 
-    return t_Expected<t_Expr*, t_ErrorInfo>(expr);
+    return Expected<t_Expr*, t_ErrorInfo>(expr);
 }
 
-t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Equality()
+Expected<t_Expr*, t_ErrorInfo> Parser::Equality()
 {
-    t_Expected<t_Expr*, t_ErrorInfo> expr_result = Comparison();
+    Expected<t_Expr*, t_ErrorInfo> expr_result = Comparison();
     if (!expr_result.HasValue())
     {
         return expr_result;
@@ -1405,7 +1409,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Equality()
     while (Match({e_TokenType::BANG_EQUAL, e_TokenType::EQUAL_EQUAL}))
     {
         t_Token op = Previous();
-        t_Expected<t_Expr*, t_ErrorInfo> right_result = Comparison();
+        Expected<t_Expr*, t_ErrorInfo> right_result = Comparison();
         if (!right_result.HasValue())
         {
             return right_result;
@@ -1420,7 +1424,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Equality()
         );
         if (!expr_node)
         {
-            return t_Expected<t_Expr*, t_ErrorInfo>
+            return Expected<t_Expr*, t_ErrorInfo>
             (
                 t_ErrorInfo
                 (
@@ -1434,12 +1438,12 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Equality()
         expr = expr_node;
     }
 
-    return t_Expected<t_Expr*, t_ErrorInfo>(expr);
+    return Expected<t_Expr*, t_ErrorInfo>(expr);
 }
 
-t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Comparison()
+Expected<t_Expr*, t_ErrorInfo> Parser::Comparison()
 {
-    t_Expected<t_Expr*, t_ErrorInfo> expr_result = Term();
+    Expected<t_Expr*, t_ErrorInfo> expr_result = Term();
     if (!expr_result.HasValue())
     {
         return expr_result;
@@ -1460,7 +1464,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Comparison()
     )
     {
         t_Token op = Previous();
-        t_Expected<t_Expr*, t_ErrorInfo> right_result = Term();
+        Expected<t_Expr*, t_ErrorInfo> right_result = Term();
         if (!right_result.HasValue())
         {
             return right_result;
@@ -1475,7 +1479,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Comparison()
         );
         if (!expr_node)
         {
-            return t_Expected<t_Expr*, t_ErrorInfo>
+            return Expected<t_Expr*, t_ErrorInfo>
             (
                 t_ErrorInfo
                 (
@@ -1489,12 +1493,12 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Comparison()
         expr = expr_node;
     }
 
-    return t_Expected<t_Expr*, t_ErrorInfo>(expr);
+    return Expected<t_Expr*, t_ErrorInfo>(expr);
 }
 
-t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Term()
+Expected<t_Expr*, t_ErrorInfo> Parser::Term()
 {
-    t_Expected<t_Expr*, t_ErrorInfo> expr_result = Factor();
+    Expected<t_Expr*, t_ErrorInfo> expr_result = Factor();
     if (!expr_result.HasValue())
     {
         return expr_result;
@@ -1504,7 +1508,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Term()
     while (Match({e_TokenType::MINUS, e_TokenType::PLUS}))
     {
         t_Token op = Previous();
-        t_Expected<t_Expr*, t_ErrorInfo> right_result = Factor();
+        Expected<t_Expr*, t_ErrorInfo> right_result = Factor();
         if (!right_result.HasValue())
         {
             return right_result;
@@ -1540,7 +1544,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Term()
             );
             if (!expr_node)
             {
-                return t_Expected<t_Expr*, t_ErrorInfo>
+                return Expected<t_Expr*, t_ErrorInfo>
                 (
                     t_ErrorInfo
                     (
@@ -1555,12 +1559,12 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Term()
         }
     }
 
-    return t_Expected<t_Expr*, t_ErrorInfo>(expr);
+    return Expected<t_Expr*, t_ErrorInfo>(expr);
 }
 
-t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Factor()
+Expected<t_Expr*, t_ErrorInfo> Parser::Factor()
 {
-    t_Expected<t_Expr*, t_ErrorInfo> expr_result = Unary();
+    Expected<t_Expr*, t_ErrorInfo> expr_result = Unary();
     if (!expr_result.HasValue())
     {
         return expr_result;
@@ -1570,7 +1574,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Factor()
     while (Match({e_TokenType::SLASH, e_TokenType::STAR, e_TokenType::MODULUS}))
     {
         t_Token op = Previous();
-        t_Expected<t_Expr*, t_ErrorInfo> right_result = Unary();
+        Expected<t_Expr*, t_ErrorInfo> right_result = Unary();
         if (!right_result.HasValue())
         {
             return right_result;
@@ -1594,7 +1598,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Factor()
             {
                 if (right_num == 0)
                 {
-                    return t_Expected<t_Expr*, t_ErrorInfo>
+                    return Expected<t_Expr*, t_ErrorInfo>
                     (
                         t_ErrorInfo
                         (
@@ -1611,7 +1615,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Factor()
             {
                 if (right_num == 0)
                 {
-                    return t_Expected<t_Expr*, t_ErrorInfo>
+                    return Expected<t_Expr*, t_ErrorInfo>
                     (
                         t_ErrorInfo
                         (
@@ -1640,7 +1644,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Factor()
             );
             if (!expr_node)
             {
-                return t_Expected<t_Expr*, t_ErrorInfo>
+                return Expected<t_Expr*, t_ErrorInfo>
                 (
                     t_ErrorInfo
                     (
@@ -1655,15 +1659,15 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Factor()
         }
     }
 
-    return t_Expected<t_Expr*, t_ErrorInfo>(expr);
+    return Expected<t_Expr*, t_ErrorInfo>(expr);
 }
 
-t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Unary()
+Expected<t_Expr*, t_ErrorInfo> Parser::Unary()
 {
     if (Match({e_TokenType::BANG, e_TokenType::MINUS}))
     {
         t_Token op = Previous();
-        t_Expected<t_Expr*, t_ErrorInfo> right_result = Unary();
+        Expected<t_Expr*, t_ErrorInfo> right_result = Unary();
         if (!right_result.HasValue())
         {
             return right_result;
@@ -1675,7 +1679,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Unary()
             double value = 0.0;
             if (TryGetNumberLiteral(right, value))
             {
-                return t_Expected<t_Expr*, t_ErrorInfo>
+                return Expected<t_Expr*, t_ErrorInfo>
                 (
                     MakeNumberLiteral(-value, m_Context)
                 );
@@ -1686,7 +1690,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Unary()
         m_Context.CreateExpr<t_UnaryExpr>(op, PoolPtr<t_Expr>(right));
         if (!expr_node)
         {
-            return t_Expected<t_Expr*, t_ErrorInfo>
+            return Expected<t_Expr*, t_ErrorInfo>
             (
                 t_ErrorInfo
                 (
@@ -1697,15 +1701,15 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Unary()
                 )
             );
         }
-        return t_Expected<t_Expr*, t_ErrorInfo>(expr_node);
+        return Expected<t_Expr*, t_ErrorInfo>(expr_node);
     }
 
     return FinishUnary();
 }
 
-t_Expected<t_Expr*, t_ErrorInfo> t_Parser::FinishUnary()
+Expected<t_Expr*, t_ErrorInfo> Parser::FinishUnary()
 {
-    t_Expected<t_Expr*, t_ErrorInfo> expr_result = Primary();
+    Expected<t_Expr*, t_ErrorInfo> expr_result = Primary();
     if (!expr_result.HasValue())
     {
         return expr_result;
@@ -1723,7 +1727,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::FinishUnary()
         );
         if (!expr_node)
         {
-            return t_Expected<t_Expr*, t_ErrorInfo>
+            return Expected<t_Expr*, t_ErrorInfo>
             (
                 t_ErrorInfo
                 (
@@ -1737,10 +1741,10 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::FinishUnary()
         expr = expr_node;
     }
 
-    return t_Expected<t_Expr*, t_ErrorInfo>(expr);
+    return Expected<t_Expr*, t_ErrorInfo>(expr);
 }
 
-t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Primary()
+Expected<t_Expr*, t_ErrorInfo> Parser::Primary()
 {
     if (Match({e_TokenType::FALSE}))
     {
@@ -1752,7 +1756,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Primary()
         );
         if (!expr_node)
         {
-            return t_Expected<t_Expr*, t_ErrorInfo>
+            return Expected<t_Expr*, t_ErrorInfo>
             (
                 t_ErrorInfo
                 (
@@ -1763,7 +1767,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Primary()
                 )
             );
         }
-        return t_Expected<t_Expr*, t_ErrorInfo>(expr_node);
+        return Expected<t_Expr*, t_ErrorInfo>(expr_node);
     }
 
     if (Match({e_TokenType::TRUE}))
@@ -1776,7 +1780,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Primary()
         );
         if (!expr_node)
         {
-            return t_Expected<t_Expr*, t_ErrorInfo>
+            return Expected<t_Expr*, t_ErrorInfo>
             (
                 t_ErrorInfo
                 (
@@ -1787,7 +1791,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Primary()
                 )
             );
         }
-        return t_Expected<t_Expr*, t_ErrorInfo>(expr_node);
+        return Expected<t_Expr*, t_ErrorInfo>(expr_node);
     }
 
     if (Match({e_TokenType::NIL}))
@@ -1800,7 +1804,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Primary()
         );
         if (!expr_node)
         {
-            return t_Expected<t_Expr*, t_ErrorInfo>
+            return Expected<t_Expr*, t_ErrorInfo>
             (
                 t_ErrorInfo
                 (
@@ -1811,7 +1815,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Primary()
                 )
             );
         }
-        return t_Expected<t_Expr*, t_ErrorInfo>(expr_node);
+        return Expected<t_Expr*, t_ErrorInfo>(expr_node);
     }
 
     if 
@@ -1834,7 +1838,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Primary()
         );
         if (!expr_node)
         {
-            return t_Expected<t_Expr*, t_ErrorInfo>
+            return Expected<t_Expr*, t_ErrorInfo>
             (
                 t_ErrorInfo
                 (
@@ -1845,14 +1849,14 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Primary()
                 )
             );
         }
-        return t_Expected<t_Expr*, t_ErrorInfo>(expr_node);
+        return Expected<t_Expr*, t_ErrorInfo>(expr_node);
     }
 
     // Handle prefix increment/decrement
     if (Match({e_TokenType::PLUS_PLUS, e_TokenType::MINUS_MINUS}))
     {
         t_Token op = Previous();
-        t_Expected<t_Expr*, t_ErrorInfo> operand_result = Primary();
+        Expected<t_Expr*, t_ErrorInfo> operand_result = Primary();
         if (!operand_result.HasValue())
         {
             return operand_result;
@@ -1863,7 +1867,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Primary()
         m_Context.CreateExpr<t_PrefixExpr>(op, PoolPtr<t_Expr>(operand));
         if (!expr_node)
         {
-            return t_Expected<t_Expr*, t_ErrorInfo>
+            return Expected<t_Expr*, t_ErrorInfo>
             (
                 t_ErrorInfo
                 (
@@ -1874,7 +1878,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Primary()
                 )
             );
         }
-        return t_Expected<t_Expr*, t_ErrorInfo>(expr_node);
+        return Expected<t_Expr*, t_ErrorInfo>(expr_node);
     }
 
     if (Match({e_TokenType::IDENTIFIER}))
@@ -1889,7 +1893,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Primary()
             {
                 while (true)
                 {
-                    t_Expected<t_Expr*, t_ErrorInfo> argument_result =
+                    Expected<t_Expr*, t_ErrorInfo> argument_result =
                     Expression();
                     if (!argument_result.HasValue())
                     {
@@ -1908,7 +1912,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Primary()
                 }
             }
 
-            t_Expected<t_Token, t_ErrorInfo> close_paren_result =
+            Expected<t_Token, t_ErrorInfo> close_paren_result =
             Consume
             (
                 e_TokenType::RIGHT_PAREN,
@@ -1916,7 +1920,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Primary()
             );
             if (!close_paren_result.HasValue())
             {
-                return t_Expected<t_Expr*, t_ErrorInfo>
+                return Expected<t_Expr*, t_ErrorInfo>
                 (
                     close_paren_result.Error()
                 );
@@ -1930,7 +1934,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Primary()
             );
             if (!call_expr)
             {
-                return t_Expected<t_Expr*, t_ErrorInfo>
+                return Expected<t_Expr*, t_ErrorInfo>
                 (
                     t_ErrorInfo
                     (
@@ -1941,14 +1945,14 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Primary()
                     )
                 );
             }
-            return t_Expected<t_Expr*, t_ErrorInfo>(call_expr);
+            return Expected<t_Expr*, t_ErrorInfo>(call_expr);
         }
 
         t_VariableExpr* expr_node = 
         m_Context.CreateExpr<t_VariableExpr>(identifier.lexeme);
         if (!expr_node)
         {
-            return t_Expected<t_Expr*, t_ErrorInfo>
+            return Expected<t_Expr*, t_ErrorInfo>
             (
                 t_ErrorInfo
                 (
@@ -1959,30 +1963,30 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Primary()
                 )
             );
         }
-        return t_Expected<t_Expr*, t_ErrorInfo>(expr_node);
+        return Expected<t_Expr*, t_ErrorInfo>(expr_node);
     }
 
     if (Match({e_TokenType::LEFT_PAREN}))
     {
-        t_Expected<t_Expr*, t_ErrorInfo> expr_result = Expression();
+        Expected<t_Expr*, t_ErrorInfo> expr_result = Expression();
         if (!expr_result.HasValue())
         {
             return expr_result;
         }
         t_Expr *expr = expr_result.Value();
         
-        t_Expected<t_Token, t_ErrorInfo> paren_result = 
+        Expected<t_Token, t_ErrorInfo> paren_result = 
         Consume(e_TokenType::RIGHT_PAREN, "Expect ')' after expression.");
         if (!paren_result.HasValue())
         {
-            return t_Expected<t_Expr*, t_ErrorInfo>(paren_result.Error());
+            return Expected<t_Expr*, t_ErrorInfo>(paren_result.Error());
         }
         
         t_GroupingExpr* expr_node = 
         m_Context.CreateExpr<t_GroupingExpr>(PoolPtr<t_Expr>(expr));
         if (!expr_node)
         {
-            return t_Expected<t_Expr*, t_ErrorInfo>
+            return Expected<t_Expr*, t_ErrorInfo>
             (
                 t_ErrorInfo
                 (
@@ -1993,10 +1997,10 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Primary()
                 )
             );
         }
-        return t_Expected<t_Expr*, t_ErrorInfo>(expr_node);
+        return Expected<t_Expr*, t_ErrorInfo>(expr_node);
     }
 
-    return t_Expected<t_Expr*, t_ErrorInfo>
+    return Expected<t_Expr*, t_ErrorInfo>
     (
         t_ErrorInfo
         (
@@ -2008,7 +2012,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Primary()
     );
 }
 
-t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ReturnStatement()
+Expected<t_Stmt*, t_ErrorInfo> Parser::ReturnStatement()
 {
     t_Token keyword = Previous();
     
@@ -2016,26 +2020,26 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ReturnStatement()
     PoolPtr<t_Expr> value = nullptr;
     if (!Check(e_TokenType::SEMICOLON))
     {
-        t_Expected<t_Expr*, t_ErrorInfo> value_result = Expression();
+        Expected<t_Expr*, t_ErrorInfo> value_result = Expression();
         if (!value_result.HasValue())
         {
-            return t_Expected<t_Stmt*, t_ErrorInfo>(value_result.Error());
+            return Expected<t_Stmt*, t_ErrorInfo>(value_result.Error());
         }
         value = PoolPtr<t_Expr>(value_result.Value());
     }
     
-    t_Expected<t_Token, t_ErrorInfo> result = 
+    Expected<t_Token, t_ErrorInfo> result = 
     Consume(e_TokenType::SEMICOLON, "Expect ';' after return value.");
     if (!result.HasValue())
     {
-        return t_Expected<t_Stmt*, t_ErrorInfo>(result.Error());
+        return Expected<t_Stmt*, t_ErrorInfo>(result.Error());
     }
     
     t_ReturnStmt* stmt = 
     m_Context.CreateStmt<t_ReturnStmt>(std::move(value));
     if (!stmt)
     {
-        return t_Expected<t_Stmt*, t_ErrorInfo>
+        return Expected<t_Stmt*, t_ErrorInfo>
         (
             t_ErrorInfo
             (
@@ -2046,5 +2050,5 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ReturnStatement()
             )
         );
     }
-    return t_Expected<t_Stmt*, t_ErrorInfo>(stmt);
+    return Expected<t_Stmt*, t_ErrorInfo>(stmt);
 }

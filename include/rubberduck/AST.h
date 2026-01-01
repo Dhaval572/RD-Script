@@ -415,7 +415,7 @@ struct t_ReturnStmt : public t_Stmt
     t_ReturnStmt* AsReturn() override { return this; }
 };
 
-using t_StmtVariant = std::variant
+using StmtVariant = std::variant
 <
     t_BlockStmt,
     t_IfStmt,
@@ -432,7 +432,7 @@ using t_StmtVariant = std::variant
     t_ReturnStmt
 >;
 
-using t_ExprVariant = std::variant
+using ExprVariant = std::variant
 <
     t_BinaryExpr,
     t_LiteralExpr,

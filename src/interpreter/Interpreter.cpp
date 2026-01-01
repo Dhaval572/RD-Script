@@ -37,7 +37,7 @@ static void AssignToVisibleVariable
     }
 }
 
-t_Interpreter::t_Interpreter()
+Interpreter::Interpreter()
 {
     std::ios::sync_with_stdio(false);
     std::cin.tie(nullptr);
@@ -51,7 +51,7 @@ t_Interpreter::t_Interpreter()
     m_ScopeStack.reserve(32);
 }
 
-void t_Interpreter::WriteOutput(const std::string& text)
+void Interpreter::WriteOutput(const std::string& text)
 {
     if (m_BufferOutput)
     {
@@ -77,7 +77,7 @@ void t_Interpreter::WriteOutput(const std::string& text)
     }
 }
 
-void t_Interpreter::FlushOutput()
+void Interpreter::FlushOutput()
 {
     if (!m_OutputBuffer.empty())
     {
@@ -91,7 +91,7 @@ void t_Interpreter::FlushOutput()
     }
 }
 
-t_InterpretationResult t_Interpreter::Interpret
+InterpretationResult Interpreter::Interpret
 (
     const std::vector<PoolPtr<t_Stmt>> &statements
 )
@@ -110,12 +110,12 @@ t_InterpretationResult t_Interpreter::Interpret
     {
         try
         {
-            t_Expected<int, t_ErrorInfo> result = Execute(statement.get());
+            Expected<int, t_ErrorInfo> result = Execute(statement.get());
             if (!result.HasValue())
             {
                 // Report the error and stop execution
                 ReportError(result.Error());
-                return t_InterpretationResult(result.Error());
+                return InterpretationResult(result.Error());
             }
         }
         catch (const std::exception& ex)
@@ -126,7 +126,7 @@ t_InterpretationResult t_Interpreter::Interpret
                 std::string("Unhandled std::exception: ") + ex.what()
             );
             ReportError(err);
-            return t_InterpretationResult(err);
+            return InterpretationResult(err);
         }
         catch (...)
         {
@@ -136,21 +136,21 @@ t_InterpretationResult t_Interpreter::Interpret
                 "Unhandled unknown exception during execution"
             );
             ReportError(err);
-            return t_InterpretationResult(err);
+            return InterpretationResult(err);
         }
     }
     
-    return t_InterpretationResult(0); // Success represented by 0
+    return InterpretationResult(0); // Success represented by 0
 }
 
 // Scope management m_Functions
-void t_Interpreter::PushScope()
+void Interpreter::PushScope()
 {
     // Save the current state of the m_Environment
     m_ScopeStack.emplace_back(m_Environment);
 }
 
-void t_Interpreter::PopScope()
+void Interpreter::PopScope()
 {
     if (!m_ScopeStack.empty()) 
     {
@@ -160,7 +160,7 @@ void t_Interpreter::PopScope()
     }
 }
 
-t_Expected<int, t_ErrorInfo> t_Interpreter::DeclareVariable
+Expected<int, t_ErrorInfo> Interpreter::DeclareVariable
 (
     const std::string& name, int line
 )
@@ -171,7 +171,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::DeclareVariable
     if (!m_Environment.count(name)) 
     {
         // Variable not declared yet, this is fine
-        return t_Expected<int, t_ErrorInfo>(0); // Success
+        return Expected<int, t_ErrorInfo>(0); // Success
     }
     
     // Variable already exists, check if it was declared in current scope
@@ -181,7 +181,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::DeclareVariable
         if (previous_scope.find(name) == previous_scope.end()) 
         {
             // Variable exists but was declared in current scope - this is an error
-            return t_Expected<int, t_ErrorInfo>
+            return Expected<int, t_ErrorInfo>
             (
                 t_ErrorInfo
                 (
@@ -196,11 +196,11 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::DeclareVariable
     }
     
     // Variable exists but was declared in a previous scope - this is shadowing, which is allowed
-    return t_Expected<int, t_ErrorInfo>(0); // Success
+    return Expected<int, t_ErrorInfo>(0); // Success
 }
 
 // Helper function to format numbers (removes trailing zeros)
-std::string t_Interpreter::FormatNumber(double value)
+std::string Interpreter::FormatNumber(double value)
 {
     std::ostringstream oss;
     oss << std::fixed << std::setprecision(15) << value;
@@ -214,7 +214,7 @@ std::string t_Interpreter::FormatNumber(double value)
 }
 
 // Helper function to detect the type of a value
-e_ValueType t_Interpreter::DetectType(const std::string& value)
+e_ValueType Interpreter::DetectType(const std::string& value)
 {
     if (value == "nil")
     {
@@ -270,7 +270,7 @@ e_ValueType t_Interpreter::DetectType(const std::string& value)
 }
 
 // Helper function to check if a string represents an integer
-bool t_Interpreter::IsInteger(const std::string& value)
+bool Interpreter::IsInteger(const std::string& value)
 {
     if (value.empty()) return false;
     
@@ -293,7 +293,7 @@ bool t_Interpreter::IsInteger(const std::string& value)
 }
 
 // Helper function to check if a string represents a float
-bool t_Interpreter::IsFloat(const std::string& value)
+bool Interpreter::IsFloat(const std::string& value)
 {
     if (value.empty()) return false;
     
@@ -325,7 +325,7 @@ bool t_Interpreter::IsFloat(const std::string& value)
 }
 
 // Comparison operations are kept as they are more complex
-t_Expected<bool, t_ErrorInfo> t_Interpreter::PerformComparison
+Expected<bool, t_ErrorInfo> Interpreter::PerformComparison
 (
     const t_TypedValue& left, 
     const e_TokenType op,
@@ -338,43 +338,43 @@ t_Expected<bool, t_ErrorInfo> t_Interpreter::PerformComparison
         switch (op)
         {
         case e_TokenType::GREATER:
-            return t_Expected<bool, t_ErrorInfo>
+            return Expected<bool, t_ErrorInfo>
             (
                 left.numeric_value > right.numeric_value
             );
         
         case e_TokenType::GREATER_EQUAL:
-            return t_Expected<bool, t_ErrorInfo>
+            return Expected<bool, t_ErrorInfo>
             (
                 left.numeric_value >= right.numeric_value
             );
         
         case e_TokenType::LESS:
-            return t_Expected<bool, t_ErrorInfo>
+            return Expected<bool, t_ErrorInfo>
             (
                 left.numeric_value < right.numeric_value
             );
         
         case e_TokenType::LESS_EQUAL:
-            return t_Expected<bool, t_ErrorInfo>
+            return Expected<bool, t_ErrorInfo>
             (
                 left.numeric_value <= right.numeric_value
             );
         
         case e_TokenType::EQUAL_EQUAL:
-            return t_Expected<bool, t_ErrorInfo>
+            return Expected<bool, t_ErrorInfo>
             (
                 left.numeric_value == right.numeric_value
             );
         
         case e_TokenType::BANG_EQUAL:
-            return t_Expected<bool, t_ErrorInfo>
+            return Expected<bool, t_ErrorInfo>
             (
                 left.numeric_value != right.numeric_value
             );
         
         default:
-            return t_Expected<bool, t_ErrorInfo>
+            return Expected<bool, t_ErrorInfo>
             (
                 false
             );
@@ -394,19 +394,19 @@ t_Expected<bool, t_ErrorInfo> t_Interpreter::PerformComparison
         switch (op)
         {
         case e_TokenType::GREATER:
-            return t_Expected<bool, t_ErrorInfo>(left_num > right_num);
+            return Expected<bool, t_ErrorInfo>(left_num > right_num);
         case e_TokenType::GREATER_EQUAL:
-            return t_Expected<bool, t_ErrorInfo>(left_num >= right_num);
+            return Expected<bool, t_ErrorInfo>(left_num >= right_num);
         case e_TokenType::LESS:
-            return t_Expected<bool, t_ErrorInfo>(left_num < right_num);
+            return Expected<bool, t_ErrorInfo>(left_num < right_num);
         case e_TokenType::LESS_EQUAL:
-            return t_Expected<bool, t_ErrorInfo>(left_num <= right_num);
+            return Expected<bool, t_ErrorInfo>(left_num <= right_num);
         case e_TokenType::EQUAL_EQUAL:
-            return t_Expected<bool, t_ErrorInfo>(left_num == right_num);
+            return Expected<bool, t_ErrorInfo>(left_num == right_num);
         case e_TokenType::BANG_EQUAL:
-            return t_Expected<bool, t_ErrorInfo>(left_num != right_num);
+            return Expected<bool, t_ErrorInfo>(left_num != right_num);
         default:
-            return t_Expected<bool, t_ErrorInfo>(false);
+            return Expected<bool, t_ErrorInfo>(false);
         }
     }
     catch (...)
@@ -415,11 +415,11 @@ t_Expected<bool, t_ErrorInfo> t_Interpreter::PerformComparison
         switch (op)
         {
         case e_TokenType::EQUAL_EQUAL:
-            return t_Expected<bool, t_ErrorInfo>(left.value == right.value);
+            return Expected<bool, t_ErrorInfo>(left.value == right.value);
         case e_TokenType::BANG_EQUAL:
-            return t_Expected<bool, t_ErrorInfo>(left.value != right.value);
+            return Expected<bool, t_ErrorInfo>(left.value != right.value);
         default:
-            return t_Expected<bool, t_ErrorInfo>
+            return Expected<bool, t_ErrorInfo>
             (
                 t_ErrorInfo
                 (
@@ -431,7 +431,7 @@ t_Expected<bool, t_ErrorInfo> t_Interpreter::PerformComparison
     }
 }
 
-t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
+Expected<int, t_ErrorInfo> Interpreter::Execute(t_Stmt *stmt)
 {
     if (t_BlockStmt* block_stmt = As<t_BlockStmt>(stmt))
     {
@@ -441,12 +441,12 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
 		{
 			for (const auto &statement : block_stmt->statements)
 			{
-				t_Expected<int, t_ErrorInfo> result = 
+				Expected<int, t_ErrorInfo> result = 
                 Execute(statement.get());
 				if (!result.HasValue())
 				{
 					PopScope(); // Clean up scope before returning
-					return t_Expected<int, t_ErrorInfo>(result.Error());
+					return Expected<int, t_ErrorInfo>(result.Error());
 				}
 
                 // If a control signal was raised inside this block (break/continue),
@@ -455,7 +455,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                 {
                     // Pop the scope to clean up variables declared in this block
                     PopScope();
-                    return t_Expected<int, t_ErrorInfo>(0);
+                    return Expected<int, t_ErrorInfo>(0);
                 }
                 
                 // If we're returning from a function, stop executing further statements
@@ -463,7 +463,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                 if (m_IsReturning)
                 {
                     PopScope();
-                    return t_Expected<int, t_ErrorInfo>(0);
+                    return Expected<int, t_ErrorInfo>(0);
                 }
 			}
 
@@ -474,7 +474,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
 		{
 			// Ensure scope is popped and convert to runtime error
 			PopScope();
-			return t_Expected<int, t_ErrorInfo>
+			return Expected<int, t_ErrorInfo>
 			(
 				t_ErrorInfo
 				(
@@ -489,7 +489,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
         // Validate that we're inside a loop
         if (m_LoopDepth <= 0)
         {
-            return t_Expected<int, t_ErrorInfo>
+            return Expected<int, t_ErrorInfo>
             (
                 t_ErrorInfo
                 (
@@ -500,14 +500,14 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
         }
         // Signal break without throwing
         m_ControlSignal = "break";
-        return t_Expected<int, t_ErrorInfo>(0);
+        return Expected<int, t_ErrorInfo>(0);
     }
     else if (As<t_ContinueStmt>(stmt))
     {
         // Validate that we're inside a loop
         if (m_LoopDepth <= 0)
         {
-            return t_Expected<int, t_ErrorInfo>
+            return Expected<int, t_ErrorInfo>
             (
                 t_ErrorInfo
                 (
@@ -518,22 +518,22 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
         }
         // Signal continue without throwing
         m_ControlSignal = "continue";
-        return t_Expected<int, t_ErrorInfo>(0);
+        return Expected<int, t_ErrorInfo>(0);
     }
     else if (t_IfStmt *if_stmt = As<t_IfStmt>(stmt))
     {
-        t_Expected<std::string, t_ErrorInfo> condition_result = Evaluate
+        Expected<std::string, t_ErrorInfo> condition_result = Evaluate
         (
             if_stmt->condition.get()
         );
         if (!condition_result.HasValue())
         {
-            return t_Expected<int, t_ErrorInfo>(condition_result.Error());
+            return Expected<int, t_ErrorInfo>(condition_result.Error());
         }
         
         if (IsTruthy(condition_result.Value()))
         {
-            t_Expected<int, t_ErrorInfo> then_result = Execute
+            Expected<int, t_ErrorInfo> then_result = Execute
             (
                 if_stmt->then_branch.get()
             );
@@ -545,12 +545,12 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
             // If we're returning from a function, propagate the return
             if (m_IsReturning)
             {
-                return t_Expected<int, t_ErrorInfo>(0);
+                return Expected<int, t_ErrorInfo>(0);
             }
         }
         else if (if_stmt->else_branch)
         {
-            t_Expected<int, t_ErrorInfo> else_result = 
+            Expected<int, t_ErrorInfo> else_result = 
             Execute(if_stmt->else_branch.get());
 
             if (!else_result.HasValue())
@@ -561,7 +561,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
             // If we're returning from a function, propagate the return
             if (m_IsReturning)
             {
-                return t_Expected<int, t_ErrorInfo>(0);
+                return Expected<int, t_ErrorInfo>(0);
             }
         }
     }
@@ -570,7 +570,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
         // Check for ultra-fast nested arithmetic loop pattern: nested loops with arithmetic
         if (IsNestedArithmeticLoop(for_stmt))
         {
-            t_Expected<int, t_ErrorInfo> result = 
+            Expected<int, t_ErrorInfo> result = 
             ExecuteNestedArithmeticLoop(for_stmt);
 
             if (!result.HasValue())
@@ -581,7 +581,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
         // Check for ultra-fast accumulation loop pattern: for (auto i = 0; i < N; i++) { var += i; }
         else if (IsSimpleAccumulationLoop(for_stmt))
         {
-            t_Expected<int, t_ErrorInfo> result = 
+            Expected<int, t_ErrorInfo> result = 
             ExecuteAccumulationLoop(for_stmt);
 
             if (!result.HasValue())
@@ -592,7 +592,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
         // Check for specialized numeric loop pattern: for (auto i = 0; i < N; i++)
         else if (IsSimpleNumericLoop(for_stmt))
         {
-            t_Expected<int, t_ErrorInfo> result = 
+            Expected<int, t_ErrorInfo> result = 
             ExecuteSimpleNumericLoop(for_stmt);
 
             if (!result.HasValue())
@@ -618,7 +618,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                 // Execute initializer (if any)
                 if (for_stmt->initializer)
                 {
-                    t_Expected<int, t_ErrorInfo> init_result = 
+                    Expected<int, t_ErrorInfo> init_result = 
                     Execute(for_stmt->initializer.get());
 
                     if (!init_result.HasValue())
@@ -635,13 +635,13 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                     // Check condition (if any)
                     if (for_stmt->condition)
                     {
-                        t_Expected<std::string, t_ErrorInfo> condition_result = 
+                        Expected<std::string, t_ErrorInfo> condition_result = 
                         Evaluate(for_stmt->condition.get());
                         if (!condition_result.HasValue())
                         {
                             PopScope(); // Clean up scope before returning
                             m_LoopDepth--;
-                            return t_Expected<int, t_ErrorInfo>
+                            return Expected<int, t_ErrorInfo>
                             (
                                 condition_result.Error()
                             );
@@ -660,7 +660,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                     // Execute body
                     {
                         m_ControlSignal.clear();
-                        t_Expected<int, t_ErrorInfo> body_result = 
+                        Expected<int, t_ErrorInfo> body_result = 
                         Execute(for_stmt->body.get());
 
                         if (!body_result.HasValue())
@@ -686,21 +686,21 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                         {
                             PopScope();
                             m_LoopDepth--;
-                            return t_Expected<int, t_ErrorInfo>(0);
+                            return Expected<int, t_ErrorInfo>(0);
                         }
                     }
 
                     // Execute increment (if any)
                     if (for_stmt->increment && m_ControlSignal.empty())
                     {
-                        t_Expected<std::string, t_ErrorInfo> increment_result= 
+                        Expected<std::string, t_ErrorInfo> increment_result= 
                         Evaluate(for_stmt->increment.get());
 
                         if (!increment_result.HasValue())
                         {
                             PopScope(); // Clean up scope before returning
                             m_LoopDepth--;
-                            return t_Expected<int, t_ErrorInfo>(increment_result.Error());
+                            return Expected<int, t_ErrorInfo>(increment_result.Error());
                         }
                     }
                 }
@@ -732,7 +732,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
 				// Ensure scope is cleaned and convert to runtime error
 				PopScope();
 				m_LoopDepth--;
-				return t_Expected<int, t_ErrorInfo>
+				return Expected<int, t_ErrorInfo>
 				(
 					t_ErrorInfo
 					(
@@ -749,23 +749,23 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
     )
     {
         // Check if variable is already declared in current scope
-        t_Expected<int, t_ErrorInfo> declare_result =
+        Expected<int, t_ErrorInfo> declare_result =
         DeclareVariable(var_stmt->name, 0); 
 
         if (!declare_result.HasValue())
         {
-            return t_Expected<int, t_ErrorInfo>(declare_result.Error());
+            return Expected<int, t_ErrorInfo>(declare_result.Error());
         }
 
         t_TypedValue typed_value;
         if (var_stmt->initializer)
         {
-            t_Expected<std::string, t_ErrorInfo> value_result = 
+            Expected<std::string, t_ErrorInfo> value_result = 
             Evaluate(var_stmt->initializer.get());
 
             if (!value_result.HasValue())
             {
-                return t_Expected<int, t_ErrorInfo>(value_result.Error());
+                return Expected<int, t_ErrorInfo>(value_result.Error());
             }
             
             std::string value = value_result.Value();
@@ -786,12 +786,12 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
             }
             first = false;
 
-            t_Expected<std::string, t_ErrorInfo> value_result = 
+            Expected<std::string, t_ErrorInfo> value_result = 
             Evaluate(expr.get());
 
             if (!value_result.HasValue())
             {
-                return t_Expected<int, t_ErrorInfo>(value_result.Error());
+                return Expected<int, t_ErrorInfo>(value_result.Error());
             }
             
             std::string value = value_result.Value();
@@ -806,7 +806,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
         auto it = m_Environment.find(var_name);
         if (it == m_Environment.end())
         {
-            return t_Expected<int, t_ErrorInfo>
+            return Expected<int, t_ErrorInfo>
             (
                 t_ErrorInfo
                 (
@@ -832,7 +832,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                         '\n'
                     );
 
-                    return t_Expected<int, t_ErrorInfo>
+                    return Expected<int, t_ErrorInfo>
                     (
                         t_ErrorInfo
                         (
@@ -865,7 +865,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                         '\n'
                     );
 
-                    return t_Expected<int, t_ErrorInfo>
+                    return Expected<int, t_ErrorInfo>
                     (
                         t_ErrorInfo
                         (
@@ -905,7 +905,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                 {
                     std::cin.clear();
 
-                    return t_Expected<int, t_ErrorInfo>
+                    return Expected<int, t_ErrorInfo>
                     (
                         t_ErrorInfo
                         (
@@ -944,7 +944,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
                 {
                     std::cin.clear();
 
-                    return t_Expected<int, t_ErrorInfo>
+                    return Expected<int, t_ErrorInfo>
                     (
                         t_ErrorInfo
                         (
@@ -985,7 +985,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
         auto start_time = std::chrono::steady_clock::now();
         
         // Execute the benchmark body
-        t_Expected<int, t_ErrorInfo> body_result = 
+        Expected<int, t_ErrorInfo> body_result = 
         Execute(benchmark_stmt->body.get());
 
         FlushOutput();
@@ -1045,12 +1045,12 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
         As<t_ExpressionStmt>(stmt)
     )
     {
-        t_Expected<std::string, t_ErrorInfo> result =
+        Expected<std::string, t_ErrorInfo> result =
         Evaluate(expr_stmt->expression.get());
 
         if (!result.HasValue())
         {
-            return t_Expected<int, t_ErrorInfo>(result.Error());
+            return Expected<int, t_ErrorInfo>(result.Error());
         }
     }
     else if 
@@ -1062,12 +1062,12 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
         // Evaluate the return value expression (if any)
         if (return_stmt->value)
         {
-            t_Expected<std::string, t_ErrorInfo> result =
+            Expected<std::string, t_ErrorInfo> result =
             Evaluate(return_stmt->value.get());
 
             if (!result.HasValue())
             {
-                return t_Expected<int, t_ErrorInfo>(result.Error());
+                return Expected<int, t_ErrorInfo>(result.Error());
             }
             
             m_ReturnValue = result.Value();
@@ -1080,18 +1080,18 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::Execute(t_Stmt *stmt)
         
         // Set the returning flag to indicate we should stop execution
         m_IsReturning = true;
-        return t_Expected<int, t_ErrorInfo>(0);
+        return Expected<int, t_ErrorInfo>(0);
     }
     
-    return t_Expected<int, t_ErrorInfo>(0); // Success represented by 0
+    return Expected<int, t_ErrorInfo>(0); // Success represented by 0
 }
 
-bool t_Interpreter::IsTruthy(const std::string &value)
+bool Interpreter::IsTruthy(const std::string &value)
 {
     return value != "false" && value != "nil";
 }
 
-t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
+Expected<std::string, t_ErrorInfo> Interpreter::Evaluate(t_Expr *expr)
 {
     if (t_LiteralExpr *literal = As<t_LiteralExpr>(expr))
     {
@@ -1117,11 +1117,11 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                     expression.erase(expression.find_last_not_of(" \t") + 1);
 
                     // Evaluate the expression instead of just looking it up as a variable
-                    t_Expected<std::string, t_ErrorInfo> expr_result = 
+                    Expected<std::string, t_ErrorInfo> expr_result = 
                     EvaluateFormatExpression(expression);
                     if (!expr_result.HasValue())
                     {
-                        return t_Expected<std::string, t_ErrorInfo>
+                        return Expected<std::string, t_ErrorInfo>
                         (
                             expr_result.Error()
                         );
@@ -1139,10 +1139,10 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                 }
             }
 
-            return t_Expected<std::string, t_ErrorInfo>(result);
+            return Expected<std::string, t_ErrorInfo>(result);
         }
 
-        return t_Expected<std::string, t_ErrorInfo>(literal->value);
+        return Expected<std::string, t_ErrorInfo>(literal->value);
     }
 
     if (t_GroupingExpr *grouping = As<t_GroupingExpr>(expr))
@@ -1162,7 +1162,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
             t_FunStmt *fun_stmt = fun_it->second;
             if (call_expr->arguments.size() != fun_stmt->parameters.size())
             {
-                return t_Expected<std::string, t_ErrorInfo>
+                return Expected<std::string, t_ErrorInfo>
                 (
                     t_ErrorInfo
                     (
@@ -1178,7 +1178,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
 
             for (size_t i = 0; i < call_expr->arguments.size(); ++i)
             {
-                t_Expected<std::string, t_ErrorInfo> arg_result =
+                Expected<std::string, t_ErrorInfo> arg_result =
                 Evaluate(call_expr->arguments[i].get());
                 if (!arg_result.HasValue())
                 {
@@ -1213,13 +1213,13 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                 {
                     m_IsReturning = false;
                 
-                    t_Expected<int, t_ErrorInfo> body_result =
+                    Expected<int, t_ErrorInfo> body_result =
                         Execute(fun_stmt->body.get());
                 
                     if (!body_result.HasValue())
                     {
                         PopScope();
-                        return t_Expected<std::string, t_ErrorInfo>
+                        return Expected<std::string, t_ErrorInfo>
                         (
                             body_result.Error()
                         );
@@ -1253,13 +1253,13 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                     m_Environment.find(key)->second = value;
                 }
             
-                return t_Expected<std::string, t_ErrorInfo>(return_value);
+                return Expected<std::string, t_ErrorInfo>(return_value);
             }
 
             catch (...)
             {
                 PopScope();
-                return t_Expected<std::string, t_ErrorInfo>
+                return Expected<std::string, t_ErrorInfo>
                 (
                     t_ErrorInfo
                     (
@@ -1271,7 +1271,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
             }
         }
 
-        return t_Expected<std::string, t_ErrorInfo>
+        return Expected<std::string, t_ErrorInfo>
         (
             t_ErrorInfo
             (
@@ -1284,7 +1284,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
 
     if (t_UnaryExpr *unary = As<t_UnaryExpr>(expr))
     {
-        t_Expected<std::string, t_ErrorInfo> right_result = 
+        Expected<std::string, t_ErrorInfo> right_result = 
         Evaluate(unary->right.get());
         if (!right_result.HasValue())
         {
@@ -1308,7 +1308,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                     try
                     {
                         double value = std::stod(right_literal->value);
-                        return t_Expected<std::string, t_ErrorInfo>
+                        return Expected<std::string, t_ErrorInfo>
                         (
                             FormatNumber(-value)
                         );
@@ -1316,16 +1316,16 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                     catch (...) {}
                 }
             }
-            return t_Expected<std::string, t_ErrorInfo>("-" + right);
+            return Expected<std::string, t_ErrorInfo>("-" + right);
 
         case e_TokenType::BANG:
-            return t_Expected<std::string, t_ErrorInfo>
+            return Expected<std::string, t_ErrorInfo>
             (
                 (right == "false" || right == "0") ? "true" : "false"
             );
 
         default:
-            return t_Expected<std::string, t_ErrorInfo>
+            return Expected<std::string, t_ErrorInfo>
             (
                 t_ErrorInfo
                 (
@@ -1349,7 +1349,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
             
             if (it == m_Environment.end())
             {
-                return t_Expected<std::string, t_ErrorInfo>
+                return Expected<std::string, t_ErrorInfo>
                 (
                     t_ErrorInfo
                     (
@@ -1368,7 +1368,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                 {
                     double new_value = current_value.numeric_value + 1.0;
                     m_Environment[var_name] = t_TypedValue(new_value);
-                    return t_Expected<std::string, t_ErrorInfo>
+                    return Expected<std::string, t_ErrorInfo>
                     (
                         std::to_string(new_value)
                     );
@@ -1377,7 +1377,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                 {
                     double new_value = current_value.numeric_value - 1.0;
                     m_Environment[var_name] = t_TypedValue(new_value);
-                    return t_Expected<std::string, t_ErrorInfo>
+                    return Expected<std::string, t_ErrorInfo>
                     (
                         std::to_string(new_value)
                     );
@@ -1408,7 +1408,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                         (
                             new_value, e_ValueType::NUMBER
                         );
-                        return t_Expected<std::string, t_ErrorInfo>(new_value);
+                        return Expected<std::string, t_ErrorInfo>(new_value);
                     }
                     else if (prefix->op.type == e_TokenType::MINUS_MINUS)
                     {
@@ -1431,12 +1431,12 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                         (
                             new_value, e_ValueType::NUMBER
                         );
-                        return t_Expected<std::string, t_ErrorInfo>(new_value);
+                        return Expected<std::string, t_ErrorInfo>(new_value);
                     }
                 }
                 catch (...)
                 {
-                    return t_Expected<std::string, t_ErrorInfo>
+                    return Expected<std::string, t_ErrorInfo>
                     (
                         t_ErrorInfo
                         (
@@ -1447,7 +1447,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                 }
             }
         }
-        return t_Expected<std::string, t_ErrorInfo>
+        return Expected<std::string, t_ErrorInfo>
         (
             t_ErrorInfo
             (
@@ -1469,7 +1469,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
             auto it = m_Environment.find(var_name);
             if (it == m_Environment.end())
             {
-                return t_Expected<std::string, t_ErrorInfo>
+                return Expected<std::string, t_ErrorInfo>
                 (
                     t_ErrorInfo
                     (
@@ -1492,7 +1492,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                     double new_value = current_value.numeric_value + 1.0;
                     m_Environment[var_name] = t_TypedValue(new_value);
                     
-                    return t_Expected<std::string, t_ErrorInfo>
+                    return Expected<std::string, t_ErrorInfo>
                     (
                         current_value.value
                     ); 
@@ -1501,7 +1501,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                 {
                     double new_value = current_value.numeric_value - 1.0;
                     m_Environment[var_name] = t_TypedValue(new_value);
-                    return t_Expected<std::string, t_ErrorInfo>
+                    return Expected<std::string, t_ErrorInfo>
                     (
                         current_value.value
                     ); 
@@ -1550,7 +1550,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                 }
                 catch (...)
                 {
-                    return t_Expected<std::string, t_ErrorInfo>
+                    return Expected<std::string, t_ErrorInfo>
                     (
                         t_ErrorInfo
                         (
@@ -1561,9 +1561,9 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                 }
             }
             
-            return t_Expected<std::string, t_ErrorInfo>(m_ReturnValue);
+            return Expected<std::string, t_ErrorInfo>(m_ReturnValue);
         }
-        return t_Expected<std::string, t_ErrorInfo>
+        return Expected<std::string, t_ErrorInfo>
         (
             t_ErrorInfo
             (
@@ -1599,7 +1599,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                 // All variables must be declared before use
                 if (!m_Environment.contains(var_name))
                 {
-                    return t_Expected<std::string, t_ErrorInfo>
+                    return Expected<std::string, t_ErrorInfo>
                     (
                         t_ErrorInfo
                         (
@@ -1610,7 +1610,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                 }
                 
                 // For compound assignments, we need to get the current value first
-                t_Expected<std::string, t_ErrorInfo> left_result = 
+                Expected<std::string, t_ErrorInfo> left_result = 
                 Evaluate(binary->left.get());
 
                 if (!left_result.HasValue())
@@ -1619,7 +1619,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                 }
                 std::string left_value = left_result.Value();
                 
-                t_Expected<std::string, t_ErrorInfo> right_result = 
+                Expected<std::string, t_ErrorInfo> right_result = 
                 Evaluate(binary->right.get());
 
                 if (!right_result.HasValue())
@@ -1628,14 +1628,14 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                 }
                 std::string right_value = right_result.Value();
                 
-                t_Expected<std::string, t_ErrorInfo> final_value_result(right_value);
+                Expected<std::string, t_ErrorInfo> final_value_result(right_value);
                 
                 // Handle compound assignments by converting them to regular operations
                 switch (binary->op.type)
                 {
                 case e_TokenType::EQUAL:
                     final_value_result = 
-                    t_Expected<std::string, t_ErrorInfo>(right_value);
+                    Expected<std::string, t_ErrorInfo>(right_value);
                     break;
                     
                 case e_TokenType::PLUS_EQUAL:
@@ -1645,14 +1645,14 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                             double left_val = std::stod(left_value);
                             double right_val = std::stod(right_value);
                             final_value_result = 
-                            t_Expected<std::string, t_ErrorInfo>
+                            Expected<std::string, t_ErrorInfo>
                             (
                                 FormatNumber(left_val + right_val)
                             );
                         }
                         catch (...)
                         {
-                            final_value_result = t_Expected<std::string, t_ErrorInfo>
+                            final_value_result = Expected<std::string, t_ErrorInfo>
                             (
                                 t_ErrorInfo
                                 (
@@ -1671,7 +1671,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                             double left_val = std::stod(left_value);
                             double right_val = std::stod(right_value);
                             final_value_result = 
-                            t_Expected<std::string, t_ErrorInfo>
+                            Expected<std::string, t_ErrorInfo>
                             (
                                 FormatNumber(left_val - right_val)
                             );
@@ -1679,7 +1679,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                         catch (...)
                         {
                             final_value_result = 
-                            t_Expected<std::string, t_ErrorInfo>
+                            Expected<std::string, t_ErrorInfo>
                             (
                                 t_ErrorInfo
                                 (
@@ -1698,14 +1698,14 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                             double left_val = std::stod(left_value);
                             double right_val = std::stod(right_value);
                             final_value_result = 
-                            t_Expected<std::string, t_ErrorInfo>
+                            Expected<std::string, t_ErrorInfo>
                             (
                                 FormatNumber(left_val * right_val)
                             );
                         }
                         catch (...)
                         {
-                            final_value_result = t_Expected<std::string, t_ErrorInfo>
+                            final_value_result = Expected<std::string, t_ErrorInfo>
                             (
                                 t_ErrorInfo
                                 (
@@ -1726,7 +1726,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                             
                             if (right_val == 0)
                             {
-                                final_value_result = t_Expected<std::string, t_ErrorInfo>
+                                final_value_result = Expected<std::string, t_ErrorInfo>
                                 (
                                     t_ErrorInfo
                                     (
@@ -1738,7 +1738,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                             else
                             {
                                 final_value_result = 
-                                t_Expected<std::string, t_ErrorInfo>
+                                Expected<std::string, t_ErrorInfo>
                                 (
                                     FormatNumber(std::fmod(left_val, right_val))
                                 );
@@ -1746,7 +1746,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                         }
                         catch (...)
                         {
-                            final_value_result = t_Expected<std::string, t_ErrorInfo>
+                            final_value_result = Expected<std::string, t_ErrorInfo>
                             (
                                 t_ErrorInfo
                                 (
@@ -1767,7 +1767,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                             
                             if (right_val == 0)
                             {
-                                final_value_result = t_Expected<std::string, t_ErrorInfo>
+                                final_value_result = Expected<std::string, t_ErrorInfo>
                                 (
                                     t_ErrorInfo
                                     (
@@ -1779,7 +1779,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                             else
                             {
                                 final_value_result = 
-                                t_Expected<std::string, t_ErrorInfo>
+                                Expected<std::string, t_ErrorInfo>
                                 (
                                     FormatNumber(left_val / right_val)
                                 );
@@ -1787,7 +1787,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                         }
                         catch (...)
                         {
-                            final_value_result = t_Expected<std::string, t_ErrorInfo>
+                            final_value_result = Expected<std::string, t_ErrorInfo>
                             (
                                 t_ErrorInfo
                                 (
@@ -1801,7 +1801,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                     
                 default:
                     final_value_result = 
-                    t_Expected<std::string, t_ErrorInfo>(right_value);
+                    Expected<std::string, t_ErrorInfo>(right_value);
                     break;
                 }
                 
@@ -1862,7 +1862,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                             break;
                         }
                         
-                        return t_Expected<std::string, t_ErrorInfo>
+                        return Expected<std::string, t_ErrorInfo>
                         (
                             t_ErrorInfo
                             (
@@ -1888,11 +1888,11 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                 );
                 
                 // Return the assigned value
-                return t_Expected<std::string, t_ErrorInfo>(final_value);
+                return Expected<std::string, t_ErrorInfo>(final_value);
             }
             else
             {
-                return t_Expected<std::string, t_ErrorInfo>
+                return Expected<std::string, t_ErrorInfo>
                 (
                     t_ErrorInfo
                     (
@@ -1904,7 +1904,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
         }
         
         // Evaluate operands
-        t_Expected<std::string, t_ErrorInfo> left_result = 
+        Expected<std::string, t_ErrorInfo> left_result = 
         Evaluate(binary->left.get());
         if (!left_result.HasValue())
         {
@@ -1916,17 +1916,17 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
         {
             if (!IsTruthy(left_str))
             {
-                return t_Expected<std::string, t_ErrorInfo>("false");
+                return Expected<std::string, t_ErrorInfo>("false");
             }
 
-            t_Expected<std::string, t_ErrorInfo> right_result =
+            Expected<std::string, t_ErrorInfo> right_result =
             Evaluate(binary->right.get());
             if (!right_result.HasValue())
             {
                 return right_result;
             }
 
-            return t_Expected<std::string, t_ErrorInfo>
+            return Expected<std::string, t_ErrorInfo>
             (
                 IsTruthy(right_result.Value()) ? "true" : "false"
             );
@@ -1936,23 +1936,23 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
         {
             if (IsTruthy(left_str))
             {
-                return t_Expected<std::string, t_ErrorInfo>("true");
+                return Expected<std::string, t_ErrorInfo>("true");
             }
 
-            t_Expected<std::string, t_ErrorInfo> right_result =
+            Expected<std::string, t_ErrorInfo> right_result =
             Evaluate(binary->right.get());
             if (!right_result.HasValue())
             {
                 return right_result;
             }
 
-            return t_Expected<std::string, t_ErrorInfo>
+            return Expected<std::string, t_ErrorInfo>
             (
                 IsTruthy(right_result.Value()) ? "true" : "false"
             );
         }
         
-        t_Expected<std::string, t_ErrorInfo> right_result = 
+        Expected<std::string, t_ErrorInfo> right_result = 
         Evaluate(binary->right.get());
         if (!right_result.HasValue())
         {
@@ -1973,14 +1973,14 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                 {
                     double left_val = std::stod(left_str);
                     double right_val = std::stod(right_str);
-                    return t_Expected<std::string, t_ErrorInfo>
+                    return Expected<std::string, t_ErrorInfo>
                     (
                         FormatNumber(left_val + right_val)
                     );
                 }
                 catch (...)
                 {
-                    return t_Expected<std::string, t_ErrorInfo>
+                    return Expected<std::string, t_ErrorInfo>
                     (
                         t_ErrorInfo
                         (
@@ -1998,14 +1998,14 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                 {
                     double left_val = std::stod(left_str);
                     double right_val = std::stod(right_str);
-                    return t_Expected<std::string, t_ErrorInfo>
+                    return Expected<std::string, t_ErrorInfo>
                     (
                         FormatNumber(left_val - right_val)
                     );
                 }
                 catch (...)
                 {
-                    return t_Expected<std::string, t_ErrorInfo>
+                    return Expected<std::string, t_ErrorInfo>
                     (
                         t_ErrorInfo
                         (
@@ -2023,14 +2023,14 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                 {
                     double left_val = std::stod(left_str);
                     double right_val = std::stod(right_str);
-                    return t_Expected<std::string, t_ErrorInfo>
+                    return Expected<std::string, t_ErrorInfo>
                     (
                         FormatNumber(left_val * right_val)
                     );
                 }
                 catch (...)
                 {
-                    return t_Expected<std::string, t_ErrorInfo>
+                    return Expected<std::string, t_ErrorInfo>
                     (
                         t_ErrorInfo
                         (
@@ -2051,7 +2051,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                     
                     if (right_val == 0)
                     {
-                        return t_Expected<std::string, t_ErrorInfo>
+                        return Expected<std::string, t_ErrorInfo>
                         (
                             t_ErrorInfo
                             (
@@ -2061,14 +2061,14 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                         );
                     }
                     
-                    return t_Expected<std::string, t_ErrorInfo>
+                    return Expected<std::string, t_ErrorInfo>
                     (
                         FormatNumber(std::fmod(left_val, right_val))
                     );
                 }
                 catch (...)
                 {
-                    return t_Expected<std::string, t_ErrorInfo>
+                    return Expected<std::string, t_ErrorInfo>
                     (
                         t_ErrorInfo
                         (
@@ -2089,7 +2089,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                     
                     if (right_val == 0)
                     {
-                        return t_Expected<std::string, t_ErrorInfo>
+                        return Expected<std::string, t_ErrorInfo>
                         (
                             t_ErrorInfo
                             (
@@ -2099,14 +2099,14 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
                         );
                     }
                     
-                    return t_Expected<std::string, t_ErrorInfo>
+                    return Expected<std::string, t_ErrorInfo>
                     (
                         FormatNumber(left_val / right_val)
                     );
                 }
                 catch (...)
                 {
-                    return t_Expected<std::string, t_ErrorInfo>
+                    return Expected<std::string, t_ErrorInfo>
                     (
                         t_ErrorInfo
                         (
@@ -2124,12 +2124,12 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
         case e_TokenType::LESS:
         case e_TokenType::LESS_EQUAL:
             {
-                t_Expected<bool, t_ErrorInfo> comparison_result = PerformComparison(left_typed, binary->op.type, right_typed);
+                Expected<bool, t_ErrorInfo> comparison_result = PerformComparison(left_typed, binary->op.type, right_typed);
                 if (!comparison_result.HasValue())
                 {
-                    return t_Expected<std::string, t_ErrorInfo>(comparison_result.Error());
+                    return Expected<std::string, t_ErrorInfo>(comparison_result.Error());
                 }
-                return t_Expected<std::string, t_ErrorInfo>
+                return Expected<std::string, t_ErrorInfo>
                 (
                     comparison_result.Value() ? "true" : "false"
                 );
@@ -2137,7 +2137,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
         
         default:
             {
-                return t_Expected<std::string, t_ErrorInfo>
+                return Expected<std::string, t_ErrorInfo>
                 (
                     t_ErrorInfo
                     (
@@ -2157,10 +2157,10 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
             it != m_Environment.end()
         )
         {
-            return t_Expected<std::string, t_ErrorInfo>(it->second.value);
+            return Expected<std::string, t_ErrorInfo>(it->second.value);
         }
         // Variables must be declared with 'auto' keyword before use
-        return t_Expected<std::string, t_ErrorInfo>
+        return Expected<std::string, t_ErrorInfo>
         (
             t_ErrorInfo
             (
@@ -2172,16 +2172,16 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::Evaluate(t_Expr *expr)
         );
     }
 
-    return t_Expected<std::string, t_ErrorInfo>("");
+    return Expected<std::string, t_ErrorInfo>("");
 }
 
-std::string t_Interpreter::Stringify(const std::string &value)
+std::string Interpreter::Stringify(const std::string &value)
 {
     // In a real implementation, we would handle different types
     return value;
 }
 
-t_Expected<std::string, t_ErrorInfo> t_Interpreter::EvaluateFormatExpression
+Expected<std::string, t_ErrorInfo> Interpreter::EvaluateFormatExpression
 (
     const std::string &expr_str
 )
@@ -2191,7 +2191,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::EvaluateFormatExpression
         // Handle empty expressions
         if (expr_str.empty())
         {
-            return t_Expected<std::string, t_ErrorInfo>("");
+            return Expected<std::string, t_ErrorInfo>("");
         }
 
         // For simple variable names, look them up directly in the m_Environment
@@ -2201,13 +2201,13 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::EvaluateFormatExpression
             it != m_Environment.end()
         )
         {
-            return t_Expected<std::string, t_ErrorInfo>(it->second.value);
+            return Expected<std::string, t_ErrorInfo>(it->second.value);
         }
         
         // For numeric literals, return them directly
         if (DetectType(expr_str) == e_ValueType::NUMBER)
         {
-            return t_Expected<std::string, t_ErrorInfo>(expr_str);
+            return Expected<std::string, t_ErrorInfo>(expr_str);
         }
 
         // Handle simple arithmetic expressions
@@ -2235,13 +2235,13 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::EvaluateFormatExpression
             right_str.erase(right_str.find_last_not_of(" \t") + 1);
             
             // Evaluate left and right operands
-            t_Expected<std::string, t_ErrorInfo> left_result = 
+            Expected<std::string, t_ErrorInfo> left_result = 
             EvaluateFormatExpression(left_str);
             if (!left_result.HasValue())
             {
                 return left_result;
             }
-            t_Expected<std::string, t_ErrorInfo> right_result = 
+            Expected<std::string, t_ErrorInfo> right_result = 
             EvaluateFormatExpression(right_str);
             if (!right_result.HasValue())
             {
@@ -2256,14 +2256,14 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::EvaluateFormatExpression
             {
                 double left_val = std::stod(left_value);
                 double right_val = std::stod(right_value);
-                return t_Expected<std::string, t_ErrorInfo>
+                return Expected<std::string, t_ErrorInfo>
                 (
                     FormatNumber(left_val * right_val)
                 );
             }
             catch (...)
             {
-                return t_Expected<std::string, t_ErrorInfo>
+                return Expected<std::string, t_ErrorInfo>
                 (
                     t_ErrorInfo
                     (
@@ -2293,13 +2293,13 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::EvaluateFormatExpression
             right_str.erase(right_str.find_last_not_of(" \t") + 1);
             
             // Evaluate left and right operands
-            t_Expected<std::string, t_ErrorInfo> left_result = 
+            Expected<std::string, t_ErrorInfo> left_result = 
             EvaluateFormatExpression(left_str);
             if (!left_result.HasValue())
             {
                 return left_result;
             }
-            t_Expected<std::string, t_ErrorInfo> right_result = 
+            Expected<std::string, t_ErrorInfo> right_result = 
             EvaluateFormatExpression(right_str);
             if (!right_result.HasValue())
             {
@@ -2317,7 +2317,7 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::EvaluateFormatExpression
                 
                 if (right_val == 0)
                 {
-                    return t_Expected<std::string, t_ErrorInfo>
+                    return Expected<std::string, t_ErrorInfo>
                     (
                         t_ErrorInfo
                         (
@@ -2327,14 +2327,14 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::EvaluateFormatExpression
                     );
                 }
                 
-                return t_Expected<std::string, t_ErrorInfo>
+                return Expected<std::string, t_ErrorInfo>
                 (
                     FormatNumber(left_val / right_val)
                 );
             }
             catch (...)
             {
-                return t_Expected<std::string, t_ErrorInfo>
+                return Expected<std::string, t_ErrorInfo>
                 (
                     t_ErrorInfo
                     (
@@ -2364,13 +2364,13 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::EvaluateFormatExpression
             right_str.erase(right_str.find_last_not_of(" \t") + 1);
             
             // Evaluate left and right operands
-            t_Expected<std::string, t_ErrorInfo> left_result = 
+            Expected<std::string, t_ErrorInfo> left_result = 
             EvaluateFormatExpression(left_str);
             if (!left_result.HasValue())
             {
                 return left_result;
             }
-            t_Expected<std::string, t_ErrorInfo> right_result = 
+            Expected<std::string, t_ErrorInfo> right_result = 
             EvaluateFormatExpression(right_str);
             if (!right_result.HasValue())
             {
@@ -2385,14 +2385,14 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::EvaluateFormatExpression
             {
                 double left_val = std::stod(left_value);
                 double right_val = std::stod(right_value);
-                return t_Expected<std::string, t_ErrorInfo>
+                return Expected<std::string, t_ErrorInfo>
                 (
                     FormatNumber(left_val + right_val)
                 );
             }
             catch (...)
             {
-                return t_Expected<std::string, t_ErrorInfo>
+                return Expected<std::string, t_ErrorInfo>
                 (
                     t_ErrorInfo
                     (
@@ -2422,13 +2422,13 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::EvaluateFormatExpression
             right_str.erase(right_str.find_last_not_of(" \t") + 1);
             
             // Evaluate left and right operands
-            t_Expected<std::string, t_ErrorInfo> left_result = 
+            Expected<std::string, t_ErrorInfo> left_result = 
             EvaluateFormatExpression(left_str);
             if (!left_result.HasValue())
             {
                 return left_result;
             }
-            t_Expected<std::string, t_ErrorInfo> right_result = 
+            Expected<std::string, t_ErrorInfo> right_result = 
             EvaluateFormatExpression(right_str);
             if (!right_result.HasValue())
             {
@@ -2443,14 +2443,14 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::EvaluateFormatExpression
             {
                 double left_val = std::stod(left_value);
                 double right_val = std::stod(right_value);
-                return t_Expected<std::string, t_ErrorInfo>
+                return Expected<std::string, t_ErrorInfo>
                 (
                     FormatNumber(left_val - right_val)
                 );
             }
             catch (...)
             {
-                return t_Expected<std::string, t_ErrorInfo>
+                return Expected<std::string, t_ErrorInfo>
                 (
                     t_ErrorInfo
                     (
@@ -2462,17 +2462,17 @@ t_Expected<std::string, t_ErrorInfo> t_Interpreter::EvaluateFormatExpression
         }
         
         // For other complex expressions, return the expression as a string
-        return t_Expected<std::string, t_ErrorInfo>(expr_str);
+        return Expected<std::string, t_ErrorInfo>(expr_str);
     }
     catch (...)
     {
         // If parsing fails, treat as literal text
-        return t_Expected<std::string, t_ErrorInfo>(expr_str);
+        return Expected<std::string, t_ErrorInfo>(expr_str);
     }
 }
 
 // Helper function to check if a for loop is a simple numeric loop pattern: for (auto i = 0; i < N; i++)
-bool t_Interpreter::IsSimpleNumericLoop(t_ForStmt* for_stmt)
+bool Interpreter::IsSimpleNumericLoop(t_ForStmt* for_stmt)
 {
     // Check if initializer is: auto var = 0
     if (!for_stmt->initializer) return false;
@@ -2719,7 +2719,7 @@ bool t_Interpreter::IsSimpleNumericLoop(t_ForStmt* for_stmt)
 }
 
 // Ultra-fast optimization for simple accumulation loops: for (auto i = 0; i < N; i++) { var += i; }
-bool t_Interpreter::IsSimpleAccumulationLoop(t_ForStmt* for_stmt)
+bool Interpreter::IsSimpleAccumulationLoop(t_ForStmt* for_stmt)
 {
     // First check if it's a simple numeric loop
     if (!IsSimpleNumericLoop(for_stmt)) return false;
@@ -2808,7 +2808,7 @@ bool t_Interpreter::IsSimpleAccumulationLoop(t_ForStmt* for_stmt)
 }
 
 // Ultra-fast native execution for simple accumulation loops
-t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteAccumulationLoop
+Expected<int, t_ErrorInfo> Interpreter::ExecuteAccumulationLoop
 (
     t_ForStmt* for_stmt
 )
@@ -2845,7 +2845,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteAccumulationLoop
     auto acc_it = m_Environment.find(acc_var_name);
     if (acc_it == m_Environment.end())
     {
-        return t_Expected<int, t_ErrorInfo>
+        return Expected<int, t_ErrorInfo>
         (
             t_ErrorInfo
             (
@@ -2871,7 +2871,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteAccumulationLoop
         }
         catch (...)
         {
-            return t_Expected<int, t_ErrorInfo>
+            return Expected<int, t_ErrorInfo>
             (
                 t_ErrorInfo
                 (
@@ -2891,11 +2891,11 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteAccumulationLoop
     // Update the accumulation variable with the result
     m_Environment[acc_var_name] = t_TypedValue(accumulator);
 
-    return t_Expected<int, t_ErrorInfo>(0);
+    return Expected<int, t_ErrorInfo>(0);
 }
 
 // Check if a for loop contains a nested loop with arithmetic accumulation
-bool t_Interpreter::IsNestedArithmeticLoop(t_ForStmt* for_stmt)
+bool Interpreter::IsNestedArithmeticLoop(t_ForStmt* for_stmt)
 {
     // First check if outer loop is a simple numeric loop
     if (!IsSimpleNumericLoop(for_stmt)) return false;
@@ -2998,7 +2998,7 @@ bool t_Interpreter::IsNestedArithmeticLoop(t_ForStmt* for_stmt)
 }
 
 // Ultra-fast native execution for nested loops with arithmetic expressions
-t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteNestedArithmeticLoop
+Expected<int, t_ErrorInfo> Interpreter::ExecuteNestedArithmeticLoop
 (
     t_ForStmt* for_stmt
 )
@@ -3053,7 +3053,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteNestedArithmeticLoop
     auto acc_it = m_Environment.find(acc_var_name);
     if (acc_it == m_Environment.end())
     {
-        return t_Expected<int, t_ErrorInfo>
+        return Expected<int, t_ErrorInfo>
         (
             t_ErrorInfo
             (
@@ -3079,7 +3079,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteNestedArithmeticLoop
         }
         catch (...)
         {
-            return t_Expected<int, t_ErrorInfo>
+            return Expected<int, t_ErrorInfo>
             (
                 t_ErrorInfo
                 (
@@ -3145,7 +3145,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteNestedArithmeticLoop
             case e_TokenType::SLASH:
                 if (right_val == 0.0)
                 {
-                    return t_Expected<int, t_ErrorInfo>
+                    return Expected<int, t_ErrorInfo>
                     (
                         t_ErrorInfo
                         (
@@ -3159,7 +3159,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteNestedArithmeticLoop
             case e_TokenType::MODULUS:
                 if (right_val == 0.0)
                 {
-                    return t_Expected<int, t_ErrorInfo>
+                    return Expected<int, t_ErrorInfo>
                     (
                         t_ErrorInfo
                         (
@@ -3171,7 +3171,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteNestedArithmeticLoop
                 arith_result = std::fmod(left_val, right_val);
                 break;
             default:
-                return t_Expected<int, t_ErrorInfo>
+                return Expected<int, t_ErrorInfo>
                 (
                     t_ErrorInfo
                     (
@@ -3196,7 +3196,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteNestedArithmeticLoop
             case e_TokenType::SLASH_EQUAL:
                 if (arith_result == 0.0)
                 {
-                    return t_Expected<int, t_ErrorInfo>
+                    return Expected<int, t_ErrorInfo>
                     (
                         t_ErrorInfo
                         (
@@ -3210,7 +3210,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteNestedArithmeticLoop
             case e_TokenType::MODULUS_EQUAL:
                 if (arith_result == 0.0)
                 {
-                    return t_Expected<int, t_ErrorInfo>
+                    return Expected<int, t_ErrorInfo>
                     (
                         t_ErrorInfo
                         (
@@ -3222,7 +3222,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteNestedArithmeticLoop
                 accumulator = std::fmod(accumulator, arith_result);
                 break;
             default:
-                return t_Expected<int, t_ErrorInfo>
+                return Expected<int, t_ErrorInfo>
                 (
                     t_ErrorInfo
                     (
@@ -3237,10 +3237,10 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteNestedArithmeticLoop
     // Update the accumulation variable with the result
     m_Environment[acc_var_name] = t_TypedValue(accumulator);
     
-    return t_Expected<int, t_ErrorInfo>(0);
+    return Expected<int, t_ErrorInfo>(0);
 }
 
-t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
+Expected<int, t_ErrorInfo> Interpreter::ExecuteSimpleNumericLoop
 (
     t_ForStmt* for_stmt
 )
@@ -3442,7 +3442,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
             
             // Execute body
             m_ControlSignal.clear();
-            t_Expected<int, t_ErrorInfo> body_result = 
+            Expected<int, t_ErrorInfo> body_result = 
             Execute(for_stmt->body.get());
 
             if (!body_result.HasValue())
@@ -3469,7 +3469,7 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
             {
                 PopScope();
                 m_LoopDepth--;
-                return t_Expected<int, t_ErrorInfo>(0);
+                return Expected<int, t_ErrorInfo>(0);
             }
             
             // Only increment if no control signal was encountered
@@ -3516,5 +3516,5 @@ t_Expected<int, t_ErrorInfo> t_Interpreter::ExecuteSimpleNumericLoop
     }
     m_LoopDepth--;
     
-    return t_Expected<int, t_ErrorInfo>(0); 
+    return Expected<int, t_ErrorInfo>(0); 
 }

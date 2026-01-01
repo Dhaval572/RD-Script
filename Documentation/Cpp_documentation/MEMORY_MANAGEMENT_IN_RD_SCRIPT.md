@@ -8,20 +8,20 @@ The RD Script interpreter uses a **memory pool-based approach** with custom smar
 
 - **Memory Pools**: Both statement and expression objects are allocated from custom memory pools (`MemoryPool`) for better performance and cache locality.
 
-- **Factory Methods**: Objects are constructed via factory methods in `t_ASTContext` (`CreateStmt` and `CreateExpr`), which handle allocation and placement `new` internally.
+- **Factory Methods**: Objects are constructed via factory methods in `ASTContext` (`CreateStmt` and `CreateExpr`), which handle allocation and placement `new` internally.
 
 - **Ownership via `PoolPtr`**: Child nodes are managed via `PoolPtr`, a specialized `std::unique_ptr` that calls destructors without attempting to free the memory (which is handled by the pool).
 
-- **RAII with `t_ASTContext`**: A `t_ASTContext` instance manages the lifecycle of memory pools and ensures they are reset or destroyed properly.
+- **RAII with `ASTContext`**: A `ASTContext` instance manages the lifecycle of memory pools and ensures they are reset or destroyed properly.
 
 ## Core Components
 
-### 1. Memory Pool (`t_MemoryPool`)
+### 1. Memory Pool (`MemoryPool`)
 
-The [t_MemoryPool](file:///c:/Users/LENOVO/Documents/RD%20Script/RD-Script/include/rubberduck/MemoryPool.h) class provides fast allocation by managing chunks and a free list:
+The [MemoryPool](file:///c:/Users/LENOVO/Documents/RD%20Script/RD-Script/include/rubberduck/MemoryPool.h) class provides fast allocation by managing chunks and a free list:
 
 ```cpp
-class t_MemoryPool
+class MemoryPool
 {
     void* Allocate();     // Get memory for one object
     void Deallocate(void* ptr);  // Return memory to pool
@@ -35,12 +35,12 @@ class t_MemoryPool
 - Maintains a free list for O(1) allocation.
 - Properly aligned for all AST node types.
 
-### 2. AST Context (`t_ASTContext`)
+### 2. AST Context (`ASTContext`)
 
-The [t_ASTContext](file:///c:/Users/LENOVO/Documents/RD%20Script/RD-Script/include/rubberduck/ASTContext.h) manages individual memory pools for statements and expressions. It provides template factory methods for safe allocation:
+The [ASTContext](file:///c:/Users/LENOVO/Documents/RD%20Script/RD-Script/include/rubberduck/ASTContext.h) manages individual memory pools for statements and expressions. It provides template factory methods for safe allocation:
 
 ```cpp
-class t_ASTContext
+class ASTContext
 {
 public:
     template<typename T, typename... Args>
@@ -51,7 +51,7 @@ public:
 };
 ```
 
-Unlike previous versions, `t_ASTContext` is now a local RAII object, typically instantiated in `main.cpp` and passed to the parser.
+Unlike previous versions, `ASTContext` is now a local RAII object, typically instantiated in `main.cpp` and passed to the parser.
 
 ### 3. Pool Smart Pointers (`PoolPtr`)
 
@@ -107,13 +107,13 @@ struct t_BinaryExpr : public t_Expr
 
 ## Memory Lifecycle
 
-1.  **Initialization**: A `t_ASTContext` is created. It uses `sizeof(t_StmtVariant)` and `sizeof(t_ExprVariant)` to determine pool slot sizes accurately.
+1.  **Initialization**: A `ASTContext` is created. It uses `sizeof(StmtVariant)` and `sizeof(ExprVariant)` to determine pool slot sizes accurately.
 
 2.  **Parsing Phase**: The parser build the AST and returns a `std::vector<PoolPtr<t_Stmt>>`. This vector now **owns** the root nodes.
 
 3.  **Interpretation**: The interpreter traverses the AST via these managed pointers.
 
-4.  **Cleanup**: When the `statements` vector goes out of scope in `main.cpp`, it triggers a recursive chain of destructors. This ensures that any heap-allocated metadata (like `std::string` values) is cleaned up before the memory pool itself is reclaimed by the `t_ASTContext` destructor.
+4.  **Cleanup**: When the `statements` vector goes out of scope in `main.cpp`, it triggers a recursive chain of destructors. This ensures that any heap-allocated metadata (like `std::string` values) is cleaned up before the memory pool itself is reclaimed by the `ASTContext` destructor.
 
 ## Key Points for Developers
 
@@ -123,7 +123,7 @@ struct t_BinaryExpr : public t_Expr
 
 3.  **Efficiency**: This design combines the safety of smart pointers with the performance of pool allocators.
 
-4.  **Automated Sizing**: No need to manually update pool sizes. Just add your new node type to the `t_StmtVariant` or `t_ExprVariant` in `AST.h`.
+4.  **Automated Sizing**: No need to manually update pool sizes. Just add your new node type to the `StmtVariant` or `ExprVariant` in `AST.h`.
 
 5.  **Bulk Reset**: Calling `context.Reset()` can recycle all memory in the pools instantly, which is useful for long-running processes or multiple parsing passes.
 
