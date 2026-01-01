@@ -61,5 +61,5 @@ public:
         const std::vector<t_Token> &tokens, 
         t_ASTContext& context
     );
-    t_Expected<std::vector<t_PoolPtr<t_Stmt>>, t_ErrorInfo> Parse();
+    t_Expected<std::vector<PoolPtr<t_Stmt>>, t_ErrorInfo> Parse();
 };

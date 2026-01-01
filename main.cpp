@@ -74,18 +74,20 @@ int main(int argc, char* argv[])
 
     // Parsing with memory pool optimization
     t_Parser parser(tokens, ast_context);
-    t_Expected<std::vector<t_PoolPtr<t_Stmt>>, t_ErrorInfo> statements_result = 
+    t_Expected<std::vector<PoolPtr<t_Stmt>>, t_ErrorInfo> statements_result = 
     parser.Parse();
     if (!statements_result.HasValue())
     {
         ReportError(statements_result.Error());
         return 1;
     }
-    std::vector<t_PoolPtr<t_Stmt>> statements = std::move(statements_result.Value());
+    std::vector<PoolPtr<t_Stmt>> statements = 
+    std::move(statements_result.Value());
 
     // Interpretation
     t_Interpreter interpreter;
-    t_InterpretationResult interpret_result = interpreter.Interpret(statements);
+    t_InterpretationResult interpret_result = 
+    interpreter.Interpret(statements);
     if (!interpret_result.HasValue())
     {
         // Error already reported in Interpret method

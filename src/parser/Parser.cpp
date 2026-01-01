@@ -77,24 +77,24 @@ t_Parser::t_Parser
 )
     : m_Tokens(tokens), m_Current(0), m_Context(context) {}
 
-t_Expected<std::vector<t_PoolPtr<t_Stmt>>, t_ErrorInfo> t_Parser::Parse()
+t_Expected<std::vector<PoolPtr<t_Stmt>>, t_ErrorInfo> t_Parser::Parse()
 {
-    std::vector<t_PoolPtr<t_Stmt>> statements;
+    std::vector<PoolPtr<t_Stmt>> statements;
     statements.reserve(64);
     while (!IsAtEnd())
     {
         t_Expected<t_Stmt*, t_ErrorInfo> result = Statement();
         if (!result.HasValue())
         {
-            return t_Expected<std::vector<t_PoolPtr<t_Stmt>>, t_ErrorInfo>
+            return t_Expected<std::vector<PoolPtr<t_Stmt>>, t_ErrorInfo>
             (
                 result.Error()
             );
         }
-        statements.push_back(t_PoolPtr<t_Stmt>(result.Value()));
+        statements.push_back(PoolPtr<t_Stmt>(result.Value()));
     }
 
-    return t_Expected<std::vector<t_PoolPtr<t_Stmt>>, t_ErrorInfo>
+    return t_Expected<std::vector<PoolPtr<t_Stmt>>, t_ErrorInfo>
     (
         std::move(statements)
     );
@@ -246,7 +246,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::Statement()
 
 t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::BlockStatement()
 {
-    std::vector<t_PoolPtr<t_Stmt>> statements;
+    std::vector<PoolPtr<t_Stmt>> statements;
     statements.reserve(64);
 
     while (!Check(e_TokenType::RIGHT_BRACE) && !IsAtEnd())
@@ -256,7 +256,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::BlockStatement()
         {
             return t_Expected<t_Stmt*, t_ErrorInfo>(result.Error());
         }
-        statements.push_back(t_PoolPtr<t_Stmt>(result.Value()));
+        statements.push_back(PoolPtr<t_Stmt>(result.Value()));
     }
 
     t_Expected<t_Token, t_ErrorInfo> consume_result = 
@@ -370,7 +370,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::IfStatement()
     t_Stmt *then_branch = then_result.Value();
 
     // Check for else branch
-    t_PoolPtr<t_Stmt> else_branch = nullptr;
+    PoolPtr<t_Stmt> else_branch = nullptr;
     if (Match({e_TokenType::ELSE}))
     {
         t_Expected<t_Stmt*, t_ErrorInfo> else_result = Statement();
@@ -378,13 +378,13 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::IfStatement()
         {
             return t_Expected<t_Stmt*, t_ErrorInfo>(else_result.Error());
         }
-        else_branch = t_PoolPtr<t_Stmt>(else_result.Value());
+        else_branch = PoolPtr<t_Stmt>(else_result.Value());
     }
 
     t_IfStmt* stmt = m_Context.CreateStmt<t_IfStmt>
     (
-        t_PoolPtr<t_Expr>(condition), 
-        t_PoolPtr<t_Stmt>(then_branch), 
+        PoolPtr<t_Expr>(condition), 
+        PoolPtr<t_Stmt>(then_branch), 
         std::move(else_branch)
     );
     if (!stmt)
@@ -413,7 +413,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
     }
 
     // Parse initializer (can be variable declaration, expression statement, or empty)
-    t_PoolPtr<t_Stmt> initializer;
+    PoolPtr<t_Stmt> initializer;
     if (Match({e_TokenType::SEMICOLON}))
     {
         initializer = nullptr;
@@ -426,7 +426,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
         {
             return t_Expected<t_Stmt*, t_ErrorInfo>(var_result.Error());
         }
-        initializer = t_PoolPtr<t_Stmt>(var_result.Value());
+        initializer = PoolPtr<t_Stmt>(var_result.Value());
     }
     else
     {
@@ -442,7 +442,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
         t_ExpressionStmt* expr_stmt = 
         m_Context.CreateStmt<t_ExpressionStmt>
         (
-            t_PoolPtr<t_Expr>(expr_result.Value())
+            PoolPtr<t_Expr>(expr_result.Value())
         );
         if (!expr_stmt)
         {
@@ -457,7 +457,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
                 )
             );
         }
-        initializer = t_PoolPtr<t_Stmt>(expr_stmt);
+        initializer = PoolPtr<t_Stmt>(expr_stmt);
         
         // Consume the semicolon after the expression
         t_Expected<t_Token, t_ErrorInfo> semicolon_result = 
@@ -469,7 +469,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
     }
 
     // Parse condition
-    t_PoolPtr<t_Expr> condition;
+    PoolPtr<t_Expr> condition;
     if (!Check(e_TokenType::SEMICOLON))
     {
         t_Expected<t_Expr*, t_ErrorInfo> condition_result = Expression();
@@ -480,7 +480,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
                 condition_result.Error()
             );
         }
-        condition = t_PoolPtr<t_Expr>(condition_result.Value());
+        condition = PoolPtr<t_Expr>(condition_result.Value());
     }
     
     t_Expected<t_Token, t_ErrorInfo> semicolon_result = 
@@ -491,7 +491,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
     }
 
     // Parse increment
-    t_PoolPtr<t_Expr> increment;
+    PoolPtr<t_Expr> increment;
     if (!Check(e_TokenType::RIGHT_PAREN))
     {
         t_Expected<t_Expr*, t_ErrorInfo> increment_result = Expression();
@@ -502,7 +502,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
                 increment_result.Error()
             );
         }
-        increment = t_PoolPtr<t_Expr>(increment_result.Value());
+        increment = PoolPtr<t_Expr>(increment_result.Value());
     }
     
     t_Expected<t_Token, t_ErrorInfo> close_paren_result = 
@@ -525,7 +525,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ForStatement()
         std::move(initializer),
         std::move(condition),
         std::move(increment),
-        t_PoolPtr<t_Stmt>(body)
+        PoolPtr<t_Stmt>(body)
     );
     if (!stmt)
     {
@@ -772,7 +772,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::VarDeclaration()
     }
     t_Token name = name_result.Value();
 
-    t_PoolPtr<t_Expr> initializer = nullptr;
+    PoolPtr<t_Expr> initializer = nullptr;
     if (Match({e_TokenType::EQUAL}))
     {
         t_Expected<t_Expr*, t_ErrorInfo> init_result = Expression();
@@ -780,7 +780,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::VarDeclaration()
         {
             return t_Expected<t_Stmt*, t_ErrorInfo>(init_result.Error());
         }
-        initializer = t_PoolPtr<t_Expr>(init_result.Value());
+        initializer = PoolPtr<t_Expr>(init_result.Value());
     }
 
     t_Expected<t_Token, t_ErrorInfo> semicolon_result = 
@@ -817,7 +817,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::VarDeclaration()
 
 t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::DisplayStatement()
 {
-    std::vector<t_PoolPtr<t_Expr>> values;
+    std::vector<PoolPtr<t_Expr>> values;
     values.reserve(64);
 
     // Parse the first expression
@@ -826,7 +826,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::DisplayStatement()
     {
         return t_Expected<t_Stmt*, t_ErrorInfo>(first_expr_result.Error());
     }
-    values.emplace_back(t_PoolPtr<t_Expr>(first_expr_result.Value()));
+    values.emplace_back(PoolPtr<t_Expr>(first_expr_result.Value()));
 
     // Parse additional comma-separated expressions
     while (Match({e_TokenType::COMMA}))
@@ -836,7 +836,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::DisplayStatement()
         {
             return t_Expected<t_Stmt*, t_ErrorInfo>(expr_result.Error());
         }
-        values.emplace_back(t_PoolPtr<t_Expr>(expr_result.Value()));
+        values.emplace_back(PoolPtr<t_Expr>(expr_result.Value()));
     }
 
     t_Expected<t_Token, t_ErrorInfo> semicolon_result = 
@@ -1056,7 +1056,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::FunDeclaration()
         (
             name_token.lexeme,
             std::move(parameters),
-            t_PoolPtr<t_Stmt>(body_stmt)
+            PoolPtr<t_Stmt>(body_stmt)
         );
         if (!stmt)
         {
@@ -1092,7 +1092,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::FunDeclaration()
     (
         name_token.lexeme,
         std::move(parameters),
-        t_PoolPtr<t_Stmt>(nullptr)
+        PoolPtr<t_Stmt>(nullptr)
     );
     if (!stmt)
     {
@@ -1127,7 +1127,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ExpressionStatement()
     }
     
     t_ExpressionStmt* stmt = 
-    m_Context.CreateStmt<t_ExpressionStmt>(t_PoolPtr<t_Expr>(expr));
+    m_Context.CreateStmt<t_ExpressionStmt>(PoolPtr<t_Expr>(expr));
     if (!stmt)
     {
         return t_Expected<t_Stmt*, t_ErrorInfo>
@@ -1174,7 +1174,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::BenchmarkStatement()
     }
     
     // Parse the benchmark body
-    std::vector<t_PoolPtr<t_Stmt>> statements;
+    std::vector<PoolPtr<t_Stmt>> statements;
     statements.reserve(32);
     while (!Check(e_TokenType::RIGHT_BRACE) && !IsAtEnd())
     {
@@ -1183,7 +1183,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::BenchmarkStatement()
         {
             return t_Expected<t_Stmt*, t_ErrorInfo>(stmt_result.Error());
         }
-        statements.emplace_back(t_PoolPtr<t_Stmt>(stmt_result.Value()));
+        statements.emplace_back(PoolPtr<t_Stmt>(stmt_result.Value()));
     }
     
     t_Expected<t_Token, t_ErrorInfo> close_brace_result = 
@@ -1210,7 +1210,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::BenchmarkStatement()
     }
     
     t_BenchmarkStmt* stmt = 
-    m_Context.CreateStmt<t_BenchmarkStmt>(t_PoolPtr<t_Stmt>(body));
+    m_Context.CreateStmt<t_BenchmarkStmt>(PoolPtr<t_Stmt>(body));
     if (!stmt)
     {
         return t_Expected<t_Stmt*, t_ErrorInfo>
@@ -1269,9 +1269,9 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Assignment()
             std::string name = var_expr->name;
             t_BinaryExpr* expr_node = m_Context.CreateExpr<t_BinaryExpr>
             (
-                t_PoolPtr<t_Expr>(expr), 
+                PoolPtr<t_Expr>(expr), 
                 equals, 
-                t_PoolPtr<t_Expr>(value)
+                PoolPtr<t_Expr>(value)
             );
             if (!expr_node)
             {
@@ -1326,9 +1326,9 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Or()
 
         t_BinaryExpr* expr_node = m_Context.CreateExpr<t_BinaryExpr>
         (
-            t_PoolPtr<t_Expr>(expr), 
+            PoolPtr<t_Expr>(expr), 
             op, 
-            t_PoolPtr<t_Expr>(right)
+            PoolPtr<t_Expr>(right)
         );
         if (!expr_node)
         {
@@ -1370,9 +1370,9 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::And()
         
         t_BinaryExpr* expr_node = m_Context.CreateExpr<t_BinaryExpr>
         (
-            t_PoolPtr<t_Expr>(expr), 
+            PoolPtr<t_Expr>(expr), 
             op, 
-            t_PoolPtr<t_Expr>(right)
+            PoolPtr<t_Expr>(right)
         );
         if (!expr_node)
         {
@@ -1414,9 +1414,9 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Equality()
         
         t_BinaryExpr* expr_node = m_Context.CreateExpr<t_BinaryExpr>
         (
-            t_PoolPtr<t_Expr>(expr), 
+            PoolPtr<t_Expr>(expr), 
             op, 
-            t_PoolPtr<t_Expr>(right)
+            PoolPtr<t_Expr>(right)
         );
         if (!expr_node)
         {
@@ -1469,9 +1469,9 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Comparison()
         
         t_BinaryExpr* expr_node = m_Context.CreateExpr<t_BinaryExpr>
         (
-            t_PoolPtr<t_Expr>(expr), 
+            PoolPtr<t_Expr>(expr), 
             op, 
-            t_PoolPtr<t_Expr>(right)
+            PoolPtr<t_Expr>(right)
         );
         if (!expr_node)
         {
@@ -1534,9 +1534,9 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Term()
         {
             t_BinaryExpr* expr_node = m_Context.CreateExpr<t_BinaryExpr>
             (
-                t_PoolPtr<t_Expr>(expr), 
+                PoolPtr<t_Expr>(expr), 
                 op, 
-                t_PoolPtr<t_Expr>(right)
+                PoolPtr<t_Expr>(right)
             );
             if (!expr_node)
             {
@@ -1634,9 +1634,9 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Factor()
         {
             t_BinaryExpr* expr_node = m_Context.CreateExpr<t_BinaryExpr>
             (
-                t_PoolPtr<t_Expr>(expr), 
+                PoolPtr<t_Expr>(expr), 
                 op, 
-                t_PoolPtr<t_Expr>(right)
+                PoolPtr<t_Expr>(right)
             );
             if (!expr_node)
             {
@@ -1683,7 +1683,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Unary()
         }
 
         t_UnaryExpr* expr_node = 
-        m_Context.CreateExpr<t_UnaryExpr>(op, t_PoolPtr<t_Expr>(right));
+        m_Context.CreateExpr<t_UnaryExpr>(op, PoolPtr<t_Expr>(right));
         if (!expr_node)
         {
             return t_Expected<t_Expr*, t_ErrorInfo>
@@ -1719,7 +1719,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::FinishUnary()
         t_PostfixExpr* expr_node = 
         m_Context.CreateExpr<t_PostfixExpr>
         (
-            t_PoolPtr<t_Expr>(expr), op
+            PoolPtr<t_Expr>(expr), op
         );
         if (!expr_node)
         {
@@ -1860,7 +1860,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Primary()
         t_Expr *operand = operand_result.Value();
         
         t_PrefixExpr* expr_node = 
-        m_Context.CreateExpr<t_PrefixExpr>(op, t_PoolPtr<t_Expr>(operand));
+        m_Context.CreateExpr<t_PrefixExpr>(op, PoolPtr<t_Expr>(operand));
         if (!expr_node)
         {
             return t_Expected<t_Expr*, t_ErrorInfo>
@@ -1883,7 +1883,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Primary()
 
         if (Match({e_TokenType::LEFT_PAREN}))
         {
-            std::vector<t_PoolPtr<t_Expr>> arguments;
+            std::vector<PoolPtr<t_Expr>> arguments;
 
             if (!Check(e_TokenType::RIGHT_PAREN))
             {
@@ -1898,7 +1898,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Primary()
 
                     arguments.push_back
                     (
-                        t_PoolPtr<t_Expr>(argument_result.Value())
+                        PoolPtr<t_Expr>(argument_result.Value())
                     );
 
                     if (!Match({e_TokenType::COMMA}))
@@ -1979,7 +1979,7 @@ t_Expected<t_Expr*, t_ErrorInfo> t_Parser::Primary()
         }
         
         t_GroupingExpr* expr_node = 
-        m_Context.CreateExpr<t_GroupingExpr>(t_PoolPtr<t_Expr>(expr));
+        m_Context.CreateExpr<t_GroupingExpr>(PoolPtr<t_Expr>(expr));
         if (!expr_node)
         {
             return t_Expected<t_Expr*, t_ErrorInfo>
@@ -2013,7 +2013,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ReturnStatement()
     t_Token keyword = Previous();
     
     // Parse the return value expression (if any)
-    t_PoolPtr<t_Expr> value = nullptr;
+    PoolPtr<t_Expr> value = nullptr;
     if (!Check(e_TokenType::SEMICOLON))
     {
         t_Expected<t_Expr*, t_ErrorInfo> value_result = Expression();
@@ -2021,7 +2021,7 @@ t_Expected<t_Stmt*, t_ErrorInfo> t_Parser::ReturnStatement()
         {
             return t_Expected<t_Stmt*, t_ErrorInfo>(value_result.Error());
         }
-        value = t_PoolPtr<t_Expr>(value_result.Value());
+        value = PoolPtr<t_Expr>(value_result.Value());
     }
     
     t_Expected<t_Token, t_ErrorInfo> result = 

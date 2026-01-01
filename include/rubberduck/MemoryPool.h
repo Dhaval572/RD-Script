@@ -21,7 +21,7 @@ private:
     };
 
     static const size_t BLOCKS_PER_CHUNK = 16;
-    static const size_t ALIGNMENT = alignof(std::max_align_t);
+    static const size_t ALIGNMENT = alignof(max_align_t);
     
     t_Chunk* m_Chunks;
     t_Block* m_FreeBlocks;

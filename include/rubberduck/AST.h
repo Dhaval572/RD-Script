@@ -20,7 +20,7 @@ struct t_PoolDeleter
 };
 
 template<typename T>
-using t_PoolPtr = std::unique_ptr<T, t_PoolDeleter<T>>;
+using PoolPtr = std::unique_ptr<T, t_PoolDeleter<T>>;
 
 struct t_Expr;
 struct t_Stmt;
@@ -111,15 +111,15 @@ public:
 
 struct t_BinaryExpr : public t_Expr
 {
-    t_PoolPtr<t_Expr> left;
+    PoolPtr<t_Expr> left;
     t_Token op;
-    t_PoolPtr<t_Expr> right;
+    PoolPtr<t_Expr> right;
 
     t_BinaryExpr
     (
-        t_PoolPtr<t_Expr> left, 
+        PoolPtr<t_Expr> left, 
         t_Token op, 
-        t_PoolPtr<t_Expr> right
+        PoolPtr<t_Expr> right
     )
         : left(std::move(left)), 
           op(op), 
@@ -147,9 +147,9 @@ struct t_LiteralExpr : public t_Expr
 struct t_UnaryExpr : public t_Expr
 {
     t_Token op;
-    t_PoolPtr<t_Expr> right;
+    PoolPtr<t_Expr> right;
 
-    t_UnaryExpr(t_Token op, t_PoolPtr<t_Expr> right)
+    t_UnaryExpr(t_Token op, PoolPtr<t_Expr> right)
         : op(op), right(std::move(right)) {}
     
     bool IsUnary() const override { return true; }
@@ -158,9 +158,9 @@ struct t_UnaryExpr : public t_Expr
 
 struct t_GroupingExpr : public t_Expr
 {
-    t_PoolPtr<t_Expr> expression;
+    PoolPtr<t_Expr> expression;
 
-    t_GroupingExpr(t_PoolPtr<t_Expr> expression)
+    t_GroupingExpr(PoolPtr<t_Expr> expression)
         : expression(std::move(expression)) {}
     
     bool IsGrouping() const override { return true; }
@@ -179,9 +179,9 @@ struct t_VariableExpr : public t_Expr
 struct t_PrefixExpr : public t_Expr
 {
     t_Token op;
-    t_PoolPtr<t_Expr> operand;
+    PoolPtr<t_Expr> operand;
 
-    t_PrefixExpr(t_Token op, t_PoolPtr<t_Expr> operand)
+    t_PrefixExpr(t_Token op, PoolPtr<t_Expr> operand)
         : op(op), operand(std::move(operand)) {}
     
     bool IsPrefix() const override { return true; }
@@ -190,10 +190,10 @@ struct t_PrefixExpr : public t_Expr
 
 struct t_PostfixExpr : public t_Expr
 {
-    t_PoolPtr<t_Expr> operand;
+    PoolPtr<t_Expr> operand;
     t_Token op;
 
-    t_PostfixExpr(t_PoolPtr<t_Expr> operand, t_Token op)
+    t_PostfixExpr(PoolPtr<t_Expr> operand, t_Token op)
         : operand(std::move(operand)), op(op) {}
     
     bool IsPostfix() const override { return true; }
@@ -203,13 +203,13 @@ struct t_PostfixExpr : public t_Expr
 struct t_CallExpr : public t_Expr
 {
     std::string callee;
-    std::vector<t_PoolPtr<t_Expr>> arguments;
+    std::vector<PoolPtr<t_Expr>> arguments;
     int line;
 
     t_CallExpr
     (
         const std::string &callee,
-        std::vector<t_PoolPtr<t_Expr>> arguments,
+        std::vector<PoolPtr<t_Expr>> arguments,
         int line = 0
     )
         : callee(callee),
@@ -222,9 +222,9 @@ struct t_CallExpr : public t_Expr
 
 struct t_TypeofExpr : public t_Expr
 {
-    t_PoolPtr<t_Expr> operand;
+    PoolPtr<t_Expr> operand;
 
-    t_TypeofExpr(t_PoolPtr<t_Expr> operand)
+    t_TypeofExpr(PoolPtr<t_Expr> operand)
         : operand(std::move(operand)) {}
 
     bool IsTypeof() const override { return true; }
@@ -233,8 +233,8 @@ struct t_TypeofExpr : public t_Expr
 
 struct t_ExpressionStmt : public t_Stmt
 {
-    t_PoolPtr<t_Expr> expression;
-    t_ExpressionStmt(t_PoolPtr<t_Expr> expression)
+    PoolPtr<t_Expr> expression;
+    t_ExpressionStmt(PoolPtr<t_Expr> expression)
         : expression(std::move(expression)) {}
     
     bool IsExpression() const override { return true; }
@@ -254,9 +254,9 @@ struct t_EmptyStmt : public t_Stmt
 
 struct t_DisplayStmt : public t_Stmt
 {
-    std::vector<t_PoolPtr<t_Expr>> expressions;
+    std::vector<PoolPtr<t_Expr>> expressions;
 
-    t_DisplayStmt(std::vector<t_PoolPtr<t_Expr>> expressions)
+    t_DisplayStmt(std::vector<PoolPtr<t_Expr>> expressions)
         : expressions(std::move(expressions)) {}
     
     bool IsDisplay() const override { return true; }
@@ -284,13 +284,13 @@ struct t_FunStmt : public t_Stmt
 {
     std::string name;
     std::vector<std::string> parameters;
-    t_PoolPtr<t_Stmt> body;
+    PoolPtr<t_Stmt> body;
 
     t_FunStmt
     (
         const std::string &name,
         std::vector<std::string> parameters,
-        t_PoolPtr<t_Stmt> body
+        PoolPtr<t_Stmt> body
     )
         : name(name),
           parameters(std::move(parameters)),
@@ -303,12 +303,12 @@ struct t_FunStmt : public t_Stmt
 struct t_VarStmt : public t_Stmt
 {
     std::string name;
-    t_PoolPtr<t_Expr> initializer;
+    PoolPtr<t_Expr> initializer;
 
     t_VarStmt
     (
         const std::string &name,
-        t_PoolPtr<t_Expr> initializer
+        PoolPtr<t_Expr> initializer
     )
         : name(name), 
           initializer(std::move(initializer)) {}
@@ -319,9 +319,9 @@ struct t_VarStmt : public t_Stmt
 
 struct t_BlockStmt : public t_Stmt
 {
-    std::vector<t_PoolPtr<t_Stmt>> statements;
+    std::vector<PoolPtr<t_Stmt>> statements;
 
-    t_BlockStmt(std::vector<t_PoolPtr<t_Stmt>> statements)
+    t_BlockStmt(std::vector<PoolPtr<t_Stmt>> statements)
         : statements(std::move(statements)) {}
     
     bool IsBlock() const override { return true; }
@@ -330,15 +330,15 @@ struct t_BlockStmt : public t_Stmt
 
 struct t_IfStmt : public t_Stmt
 {
-    t_PoolPtr<t_Expr> condition;
-    t_PoolPtr<t_Stmt> then_branch;
-    t_PoolPtr<t_Stmt> else_branch;
+    PoolPtr<t_Expr> condition;
+    PoolPtr<t_Stmt> then_branch;
+    PoolPtr<t_Stmt> else_branch;
 
     t_IfStmt
     (
-        t_PoolPtr<t_Expr> condition, 
-        t_PoolPtr<t_Stmt> then_branch,
-        t_PoolPtr<t_Stmt> else_branch
+        PoolPtr<t_Expr> condition, 
+        PoolPtr<t_Stmt> then_branch,
+        PoolPtr<t_Stmt> else_branch
     )
         : condition(std::move(condition)), 
           then_branch(std::move(then_branch)),
@@ -350,17 +350,17 @@ struct t_IfStmt : public t_Stmt
 
 struct t_ForStmt : public t_Stmt
 {
-    t_PoolPtr<t_Stmt> initializer;
-    t_PoolPtr<t_Expr> condition;
-    t_PoolPtr<t_Expr> increment;
-    t_PoolPtr<t_Stmt> body;
+    PoolPtr<t_Stmt> initializer;
+    PoolPtr<t_Expr> condition;
+    PoolPtr<t_Expr> increment;
+    PoolPtr<t_Stmt> body;
 
     t_ForStmt
     (   
-        t_PoolPtr<t_Stmt> initializer,
-        t_PoolPtr<t_Expr> condition,
-        t_PoolPtr<t_Expr> increment,
-        t_PoolPtr<t_Stmt> body
+        PoolPtr<t_Stmt> initializer,
+        PoolPtr<t_Expr> condition,
+        PoolPtr<t_Expr> increment,
+        PoolPtr<t_Stmt> body
     )
         : initializer(std::move(initializer)),
           condition(std::move(condition)),
@@ -395,9 +395,9 @@ struct t_ContinueStmt : public t_Stmt
 
 struct t_BenchmarkStmt : public t_Stmt
 {
-    t_PoolPtr<t_Stmt> body;
+    PoolPtr<t_Stmt> body;
 
-    t_BenchmarkStmt(t_PoolPtr<t_Stmt> body)
+    t_BenchmarkStmt(PoolPtr<t_Stmt> body)
         : body(std::move(body)) {}
     
     bool IsBenchmark() const override { return true; }
@@ -406,9 +406,9 @@ struct t_BenchmarkStmt : public t_Stmt
 
 struct t_ReturnStmt : public t_Stmt
 {
-    t_PoolPtr<t_Expr> value;
+    PoolPtr<t_Expr> value;
     
-    t_ReturnStmt(t_PoolPtr<t_Expr> value)
+    t_ReturnStmt(PoolPtr<t_Expr> value)
         : value(std::move(value)) {}
     
     bool IsReturn() const override { return true; }

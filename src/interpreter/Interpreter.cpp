@@ -93,7 +93,7 @@ void t_Interpreter::FlushOutput()
 
 t_InterpretationResult t_Interpreter::Interpret
 (
-    const std::vector<t_PoolPtr<t_Stmt>> &statements
+    const std::vector<PoolPtr<t_Stmt>> &statements
 )
 {
     m_Functions.clear();

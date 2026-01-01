@@ -10,7 +10,7 @@ The RD Script interpreter uses a **memory pool-based approach** with custom smar
 
 - **Factory Methods**: Objects are constructed via factory methods in `t_ASTContext` (`CreateStmt` and `CreateExpr`), which handle allocation and placement `new` internally.
 
-- **Ownership via `t_PoolPtr`**: Child nodes are managed via `t_PoolPtr`, a specialized `std::unique_ptr` that calls destructors without attempting to free the memory (which is handled by the pool).
+- **Ownership via `PoolPtr`**: Child nodes are managed via `PoolPtr`, a specialized `std::unique_ptr` that calls destructors without attempting to free the memory (which is handled by the pool).
 
 - **RAII with `t_ASTContext`**: A `t_ASTContext` instance manages the lifecycle of memory pools and ensures they are reset or destroyed properly.
 
@@ -53,9 +53,9 @@ public:
 
 Unlike previous versions, `t_ASTContext` is now a local RAII object, typically instantiated in `main.cpp` and passed to the parser.
 
-### 3. Pool Smart Pointers (`t_PoolPtr`)
+### 3. Pool Smart Pointers (`PoolPtr`)
 
-In [AST.h](file:///c:/Users/LENOVO/Documents/RD%20Script/RD-Script/include/rubberduck/AST.h), we define `t_PoolPtr` to manage ownership:
+In [AST.h](file:///c:/Users/LENOVO/Documents/RD%20Script/RD-Script/include/rubberduck/AST.h), we define `PoolPtr` to manage ownership:
 
 ```cpp
 template<typename T>
@@ -68,10 +68,10 @@ struct t_PoolDeleter
 };
 
 template<typename T>
-using t_PoolPtr = std::unique_ptr<T, t_PoolDeleter<T>>;
+using PoolPtr = std::unique_ptr<T, t_PoolDeleter<T>>;
 ```
 
-`t_PoolPtr` ensures that nested structures have their destructors called correctly when the parent is destroyed, while the actual memory remains managed by the pool.
+`PoolPtr` ensures that nested structures have their destructors called correctly when the parent is destroyed, while the actual memory remains managed by the pool.
 
 ## How Allocation Works
 
@@ -94,14 +94,14 @@ return m_Context.CreateExpr<t_BinaryExpr>
 
 ### Ownership Management
 
-Parent nodes own child nodes via `t_PoolPtr`. For example:
+Parent nodes own child nodes via `PoolPtr`. For example:
 
 ```cpp
 struct t_BinaryExpr : public t_Expr
 {
-    t_PoolPtr<t_Expr> left;
+    PoolPtr<t_Expr> left;
     t_Token op;
-    t_PoolPtr<t_Expr> right;
+    PoolPtr<t_Expr> right;
 };
 ```
 
@@ -109,7 +109,7 @@ struct t_BinaryExpr : public t_Expr
 
 1.  **Initialization**: A `t_ASTContext` is created. It uses `sizeof(t_StmtVariant)` and `sizeof(t_ExprVariant)` to determine pool slot sizes accurately.
 
-2.  **Parsing Phase**: The parser build the AST and returns a `std::vector<t_PoolPtr<t_Stmt>>`. This vector now **owns** the root nodes.
+2.  **Parsing Phase**: The parser build the AST and returns a `std::vector<PoolPtr<t_Stmt>>`. This vector now **owns** the root nodes.
 
 3.  **Interpretation**: The interpreter traverses the AST via these managed pointers.
 
@@ -119,7 +119,7 @@ struct t_BinaryExpr : public t_Expr
 
 1.  **Use Factory Methods**: Always use `context.CreateStmt<T>(...)` or `context.CreateExpr<T>(...)`. Never use `new` directly.
 
-2.  **Use `t_PoolPtr`**: For any ownership of a pool-allocated AST node, use `t_PoolPtr<T>`.
+2.  **Use `PoolPtr`**: For any ownership of a pool-allocated AST node, use `PoolPtr<T>`.
 
 3.  **Efficiency**: This design combines the safety of smart pointers with the performance of pool allocators.
 
@@ -129,12 +129,12 @@ struct t_BinaryExpr : public t_Expr
 
 ## Why This Design?
 
--   **Zero-Leak Metadata**: By using `t_PoolPtr` for root ownership, we combine the speed of pool allocation with the completeness of recursive destruction for heap members.
+-   **Zero-Leak Metadata**: By using `PoolPtr` for root ownership, we combine the speed of pool allocation with the completeness of recursive destruction for heap members.
 
 -   **Robustness**: The use of `std::variant` for size calculation prevents buffer overflow risks and manual maintenance errors.
 
 -   **Performance**: Pool allocation remains O(1) with great cache locality.
 
--   **Safety**: `t_PoolPtr` prevents resource leaks (e.g., if an AST node owns a `std::string`) while maintaining the speed of pool deallocation.
+-   **Safety**: `PoolPtr` prevents resource leaks (e.g., if an AST node owns a `std::string`) while maintaining the speed of pool deallocation.
 
 -   **Simplicity**: Developers don't need to manually manage `delete` or placement `new`.

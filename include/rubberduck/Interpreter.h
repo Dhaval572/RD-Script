@@ -162,6 +162,6 @@ public:
     t_Interpreter();
     t_InterpretationResult Interpret
     (
-        const std::vector<t_PoolPtr<t_Stmt>> &statements
+        const std::vector<PoolPtr<t_Stmt>> &statements
     );
 };
