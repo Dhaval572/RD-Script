@@ -281,10 +281,10 @@ getin(num1);
 display("Enter second number:");
 getin(num2);
 
-display($"Sum:", {num1 + num2});
-display($"Difference:", {num1 - num2});
-display($"Product:", {num1 * num2});
-display($"Quotient:", {num1 / num2});
+display($"Sum: {num1 + num2}");
+display($"Difference: {num1 - num2}");
+display($"Product: {num1 * num2}");
+display($"Quotient: {num1 / num2}");
 ```
 
 ### FizzBuzz
