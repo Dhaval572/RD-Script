@@ -211,6 +211,11 @@ Expected<t_Stmt*, t_ErrorInfo> Parser::Statement()
         return ContinueStatement();
     }
 
+    if (Match({e_TokenType::CONST}))
+    {
+        return VarDeclaration();
+    }
+
     if (Match({e_TokenType::AUTO}))
     {
         return VarDeclaration();
@@ -418,8 +423,18 @@ Expected<t_Stmt*, t_ErrorInfo> Parser::ForStatement()
     {
         initializer = nullptr;
     }
-    else if (Match({e_TokenType::AUTO}))
+    else if 
+    (
+        Match({e_TokenType::AUTO}) ||
+        Match({e_TokenType::CONST})
+    )
     {
+        if (Previous().type == e_TokenType::CONST)
+        {
+            // Backtrack so VarDeclaration can process the CONST token
+            m_Current--; 
+        }
+
         // Variable declaration
         Expected<t_Stmt*, t_ErrorInfo> var_result = VarDeclaration();
         if (!var_result.HasValue())
@@ -768,8 +783,28 @@ Expected<t_Stmt*, t_ErrorInfo> Parser::ForStatement()
 
 Expected<t_Stmt*, t_ErrorInfo> Parser::VarDeclaration()
 {
+    bool is_const = false;
+    
+    // Check if this is a const declaration
+    if (Previous().type == e_TokenType::CONST)
+    {
+        is_const = true;
+        // Consume 'auto' keyword after 'const'
+        Expected<t_Token, t_ErrorInfo> auto_result = 
+        Consume(e_TokenType::AUTO, "Expect 'auto' after 'const'.");
+        if (!auto_result.HasValue())
+        {
+            return Expected<t_Stmt*, t_ErrorInfo>(auto_result.Error());
+        }
+    }
+    // else: we already consumed 'auto' in Statement()
+
     Expected<t_Token, t_ErrorInfo> name_result = 
-    Consume(e_TokenType::IDENTIFIER, "Expect variable name.");
+    Consume
+    (
+        e_TokenType::IDENTIFIER, 
+        "Expect variable ( non-const ) name."
+    );
     if (!name_result.HasValue())
     {
         return Expected<t_Stmt*, t_ErrorInfo>(name_result.Error());
@@ -777,14 +812,50 @@ Expected<t_Stmt*, t_ErrorInfo> Parser::VarDeclaration()
     t_Token name = name_result.Value();
 
     PoolPtr<t_Expr> initializer = nullptr;
-    if (Match({e_TokenType::EQUAL}))
+    
+    // For constants, initializer is required
+    if (is_const)
     {
+        Expected<t_Token, t_ErrorInfo> equal_result = 
+        Consume
+        (
+            e_TokenType::EQUAL, 
+            "Constant declaration requires an initializer."
+        );
+        if (!equal_result.HasValue())
+        {
+            return Expected<t_Stmt*, t_ErrorInfo>
+            (
+                t_ErrorInfo
+                (
+                    e_ErrorType::PARSING_ERROR,
+                    "Constant '" + name.lexeme + "' must be initialized",
+                    name.line,
+                    0
+                )
+            );
+        }
+        
+        // Parse the initializer expression
         Expected<t_Expr*, t_ErrorInfo> init_result = Expression();
         if (!init_result.HasValue())
         {
             return Expected<t_Stmt*, t_ErrorInfo>(init_result.Error());
         }
         initializer = PoolPtr<t_Expr>(init_result.Value());
+    }
+    else
+    {
+        // Regular variable - initializer is optional
+        if (Match({e_TokenType::EQUAL}))
+        {
+            Expected<t_Expr*, t_ErrorInfo> init_result = Expression();
+            if (!init_result.HasValue())
+            {
+                return Expected<t_Stmt*, t_ErrorInfo>(init_result.Error());
+            }
+            initializer = PoolPtr<t_Expr>(init_result.Value());
+        }
     }
 
     Expected<t_Token, t_ErrorInfo> semicolon_result = 
@@ -801,7 +872,8 @@ Expected<t_Stmt*, t_ErrorInfo> Parser::VarDeclaration()
     t_VarStmt* stmt = m_Context.CreateStmt<t_VarStmt>
     (
         name.lexeme, 
-        std::move(initializer)
+        std::move(initializer),
+        is_const
     );
     if (!stmt)
     {
@@ -892,7 +964,7 @@ Expected<t_Stmt*, t_ErrorInfo> Parser::GetinStatement()
     Consume
     (
         e_TokenType::IDENTIFIER,
-        "Expect variable name in getin()."
+        "Expect variable (non constant) name in getin()."
     );
     if (!name_result.HasValue())
     {
@@ -1017,7 +1089,10 @@ Expected<t_Stmt*, t_ErrorInfo> Parser::FunDeclaration()
                 );
             }
 
-            parameters.emplace_back(param_name_result.Value().lexeme);
+            parameters.emplace_back
+            (
+                param_name_result.Value().lexeme
+            );
 
             if (!Match({e_TokenType::COMMA}))
             {

@@ -45,6 +45,7 @@ enum class e_TokenType
     AND,
     BREAK,
     CLASS,
+    CONST,
     CONTINUE,
     ELSE,
     FALSE,

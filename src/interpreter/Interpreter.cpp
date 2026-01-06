@@ -770,15 +770,21 @@ Expected<int, t_ErrorInfo> Interpreter::Execute(t_Stmt *stmt)
             
             std::string value = value_result.Value();
             e_ValueType type = DetectType(value);
-            // Use optimized TypedValue constructor
             typed_value = t_TypedValue(value, type);
         }
+        
+        // Add to constants set if this is a constant declaration
+        if (var_stmt->is_const)
+        {
+            m_Constants.insert(var_stmt->name);
+        }
+        
         m_Environment[var_stmt->name] = typed_value;
     }
     else if (t_DisplayStmt *display_stmt = As<t_DisplayStmt>(stmt))
     {
         bool first = true;
-        for (const auto &expr : display_stmt->expressions)
+        for (const auto &EXPR : display_stmt->expressions)
         {
             if (!first)
             {
@@ -787,7 +793,7 @@ Expected<int, t_ErrorInfo> Interpreter::Execute(t_Stmt *stmt)
             first = false;
 
             Expected<std::string, t_ErrorInfo> value_result = 
-            Evaluate(expr.get());
+            Evaluate(EXPR.get());
 
             if (!value_result.HasValue())
             {
@@ -813,6 +819,18 @@ Expected<int, t_ErrorInfo> Interpreter::Execute(t_Stmt *stmt)
                     e_ErrorType::RUNTIME_ERROR,
                     "Variable '" + var_name +
                     "' must be declared with 'auto' keyword before use"
+                )
+            );
+        }
+
+        if(m_Constants.count(var_name))
+        {
+            return Expected<int, t_ErrorInfo>
+            (
+                t_ErrorInfo
+                (
+                    e_ErrorType::RUNTIME_ERROR,
+                    "Cannot modify constant '" + var_name + "' with getin"
                 )
             );
         }
@@ -1348,8 +1366,19 @@ Expected<std::string, t_ErrorInfo> Interpreter::Evaluate(t_Expr *expr)
                 );
             }
             
-            t_TypedValue& current_value = it->second;
+            if (m_Constants.count(var_name))
+            {
+                return Expected<std::string, t_ErrorInfo>
+                (
+                    t_ErrorInfo
+                    (
+                        e_ErrorType::RUNTIME_ERROR,
+                        "Cannot modify constant '" + var_name + "'"
+                    )
+                );
+            }
             
+            t_TypedValue& current_value = it->second;
             // Use direct numeric operations when possible
             if (current_value.has_numeric_value)
             {
@@ -1468,8 +1497,19 @@ Expected<std::string, t_ErrorInfo> Interpreter::Evaluate(t_Expr *expr)
                 );
             }
             
-            t_TypedValue& current_value = it->second;
+            if (m_Constants.count(var_name))
+            {
+                return Expected<std::string, t_ErrorInfo>
+                (
+                    t_ErrorInfo
+                    (
+                        e_ErrorType::RUNTIME_ERROR,
+                        "Cannot modify constant '" + var_name + "'"
+                    )
+                );
+            }
 
+            t_TypedValue& current_value = it->second;
             // Return the value BEFORE increment/decrement
             m_ReturnValue = current_value.value;
             
@@ -1598,6 +1638,18 @@ Expected<std::string, t_ErrorInfo> Interpreter::Evaluate(t_Expr *expr)
                     );
                 }
                 
+                if (m_Constants.count(var_name))
+                {
+                    return Expected<std::string, t_ErrorInfo>
+                    (
+                        t_ErrorInfo
+                        (
+                            e_ErrorType::RUNTIME_ERROR,
+                            "Cannot assign to constant '" + var_name + "'"
+                        )
+                    );
+                }
+
                 // For compound assignments, we need to get the current value first
                 Expected<std::string, t_ErrorInfo> left_result = 
                 Evaluate(binary->left.get());

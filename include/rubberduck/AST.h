@@ -304,15 +304,18 @@ struct t_VarStmt : public t_Stmt
 {
     std::string name;
     PoolPtr<t_Expr> initializer;
-
+    bool is_const;
+    
     t_VarStmt
     (
         const std::string &name,
-        PoolPtr<t_Expr> initializer
+        PoolPtr<t_Expr> initializer,
+        bool is_const = false
     )
         : name(name), 
-          initializer(std::move(initializer)) {}
-    
+          initializer(std::move(initializer)),
+          is_const(is_const) {}
+          
     bool IsVar() const override { return true; }
     t_VarStmt* AsVar() override { return this; }
 };

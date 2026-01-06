@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <unordered_map>
+#include <unordered_set>
 #include <string>
 #include <chrono>
 #include <rubberduck/AST.h>
@@ -99,6 +100,9 @@ private:
     bool m_IsReturning = false;
 
     bool m_BufferOutput = false;
+    
+    // Track constant variables to prevent reassignment
+    std::unordered_set<std::string> m_Constants;
     std::string m_OutputBuffer;
 
     Expected<std::string, t_ErrorInfo> Evaluate(t_Expr *expr);

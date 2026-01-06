@@ -8,6 +8,7 @@ static const std::unordered_map<std::string, e_TokenType> keywords =
     {"and", e_TokenType::AND},
     {"break", e_TokenType::BREAK},
     {"class", e_TokenType::CLASS},
+    {"const", e_TokenType::CONST},
     {"continue", e_TokenType::CONTINUE},
     {"else", e_TokenType::ELSE},
     {"false", e_TokenType::FALSE},
