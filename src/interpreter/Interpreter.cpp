@@ -802,7 +802,7 @@ Expected<int, t_ErrorInfo> Interpreter::Execute(t_Stmt *stmt)
     else if (t_GetinStmt *getin_stmt = As<t_GetinStmt>(stmt))
     {
         const std::string &var_name = getin_stmt->variable_name;
-    
+
         auto it = m_Environment.find(var_name);
         if (it == m_Environment.end())
         {
@@ -816,18 +816,15 @@ Expected<int, t_ErrorInfo> Interpreter::Execute(t_Stmt *stmt)
                 )
             );
         }
-        
+
         t_TypedValue &current_value = it->second;
-        
-        // Create a string to store the input line
         std::string input_line;
-        
+
         // Read the entire line for all types first
         if (!std::getline(std::cin, input_line))
         {
             // If getline fails, clear the error state
             std::cin.clear();
-            
             return Expected<int, t_ErrorInfo>
             (
                 t_ErrorInfo
@@ -837,13 +834,13 @@ Expected<int, t_ErrorInfo> Interpreter::Execute(t_Stmt *stmt)
                 )
             );
         }
-        
+
         // Trim trailing carriage return if present (for cross-platform compatibility)
         if (!input_line.empty() && input_line.back() == '\r')
         {
             input_line.pop_back();
         }
-        
+
         switch (current_value.type)
         {
         case e_ValueType::NUMBER:
@@ -866,28 +863,33 @@ Expected<int, t_ErrorInfo> Interpreter::Execute(t_Stmt *stmt)
                         t_ErrorInfo
                         (
                             e_ErrorType::RUNTIME_ERROR,
-                            "Failed to convert input to number for variable '" +
-                            var_name + "'"
+                            "Invalid type for variable " +
+                            var_name
                         )
                     );
                 }
                 break;
             }
-        
+
         case e_ValueType::BOOLEAN:
             {
                 // Convert string to lowercase for case-insensitive comparison
                 std::string lower_input = input_line;
-                std::transform(lower_input.begin(), lower_input.end(), 
-                             lower_input.begin(), ::tolower);
-                
+                std::transform
+                (
+                    lower_input.begin(), 
+                    lower_input.end(), 
+                    lower_input.begin(), 
+                    ::tolower
+                );
+
                 // Try parsing as boolean
                 bool bool_value = false;
-                if (lower_input == "true" || lower_input == "1" || lower_input == "yes")
+                if (lower_input == "true" || lower_input == "1")
                 {
                     bool_value = true;
                 }
-                else if (lower_input == "false" || lower_input == "0" || lower_input == "no")
+                else if (lower_input == "false" || lower_input == "0")
                 {
                     bool_value = false;
                 }
@@ -907,14 +909,14 @@ Expected<int, t_ErrorInfo> Interpreter::Execute(t_Stmt *stmt)
                             (
                                 e_ErrorType::RUNTIME_ERROR,
                                 "Failed to convert input to boolean for variable '" +
-                                var_name + "'. Valid values: true, false, 1, 0, yes, no"
+                                var_name    + 
+                                "'. Valid values: true, false, 1, 0"
                             )
                         );
                     }
                 }
-            
+
                 std::string stored_value = bool_value ? "true" : "false";
-            
                 AssignToVisibleVariable
                 (
                     var_name,
@@ -924,7 +926,7 @@ Expected<int, t_ErrorInfo> Interpreter::Execute(t_Stmt *stmt)
                 );
                 break;
             }
-        
+
         case e_ValueType::STRING:
             {
                 // For strings, we already have the input line
@@ -937,7 +939,7 @@ Expected<int, t_ErrorInfo> Interpreter::Execute(t_Stmt *stmt)
                 );
                 break;
             }
-        
+
         case e_ValueType::NIL:
         default:
             {
