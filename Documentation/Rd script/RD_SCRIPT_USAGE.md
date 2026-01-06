@@ -7,11 +7,16 @@
 
 ### Variable Declarations
 
-In RD Script, all variables must be explicitly declared using the `auto` keyword before they can be used. This enforces static typing and prevents accidental variable creation.
+In RD Script, all variables must be explicitly declared using the `auto` keyword before they can be used. This enforces static typing and prevents accidental variable creation. You can use constant using const keyword
 
 Syntax:
 ```rubberduck
 auto variable_name = initial_value;
+```
+
+Syntax (Constant variable): 
+```rubberduck
+const auto constant_variable_name = initial_value;
 ```
 
 Examples:

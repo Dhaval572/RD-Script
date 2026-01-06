@@ -1496,7 +1496,7 @@ Expected<std::string, t_ErrorInfo> Interpreter::Evaluate(t_Expr *expr)
                     )
                 );
             }
-            
+
             if (m_Constants.count(var_name))
             {
                 return Expected<std::string, t_ErrorInfo>
@@ -1510,87 +1510,87 @@ Expected<std::string, t_ErrorInfo> Interpreter::Evaluate(t_Expr *expr)
             }
 
             t_TypedValue& current_value = it->second;
-            // Return the value BEFORE increment/decrement
-            m_ReturnValue = current_value.value;
-            
-            // Use direct numeric operations when possible
-            if (current_value.has_numeric_value)
+            std::string old_value = current_value.value;
+            if (postfix->op.type == e_TokenType::PLUS_PLUS)
             {
-                if (postfix->op.type == e_TokenType::PLUS_PLUS)
+                if (current_value.has_numeric_value)
                 {
-                    double new_value = current_value.numeric_value + 1.0;
-                    m_Environment[var_name] = t_TypedValue(new_value);
-                    
-                    return Expected<std::string, t_ErrorInfo>
+                    current_value.numeric_value += 1.0;
+                    current_value.value = FormatNumber
                     (
-                        current_value.value
-                    ); 
-                }
-                else if (postfix->op.type == e_TokenType::MINUS_MINUS)
-                {
-                    double new_value = current_value.numeric_value - 1.0;
-                    m_Environment[var_name] = t_TypedValue(new_value);
-                    return Expected<std::string, t_ErrorInfo>
-                    (
-                        current_value.value
-                    ); 
-                }
-            }
-            else
-            {
-                // Fallback to string-based operations
-                try
-                {
-                    double num_value = std::stod(current_value.value);
-                    
-                    if (postfix->op.type == e_TokenType::PLUS_PLUS)
-                    {
-                        num_value += 1.0;
-                        std::string new_value = std::to_string(num_value);
-
-                        // Remove trailing zeros and decimal point if not needed
-                        new_value.erase
-                        (
-                            new_value.find_last_not_of('0') + 1, std::string::npos
-                        );
-                        new_value.erase
-                        (
-                            new_value.find_last_not_of('.') + 1, std::string::npos
-                        );
-                        m_Environment[var_name] = 
-                        t_TypedValue(new_value, e_ValueType::NUMBER);
-                    }
-                    else if (postfix->op.type == e_TokenType::MINUS_MINUS)
-                    {
-                        num_value -= 1.0;
-                        std::string new_value = std::to_string(num_value);
-                        // Remove trailing zeros and decimal point if not needed
-                        new_value.erase
-                        (
-                            new_value.find_last_not_of('0') + 1, std::string::npos
-                        );
-                        new_value.erase
-                        (
-                            new_value.find_last_not_of('.') + 1, std::string::npos
-                        );
-                        m_Environment[var_name] = 
-                        t_TypedValue(new_value, e_ValueType::NUMBER);
-                    }
-                }
-                catch (...)
-                {
-                    return Expected<std::string, t_ErrorInfo>
-                    (
-                        t_ErrorInfo
-                        (
-                            e_ErrorType::RUNTIME_ERROR, 
-                            "Cannot perform increment/decrement on non-numeric value"
-                        )
+                        current_value.numeric_value
                     );
                 }
+                else
+                {
+                    try
+                    {
+                        double num_value = std::stod(current_value.value);
+                        num_value += 1.0;
+                        current_value.value = FormatNumber(num_value);
+                        current_value.has_numeric_value = true;
+                        current_value.numeric_value = num_value;
+                        current_value.type = e_ValueType::NUMBER;
+                    }
+                    catch (...)
+                    {
+                        return Expected<std::string, t_ErrorInfo>
+                        (
+                            t_ErrorInfo
+                            (
+                                e_ErrorType::RUNTIME_ERROR, 
+                                "Cannot perform increment on non-numeric value"
+                            )
+                        );
+                    }
+                }
             }
-            
-            return Expected<std::string, t_ErrorInfo>(m_ReturnValue);
+            else if (postfix->op.type == e_TokenType::MINUS_MINUS)
+            {
+                if (current_value.has_numeric_value)
+                {
+                    current_value.numeric_value -= 1.0;
+                    current_value.value = FormatNumber
+                    (
+                        current_value.numeric_value
+                    );
+                }
+                else
+                {
+                    try
+                    {
+                        double num_value = std::stod(current_value.value);
+                        num_value -= 1.0;
+                        current_value.value = FormatNumber(num_value);
+                        current_value.has_numeric_value = true;
+                        current_value.numeric_value = num_value;
+                        current_value.type = e_ValueType::NUMBER;
+                    }
+                    catch (...)
+                    {
+                        return Expected<std::string, t_ErrorInfo>
+                        (
+                            t_ErrorInfo
+                            (
+                                e_ErrorType::RUNTIME_ERROR, 
+                                "Cannot perform decrement on non-numeric value"
+                            )
+                        );
+                    }
+                }
+            }
+
+            // Return the OLD value (postfix behavior)
+            // Also ensure the variable is updated in all scopes
+            AssignToVisibleVariable
+            (
+                var_name, 
+                current_value, 
+                m_Environment, 
+                m_ScopeStack
+            );
+
+            return Expected<std::string, t_ErrorInfo>(old_value);
         }
         return Expected<std::string, t_ErrorInfo>
         (
@@ -1669,7 +1669,10 @@ Expected<std::string, t_ErrorInfo> Interpreter::Evaluate(t_Expr *expr)
                 }
                 std::string right_value = right_result.Value();
                 
-                Expected<std::string, t_ErrorInfo> final_value_result(right_value);
+                Expected<std::string, t_ErrorInfo> final_value_result
+                (
+                    right_value
+                );
                 
                 // Handle compound assignments by converting them to regular operations
                 switch (binary->op.type)
