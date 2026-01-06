@@ -4,13 +4,14 @@ A statically-typed scripting language with C-like syntax, featuring automatic me
 
 ## Overview
 
-**Name:** Rubber Duck Script
-**Extension:** `.rd`
+**Name:** Rubber Duck Script  
+**Extension:** `.rd`  
 **Philosophy:** Simple, expressive, and efficient
 
 ## Key Features
 
 * **Static typing** with type inference using `auto` keyword
+* **Constants** with `const auto` declaration (must be initialized)
 * **Automatic memory management** - no manual allocation/deallocation
 * **C-like syntax** - familiar and easy to learn
 * **Performance benchmarking** - built-in timing utilities
@@ -18,19 +19,19 @@ A statically-typed scripting language with C-like syntax, featuring automatic me
 
 ## Quick Start
 
-### Building the Project
+### Building and Running
 
+**To build the project:**
 ```bash
 ./rd.bat
 ```
 
-> **Note:** When making changes to the project, delete the `build` folder before rebuilding.
-
-### Running Scripts
-
+**To run a script:**
 ```bash
 ./rd.bat script.rd
 ```
+
+> **Note:** The `rd.bat` script automatically handles build updates. You don't need to manually delete the `build` folder before rebuilding - the batch file will detect changes and recompile only what's necessary.
 
 ## Language Syntax
 
@@ -42,6 +43,62 @@ auto age = 5;
 auto price = 19.99;
 auto is_active = true;
 ```
+
+### Constants ⚠️ (Compile-Time Enforcement)
+
+Variables declared as `const` are immutable and **MUST** be initialized at declaration. Uninitialized constants will cause a compilation error:
+
+```cpp
+const auto PI = 3.14159;           // ✅ Valid - initialized with value
+const auto APP_NAME = "Rubber Duck"; // ✅ Valid - initialized with string
+const auto MAX_USERS = 1000;        // ✅ Valid - initialized with integer
+
+const auto UNINITIALIZED;           // ❌ COMPILATION ERROR: constants must be initialized
+const auto LATE_INIT;              // ❌ COMPILATION ERROR: constants must be initialized
+LATE_INIT = 10;                    // ❌ COMPILATION ERROR: cannot reassign constants
+```
+
+#### Using Constants in Expressions
+
+Constants can be used in expressions like regular variables, but cannot be modified:
+
+```cpp
+const auto TAX_RATE = 0.07;
+auto price = 100.0;
+auto tax = price * TAX_RATE;        // ✅ Valid - using constant in calculation
+auto total = price + tax;
+
+TAX_RATE = 0.08;                    // ❌ RUNTIME ERROR: cannot modify constant
+```
+
+#### Example: Configuration Values
+
+```cpp
+// Application configuration
+const auto APP_NAME = "Rubber Duck Script";
+const auto VERSION = "1.0.0";
+const auto MAX_FILE_SIZE = 10485760;  // 10 MB
+const auto TIMEOUT_SECONDS = 30;
+
+display($"Welcome to {APP_NAME} v{VERSION}");
+display($"Max file size: {MAX_FILE_SIZE} bytes");
+display($"Timeout: {TIMEOUT_SECONDS} seconds");
+```
+
+#### Error Examples with Constants
+
+```cpp
+// ❌ Common compilation errors with constants
+const auto UNINIT;                  // COMPILATION ERROR: must be initialized
+const auto VALUE = 10;
+VALUE = 20;                         // RUNTIME ERROR: cannot reassign
+
+// These will prevent the program from running:
+const auto MISSING_VALUE;           // Program won't compile or run
+const auto EMPTY_CONST;             // Program won't compile or run
+```
+
+> **Important Security Feature:** The language enforces constant initialization at parse time. If you declare a constant without initialization, the parser will immediately fail with an error message like: `"Constant 'VARIABLE_NAME' must be initialized"` and the program will not execute.
 
 ### Arithmetic Operators
 
@@ -311,11 +368,39 @@ for (auto i = 1; i <= 100; ++i)
 }
 ```
 
+### Circle Area Calculator (Using Constants)
+
+```cpp
+const auto PI = 3.141592653589793;
+auto radius = 0;
+
+display("Enter the radius of the circle:");
+getin(radius);
+
+auto area = PI * radius * radius;
+auto circumference = 2 * PI * radius;
+
+display($"Radius: {radius}");
+display($"Area: {area}");
+display($"Circumference: {circumference}");
+```
+
+### Example Showing Constant Enforcement
+
+```cpp
+// This program will NOT run due to uninitialized constant
+const auto APP_VERSION;  // ❌ PARSING ERROR: Constant must be initialized
+
+display("This line will never execute");
+```
+
 ## Implementation Status
 
 ### ✅ Current Features
 
 * Variable declarations with `auto`
+* Constant declarations with `const auto` (must be initialized at declaration)
+* Strict constant enforcement (uninitialized constants prevent program execution)
 * Arithmetic operators (`+`, `-`, `*`, `/`)
 * Comparison operators (`==`, `!=`, `<`, `>`, `<=`, `>=`)
 * Logical operators (`&&`, `||`, `!`)
@@ -326,6 +411,13 @@ for (auto i = 1; i <= 100; ++i)
 * Input/output (`getin()`, `display()`)
 * String literals with escape sequences
 * Benchmark blocks for performance measurement
+
+## Security and Safety Features
+
+1. **Constant Safety**: Uninitialized constants are caught at parse time
+2. **Type Safety**: Variables maintain their type after declaration
+3. **Memory Safety**: Automatic memory management prevents leaks
+4. **Bound Checking**: Loop and array bounds are validated
 
 ## Coding Standards
 
