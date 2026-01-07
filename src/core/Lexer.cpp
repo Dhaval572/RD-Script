@@ -108,16 +108,36 @@ ParsingResult Lexer::ScanToken()
         AddToken(e_TokenType::SEMICOLON);
         break;
     case '*':
-        AddToken(Match('=') ? e_TokenType::STAR_EQUAL : e_TokenType::STAR);
+        AddToken
+        (
+            Match('=') ? 
+            e_TokenType::STAR_EQUAL : 
+            e_TokenType::STAR
+        );
         break;
     case '%':
-        AddToken(Match('=') ? e_TokenType::MODULUS_EQUAL : e_TokenType::MODULUS);
+        AddToken
+        (
+            Match('=') ? 
+            e_TokenType::MODULUS_EQUAL : 
+            e_TokenType::MODULUS
+        );
         break;
     case '!':
-        AddToken(Match('=') ? e_TokenType::BANG_EQUAL : e_TokenType::BANG);
+        AddToken
+        (
+            Match('=') ? 
+            e_TokenType::BANG_EQUAL : 
+            e_TokenType::BANG
+        );
         break;
     case '=':
-        AddToken(Match('=') ? e_TokenType::EQUAL_EQUAL : e_TokenType::EQUAL);
+        AddToken
+        (
+            Match('=') ? 
+            e_TokenType::EQUAL_EQUAL : 
+            e_TokenType::EQUAL
+        );
         break;
     case '&':
         if (Match('&')) 
@@ -158,10 +178,20 @@ ParsingResult Lexer::ScanToken()
         }
         break;
     case '<':
-        AddToken(Match('=') ? e_TokenType::LESS_EQUAL : e_TokenType::LESS);
+        AddToken
+        (
+            Match('=') ? 
+            e_TokenType::LESS_EQUAL : 
+            e_TokenType::LESS
+        );
         break;
     case '>':
-        AddToken(Match('=') ? e_TokenType::GREATER_EQUAL : e_TokenType::GREATER);
+        AddToken
+        (
+            Match('=') ? 
+            e_TokenType::GREATER_EQUAL : 
+            e_TokenType::GREATER
+        );
         break;
     case '/':
         if (Match('/')) 
@@ -171,7 +201,12 @@ ParsingResult Lexer::ScanToken()
         } 
         else
         {
-            AddToken(Match('=') ? e_TokenType::SLASH_EQUAL : e_TokenType::SLASH);
+            AddToken
+            (
+                Match('=') ? 
+                e_TokenType::SLASH_EQUAL : 
+                e_TokenType::SLASH
+            );
         }
         break;
 
@@ -324,8 +359,6 @@ Expected<std::string, t_ErrorInfo> Lexer::String()
             )
         );
     }
-
-    // The closing ".
     Advance();
 
     // Return the processed string value (without surrounding quotes)
@@ -406,7 +439,11 @@ void Lexer::Number()
         while (std::isdigit(Peek())) Advance();
     }
 
-    AddToken(e_TokenType::NUMBER, m_Source.substr(m_Start, m_Current - m_Start));
+    AddToken
+    (
+        e_TokenType::NUMBER, 
+        m_Source.substr(m_Start, m_Current - m_Start)
+    );
 }
 
 void Lexer::Identifier()

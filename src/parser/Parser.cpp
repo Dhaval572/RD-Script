@@ -6,34 +6,26 @@
 #include <string>
 #include <cctype>
 #include <cmath>
+#include <algorithm>
 
 namespace
 {
-    bool IsIntegerLiteralValue(const std::string &value)
+    bool IsIntegerLiteralValue(std::string_view value)
     {
-        if (value.empty())
-        {
-            return false;
-        }
+        if (value.empty()) return false;
 
         size_t start = 0;
         if (value[0] == '-')
         {
-            if (value.size() == 1)
-            {
-                return false;
-            }
+            if (value.size() == 1) return false;
             start = 1;
         }
 
-        for (size_t i = start; i < value.size(); i++)
+        for (size_t i =  start; i < value.size(); i++)
         {
-            if (!std::isdigit(static_cast<unsigned char>(value[i])))
-            {
-                return false;
-            }
+            char c = value[i];
+            if(c < '0' || c > '9') return false;
         }
-
         return true;
     }
 
@@ -100,7 +92,6 @@ Expected<std::vector<PoolPtr<t_Stmt>>, t_ErrorInfo> Parser::Parse()
     );
 }
 
-
 bool Parser::IsAtEnd()
 {
     return Peek().type == e_TokenType::EOF_TOKEN;
@@ -120,7 +111,7 @@ bool Parser::Check(e_TokenType type)
 
 t_Token Parser::Peek()
 {
-    if (static_cast<size_t>(m_Current)>= m_Tokens.size())
+    if (static_cast<size_t>(m_Current) >= m_Tokens.size())
     {
         // Return EOF token if we're past the end of the tokens vector
         return t_Token(e_TokenType::EOF_TOKEN, "", "", 0);
@@ -1246,10 +1237,17 @@ Expected<t_Stmt*, t_ErrorInfo> Parser::EmptyStatement()
 Expected<t_Stmt*, t_ErrorInfo> Parser::BenchmarkStatement()
 {
     Expected<t_Token, t_ErrorInfo> open_brace_result = 
-    Consume(e_TokenType::LEFT_BRACE, "Expect '{' after 'benchmark'.");
+    Consume
+    (
+        e_TokenType::LEFT_BRACE,
+        "Expect '{' after 'benchmark'."
+    );
     if (!open_brace_result.HasValue())
     {
-        return Expected<t_Stmt*, t_ErrorInfo>(open_brace_result.Error());
+        return Expected<t_Stmt*, t_ErrorInfo>
+        (
+            open_brace_result.Error()
+        );
     }
     
     // Parse the benchmark body
@@ -1273,7 +1271,10 @@ Expected<t_Stmt*, t_ErrorInfo> Parser::BenchmarkStatement()
     }
     
     // Create a block statement for the body
-    t_Stmt *body = m_Context.CreateStmt<t_BlockStmt>(std::move(statements));
+    t_Stmt *body = m_Context.CreateStmt<t_BlockStmt>
+    (
+        std::move(statements)
+    );
     if (!body)
     {
         return Expected<t_Stmt*, t_ErrorInfo>
