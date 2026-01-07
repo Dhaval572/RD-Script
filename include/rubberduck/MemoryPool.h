@@ -65,7 +65,7 @@ private:
     }
 
 public:
-    MemoryPool(size_t block_size_) 
+    explicit MemoryPool(size_t block_size_) 
         : m_Chunks(nullptr), m_FreeBlocks(nullptr)
     {
         // Ensure block size is at least as large as a pointer and properly aligned
@@ -169,11 +169,11 @@ public:
     //     typedef PoolAllocator<U> other;
     // };
 
-    PoolAllocator(MemoryPool* pool_) noexcept : 
+    explicit PoolAllocator(MemoryPool* pool_) noexcept : 
         m_Pool(pool_) {}
     
     template<typename U>
-    PoolAllocator(const PoolAllocator<U>& other) noexcept : 
+    explicit PoolAllocator(const PoolAllocator<U>& other) noexcept : 
         m_Pool(other.m_Pool) {}
 
     template<typename U>

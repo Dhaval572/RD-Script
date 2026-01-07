@@ -22,13 +22,13 @@ struct t_ErrorInfo
     int line;
     int column;
 
-    t_ErrorInfo() 
+    explicit t_ErrorInfo() 
         : type(e_ErrorType::RUNTIME_ERROR), 
           message(""), 
           line(0), 
           column(0) {}
     
-    t_ErrorInfo
+    explicit t_ErrorInfo
     (
         e_ErrorType type, 
         const std::string& message, 
@@ -50,10 +50,10 @@ private:
 
 public:
     // Constructors
-    Expected(const T& value) : m_Value(value) {}
-    Expected(T&& value) : m_Value(std::move(value)) {}
-    Expected(const E& error) : m_Value(error) {}
-    Expected(E&& error) : m_Value(std::move(error)) {}
+    explicit Expected(const T& value) : m_Value(value) {}
+    explicit Expected(T&& value) : m_Value(std::move(value)) {}
+    explicit Expected(const E& error) : m_Value(error) {}
+    explicit Expected(E&& error) : m_Value(std::move(error)) {}
 
     // Check if the result is a value or an error
     bool HasValue() const { return std::holds_alternative<T>(m_Value); }

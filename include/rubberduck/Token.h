@@ -78,7 +78,7 @@ struct t_Token
     std::string literal;
     int line;
 
-    t_Token
+    explicit t_Token
     (
         e_TokenType type, 
         const std::string &lexeme, 

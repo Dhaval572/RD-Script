@@ -646,7 +646,8 @@ Expected<t_Stmt*, t_ErrorInfo> Parser::ForStatement()
             (
                 Error
                 (
-                    Previous(), "For-loop condition must compare loop variable to an int literal."
+                    Previous(), 
+                    "For-loop condition must compare loop variable to an int literal."
                 )
             );
         }
@@ -788,7 +789,6 @@ Expected<t_Stmt*, t_ErrorInfo> Parser::VarDeclaration()
             return Expected<t_Stmt*, t_ErrorInfo>(auto_result.Error());
         }
     }
-    // else: we already consumed 'auto' in Statement()
 
     Expected<t_Token, t_ErrorInfo> name_result = 
     Consume

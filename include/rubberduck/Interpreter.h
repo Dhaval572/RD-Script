@@ -25,13 +25,13 @@ struct t_TypedValue
     double numeric_value;  
     bool has_numeric_value;
 
-    t_TypedValue() 
+    explicit t_TypedValue() 
         : value("nil"), 
           type(e_ValueType::NIL), 
           numeric_value(0.0), 
           has_numeric_value(false) {}
     
-    t_TypedValue(const std::string& val, e_ValueType typ) 
+    explicit t_TypedValue(const std::string& val, e_ValueType typ) 
         : value(val), 
           type(typ), 
           numeric_value(0.0), 
@@ -53,7 +53,7 @@ struct t_TypedValue
     }
     
     // Constructor for direct numeric values
-    t_TypedValue(double num_val) 
+    explicit t_TypedValue(double num_val) 
         : type(e_ValueType::NUMBER), 
           numeric_value(num_val), 
           has_numeric_value(true) 
@@ -67,7 +67,7 @@ struct t_TypedValue
     }
     
     // Copy constructor
-    t_TypedValue(const t_TypedValue& other) 
+    explicit t_TypedValue(const t_TypedValue& other) 
         : value(other.value), 
           type(other.type), 
           numeric_value(other.numeric_value), 
@@ -163,7 +163,7 @@ private:
     ); 
 
 public:
-    Interpreter();
+    explicit Interpreter();
     InterpretationResult Interpret
     (
         const std::vector<PoolPtr<t_Stmt>> &statements

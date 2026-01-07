@@ -16,9 +16,9 @@ public:
     ~ASTContext();
 
     // Non-copyable, but movable
-    ASTContext(const ASTContext&) = delete;
+    explicit ASTContext(const ASTContext&) = delete;
     ASTContext& operator=(const ASTContext&) = delete;
-    ASTContext(ASTContext&&) = default;
+    explicit ASTContext(ASTContext&&) = default;
     ASTContext& operator=(ASTContext&&) = default;
     void Reset();
 

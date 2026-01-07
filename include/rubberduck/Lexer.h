@@ -33,6 +33,6 @@ private:
     e_TokenType IdentifierType();
 
 public:
-    Lexer(const std::string &source);
+    explicit Lexer(const std::string &source);
     ParsingResult ScanTokens();
 };
