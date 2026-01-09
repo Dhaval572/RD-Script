@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.27)
 project(RubberDuck LANGUAGES CXX)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_executable(
     rubberduck
@@ -8,7 +9,7 @@ add_executable(
     src/core/ASTContext.cpp
     src/parser/Parser.cpp
     src/interpreter/Interpreter.cpp
-    main.cpp
+    src/main.cpp
 )
 
 # Require modern C++ (can be raised to cxx_std_23 when desired)
@@ -24,5 +25,5 @@ target_include_directories(
 if (MSVC)
 target_compile_options(rubberduck PRIVATE /W4)
 else()
-target_compile_options(rubberduck PRIVATE -Wall -Wextra -pedantic)
+  target_compile_options(rubberduck PRIVATE -Wall -Wextra -pedantic -Wpedantic -Werror)
 endif()
