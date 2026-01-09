@@ -9,7 +9,7 @@ add_executable(
     src/core/ASTContext.cpp
     src/parser/Parser.cpp
     src/interpreter/Interpreter.cpp
-    main.cpp
+    src/main.cpp
 )
 
 # Require modern C++ (can be raised to cxx_std_23 when desired)
