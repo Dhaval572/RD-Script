@@ -24,5 +24,5 @@ target_include_directories(
 if (MSVC)
 target_compile_options(rubberduck PRIVATE /W4)
 else()
-target_compile_options(rubberduck PRIVATE -Wall -Wextra -pedantic)
+  target_compile_options(rubberduck PRIVATE -Wall -Wextra -pedantic -Wpedantic -Werror)
 endif()
