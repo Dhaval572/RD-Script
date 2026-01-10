@@ -285,7 +285,7 @@ benchmark
 
 **Example Benchmark Results:**
 
-![Benchmark Output](Benchmark/print.jpeg)
+![Benchmark Output](Assets/print.jpeg)
 
 **Performance Test: Printing 1,000,000 numbers**
 
