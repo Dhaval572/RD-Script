@@ -21,8 +21,8 @@ private:
         char data[1];
     };
 
-    static const size_t BLOCKS_PER_CHUNK = 16;
-    static const size_t ALIGNMENT = alignof(max_align_t);
+    static constexpr size_t BLOCKS_PER_CHUNK = 16;
+    static constexpr size_t ALIGNMENT = alignof(max_align_t);
     
     t_Chunk* m_Chunks;
     t_Block* m_FreeBlocks;
@@ -30,10 +30,11 @@ private:
 
     void AddChunk()
     {
-        size_t chunk_size = sizeof(t_Chunk) + 
-        (m_BlockSize * BLOCKS_PER_CHUNK) - 1;
+        size_t chunk_size = 
+        sizeof(t_Chunk) + (m_BlockSize * BLOCKS_PER_CHUNK) - 1;
+
         t_Chunk* chunk = static_cast<t_Chunk*>(std::malloc(chunk_size));
-        if (!chunk)
+        if (!chunk) 
         {
             // If malloc fails, we cannot add a chunk.
             // Return to caller who should handle the memory exhaustion.
@@ -61,7 +62,7 @@ private:
             block->next = m_FreeBlocks;
             m_FreeBlocks = block;
             data += m_BlockSize;
-            available -= m_BlockSize;
+            available -= m_BlockSize; 
         }
     }
 
@@ -163,12 +164,6 @@ public:
     typedef const T& const_reference;
     typedef size_t size_type;
     typedef ptrdiff_t difference_type;
-
-    // template<typename U>
-    // struct t_Rebind
-    // {
-    //     typedef PoolAllocator<U> other;
-    // };
 
     explicit PoolAllocator(MemoryPool* pool_) noexcept : 
         m_Pool(pool_) {}

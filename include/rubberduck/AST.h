@@ -64,7 +64,7 @@ public:
     virtual bool IsPostfix() const { return false; }
     virtual bool IsCall() const { return false; }
     virtual bool IsTypeof() const { return false; }
-    virtual bool IsSizeof() const { return false; }  // Added for sizeof()
+    virtual bool IsSizeof() const { return false; }  
     
     virtual t_BinaryExpr* AsBinary() { return nullptr; }
     virtual t_LiteralExpr* AsLiteral() { return nullptr; }
@@ -75,7 +75,7 @@ public:
     virtual t_PostfixExpr* AsPostfix() { return nullptr; }
     virtual t_CallExpr* AsCall() { return nullptr; }
     virtual t_TypeofExpr* AsTypeof() { return nullptr; }
-    virtual t_SizeofExpr* AsSizeof() { return nullptr; }  // Added for sizeof()
+    virtual t_SizeofExpr* AsSizeof() { return nullptr; }  
 };
 
 struct t_Stmt
@@ -234,7 +234,7 @@ struct t_TypeofExpr : public t_Expr
     t_TypeofExpr* AsTypeof() override { return this; }
 };
 
-struct t_SizeofExpr : public t_Expr  // Added for sizeof() functionality
+struct t_SizeofExpr : public t_Expr  
 {
     PoolPtr<t_Expr> operand;
 
@@ -460,7 +460,7 @@ using ExprVariant = std::variant
     t_PostfixExpr,
     t_CallExpr,
     t_TypeofExpr,
-    t_SizeofExpr  // Added sizeof expression type
+    t_SizeofExpr  
 >; 
 
 namespace ast_internal 

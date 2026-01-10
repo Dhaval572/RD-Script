@@ -98,7 +98,6 @@ private:
 
     std::string m_ReturnValue; 
     bool m_IsReturning = false;
-
     bool m_BufferOutput = false;
     
     // Track constant variables to prevent reassignment

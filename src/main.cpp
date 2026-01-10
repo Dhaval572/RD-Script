@@ -62,7 +62,7 @@ int main(int argc, char* argv[])
     // Lexical analysis
     Lexer lexer(source);
     ParsingResult tokens_result = lexer.ScanTokens();
-    if (!tokens_result.HasValue())
+    if (!tokens_result)
     {
         ReportError(tokens_result.Error());
         return 1;
@@ -76,7 +76,7 @@ int main(int argc, char* argv[])
     Parser parser(tokens, ast_context);
     Expected<std::vector<PoolPtr<t_Stmt>>, t_ErrorInfo> statements_result = 
     parser.Parse();
-    if (!statements_result.HasValue())
+    if (!statements_result)
     {
         ReportError(statements_result.Error());
         return 1;
@@ -88,7 +88,7 @@ int main(int argc, char* argv[])
     Interpreter interpreter;
     InterpretationResult interpret_result = 
     interpreter.Interpret(statements);
-    if (!interpret_result.HasValue())
+    if (!interpret_result)
     {
         // Error already reported in Interpret method
         return 1;

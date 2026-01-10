@@ -22,13 +22,13 @@ struct t_ErrorInfo
     int line;
     int column;
 
-    explicit t_ErrorInfo() 
+    t_ErrorInfo() 
         : type(e_ErrorType::RUNTIME_ERROR), 
           message(""), 
           line(0), 
           column(0) {}
     
-    explicit t_ErrorInfo
+    t_ErrorInfo
     (
         e_ErrorType type, 
         const std::string& message, 
@@ -50,26 +50,28 @@ private:
 
 public:
     // Constructors
-    explicit Expected(const T& value) : m_Value(value) {}
-    explicit Expected(T&& value) : m_Value(std::move(value)) {}
-    explicit Expected(const E& error) : m_Value(error) {}
-    explicit Expected(E&& error) : m_Value(std::move(error)) {}
+    Expected(const T& value) : m_Value(value) {}
+    Expected(T&& value) : m_Value(std::move(value)) {}
+    Expected(const E& error) : m_Value(error) {}
+    Expected(E&& error) : m_Value(std::move(error)) {}
 
-    // Check if the result is a value or an error
-    bool HasValue() const { return std::holds_alternative<T>(m_Value); }
+    explicit operator bool() const 
+    { 
+        return std::holds_alternative<T>(m_Value); 
+    }
     
-    // Access the value (undefined behavior if HasValue() is false)
+    // Access the value (undefined behavior if operator bool() returns false)
     const T& Value() const { return std::get<T>(m_Value); }
     T& Value() { return std::get<T>(m_Value); }
     
-    // Access the error (undefined behavior if HasValue() is true)
+    // Access the error (undefined behavior if operator bool() returns true)
     const E& Error() const { return std::get<E>(m_Value); }
     E& Error() { return std::get<E>(m_Value); }
     
     // Value or default
     T ValueOr(const T& default_value) const
     {
-        return HasValue() ? Value() : default_value;
+        return static_cast<bool>(*this) ? Value() : default_value;
     }
 };
 

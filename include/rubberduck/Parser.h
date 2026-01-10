@@ -55,7 +55,7 @@ private:
     Expected<t_Expr*, t_ErrorInfo> Primary();
 
 public:
-    Expected<t_Expr*, t_ErrorInfo> Expression();  // Moved from private to public section
+    Expected<t_Expr*, t_ErrorInfo> Expression();
     explicit Parser
     (
         const std::vector<t_Token> &tokens, 

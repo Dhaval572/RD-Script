@@ -39,7 +39,7 @@ ParsingResult Lexer::ScanTokens()
     {
         m_Start = m_Current;
         ParsingResult result = ScanToken();
-        if (!result.HasValue())
+        if (!result)
         {
             return result; 
         }
@@ -221,7 +221,7 @@ ParsingResult Lexer::ScanToken()
     case '"':
         {
             Expected<std::string, t_ErrorInfo> result = String();
-            if (!result.HasValue())
+            if (!result)
             {
                 return ParsingResult(result.Error());
             }
@@ -233,7 +233,7 @@ ParsingResult Lexer::ScanToken()
         {
             Advance(); 
             Expected<std::string, t_ErrorInfo> result = FormatString();
-            if (!result.HasValue())
+            if (!result)
             {
                 return ParsingResult(result.Error());
             }

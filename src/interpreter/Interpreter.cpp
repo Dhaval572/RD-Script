@@ -111,7 +111,7 @@ InterpretationResult Interpreter::Interpret
         try
         {
             Expected<int, t_ErrorInfo> result = Execute(statement.get());
-            if (!result.HasValue())
+            if (!result)
             {
                 // Report the error and stop execution
                 ReportError(result.Error());
@@ -443,7 +443,7 @@ Expected<int, t_ErrorInfo> Interpreter::Execute(t_Stmt *stmt)
 			{
 				Expected<int, t_ErrorInfo> result = 
                 Execute(statement.get());
-				if (!result.HasValue())
+				if (!result)
 				{
 					PopScope(); // Clean up scope before returning
 					return Expected<int, t_ErrorInfo>(result.Error());
@@ -526,7 +526,7 @@ Expected<int, t_ErrorInfo> Interpreter::Execute(t_Stmt *stmt)
         (
             if_stmt->condition.get()
         );
-        if (!condition_result.HasValue())
+        if (!condition_result)
         {
             return Expected<int, t_ErrorInfo>(condition_result.Error());
         }
@@ -537,7 +537,7 @@ Expected<int, t_ErrorInfo> Interpreter::Execute(t_Stmt *stmt)
             (
                 if_stmt->then_branch.get()
             );
-            if (!then_result.HasValue())
+            if (!then_result)
             {
                 return then_result;
             }
@@ -553,7 +553,7 @@ Expected<int, t_ErrorInfo> Interpreter::Execute(t_Stmt *stmt)
             Expected<int, t_ErrorInfo> else_result = 
             Execute(if_stmt->else_branch.get());
 
-            if (!else_result.HasValue())
+            if (!else_result)
             {
                 return else_result;
             }
@@ -573,7 +573,7 @@ Expected<int, t_ErrorInfo> Interpreter::Execute(t_Stmt *stmt)
             Expected<int, t_ErrorInfo> result = 
             ExecuteNestedArithmeticLoop(for_stmt);
 
-            if (!result.HasValue())
+            if (!result)
             {
                 return result;
             }
@@ -584,7 +584,7 @@ Expected<int, t_ErrorInfo> Interpreter::Execute(t_Stmt *stmt)
             Expected<int, t_ErrorInfo> result = 
             ExecuteAccumulationLoop(for_stmt);
 
-            if (!result.HasValue())
+            if (!result)
             {
                 return result;
             }
@@ -595,7 +595,7 @@ Expected<int, t_ErrorInfo> Interpreter::Execute(t_Stmt *stmt)
             Expected<int, t_ErrorInfo> result = 
             ExecuteSimpleNumericLoop(for_stmt);
 
-            if (!result.HasValue())
+            if (!result)
             {
                 return result;
             }
@@ -621,7 +621,7 @@ Expected<int, t_ErrorInfo> Interpreter::Execute(t_Stmt *stmt)
                     Expected<int, t_ErrorInfo> init_result = 
                     Execute(for_stmt->initializer.get());
 
-                    if (!init_result.HasValue())
+                    if (!init_result)
                     {
                         PopScope(); // Clean up scope before returning
                         m_LoopDepth--;
@@ -637,7 +637,7 @@ Expected<int, t_ErrorInfo> Interpreter::Execute(t_Stmt *stmt)
                     {
                         Expected<std::string, t_ErrorInfo> condition_result = 
                         Evaluate(for_stmt->condition.get());
-                        if (!condition_result.HasValue())
+                        if (!condition_result)
                         {
                             PopScope(); // Clean up scope before returning
                             m_LoopDepth--;
@@ -663,7 +663,7 @@ Expected<int, t_ErrorInfo> Interpreter::Execute(t_Stmt *stmt)
                         Expected<int, t_ErrorInfo> body_result = 
                         Execute(for_stmt->body.get());
 
-                        if (!body_result.HasValue())
+                        if (!body_result)
                         {
                             PopScope(); // Clean up scope before returning
                             m_LoopDepth--;
@@ -696,7 +696,7 @@ Expected<int, t_ErrorInfo> Interpreter::Execute(t_Stmt *stmt)
                         Expected<std::string, t_ErrorInfo> increment_result= 
                         Evaluate(for_stmt->increment.get());
 
-                        if (!increment_result.HasValue())
+                        if (!increment_result)
                         {
                             PopScope(); // Clean up scope before returning
                             m_LoopDepth--;
@@ -752,7 +752,7 @@ Expected<int, t_ErrorInfo> Interpreter::Execute(t_Stmt *stmt)
         Expected<int, t_ErrorInfo> declare_result =
         DeclareVariable(var_stmt->name, 0); 
 
-        if (!declare_result.HasValue())
+        if (!declare_result)
         {
             return Expected<int, t_ErrorInfo>(declare_result.Error());
         }
@@ -763,7 +763,7 @@ Expected<int, t_ErrorInfo> Interpreter::Execute(t_Stmt *stmt)
             Expected<std::string, t_ErrorInfo> value_result = 
             Evaluate(var_stmt->initializer.get());
 
-            if (!value_result.HasValue())
+            if (!value_result)
             {
                 return Expected<int, t_ErrorInfo>(value_result.Error());
             }
@@ -795,7 +795,7 @@ Expected<int, t_ErrorInfo> Interpreter::Execute(t_Stmt *stmt)
             Expected<std::string, t_ErrorInfo> value_result = 
             Evaluate(EXPR.get());
 
-            if (!value_result.HasValue())
+            if (!value_result)
             {
                 return Expected<int, t_ErrorInfo>(value_result.Error());
             }
@@ -998,7 +998,7 @@ Expected<int, t_ErrorInfo> Interpreter::Execute(t_Stmt *stmt)
         FlushOutput();
         m_BufferOutput = previous_buffering;
         
-        if (!body_result.HasValue())
+        if (!body_result)
         {
             return body_result;
         }
@@ -1055,7 +1055,7 @@ Expected<int, t_ErrorInfo> Interpreter::Execute(t_Stmt *stmt)
         Expected<std::string, t_ErrorInfo> result =
         Evaluate(expr_stmt->expression.get());
 
-        if (!result.HasValue())
+        if (!result)
         {
             return Expected<int, t_ErrorInfo>(result.Error());
         }
@@ -1072,7 +1072,7 @@ Expected<int, t_ErrorInfo> Interpreter::Execute(t_Stmt *stmt)
             Expected<std::string, t_ErrorInfo> result =
             Evaluate(return_stmt->value.get());
 
-            if (!result.HasValue())
+            if (!result)
             {
                 return Expected<int, t_ErrorInfo>(result.Error());
             }
@@ -1126,7 +1126,7 @@ Expected<std::string, t_ErrorInfo> Interpreter::Evaluate(t_Expr *expr)
                     // Evaluate the expression instead of just looking it up as a variable
                     Expected<std::string, t_ErrorInfo> expr_result = 
                     EvaluateFormatExpression(expression);
-                    if (!expr_result.HasValue())
+                    if (!expr_result)
                     {
                         return Expected<std::string, t_ErrorInfo>
                         (
@@ -1187,7 +1187,7 @@ Expected<std::string, t_ErrorInfo> Interpreter::Evaluate(t_Expr *expr)
             {
                 Expected<std::string, t_ErrorInfo> arg_result =
                 Evaluate(call_expr->arguments[i].get());
-                if (!arg_result.HasValue())
+                if (!arg_result)
                 {
                     return arg_result;
                 }
@@ -1223,7 +1223,7 @@ Expected<std::string, t_ErrorInfo> Interpreter::Evaluate(t_Expr *expr)
                     Expected<int, t_ErrorInfo> body_result =
                         Execute(fun_stmt->body.get());
                 
-                    if (!body_result.HasValue())
+                    if (!body_result)
                     {
                         PopScope();
                         return Expected<std::string, t_ErrorInfo>
@@ -1293,7 +1293,7 @@ Expected<std::string, t_ErrorInfo> Interpreter::Evaluate(t_Expr *expr)
     {
         Expected<std::string, t_ErrorInfo> right_result = 
         Evaluate(unary->right.get());
-        if (!right_result.HasValue())
+        if (!right_result)
         {
             return right_result;
         }
@@ -1654,7 +1654,7 @@ Expected<std::string, t_ErrorInfo> Interpreter::Evaluate(t_Expr *expr)
                 Expected<std::string, t_ErrorInfo> left_result = 
                 Evaluate(binary->left.get());
 
-                if (!left_result.HasValue())
+                if (!left_result)
                 {
                     return left_result;
                 }
@@ -1663,7 +1663,7 @@ Expected<std::string, t_ErrorInfo> Interpreter::Evaluate(t_Expr *expr)
                 Expected<std::string, t_ErrorInfo> right_result = 
                 Evaluate(binary->right.get());
 
-                if (!right_result.HasValue())
+                if (!right_result)
                 {
                     return right_result;
                 }
@@ -1849,7 +1849,7 @@ Expected<std::string, t_ErrorInfo> Interpreter::Evaluate(t_Expr *expr)
                     break;
                 }
                 
-                if (!final_value_result.HasValue())
+                if (!final_value_result)
                 {
                     return final_value_result;
                 }
@@ -1950,7 +1950,7 @@ Expected<std::string, t_ErrorInfo> Interpreter::Evaluate(t_Expr *expr)
         // Evaluate operands
         Expected<std::string, t_ErrorInfo> left_result = 
         Evaluate(binary->left.get());
-        if (!left_result.HasValue())
+        if (!left_result)
         {
             return left_result;
         }
@@ -1965,7 +1965,7 @@ Expected<std::string, t_ErrorInfo> Interpreter::Evaluate(t_Expr *expr)
 
             Expected<std::string, t_ErrorInfo> right_result =
             Evaluate(binary->right.get());
-            if (!right_result.HasValue())
+            if (!right_result)
             {
                 return right_result;
             }
@@ -1985,7 +1985,7 @@ Expected<std::string, t_ErrorInfo> Interpreter::Evaluate(t_Expr *expr)
 
             Expected<std::string, t_ErrorInfo> right_result =
             Evaluate(binary->right.get());
-            if (!right_result.HasValue())
+            if (!right_result)
             {
                 return right_result;
             }
@@ -1998,7 +1998,7 @@ Expected<std::string, t_ErrorInfo> Interpreter::Evaluate(t_Expr *expr)
         
         Expected<std::string, t_ErrorInfo> right_result = 
         Evaluate(binary->right.get());
-        if (!right_result.HasValue())
+        if (!right_result)
         {
             return right_result;
         }
@@ -2168,8 +2168,9 @@ Expected<std::string, t_ErrorInfo> Interpreter::Evaluate(t_Expr *expr)
         case e_TokenType::LESS:
         case e_TokenType::LESS_EQUAL:
             {
-                Expected<bool, t_ErrorInfo> comparison_result = PerformComparison(left_typed, binary->op.type, right_typed);
-                if (!comparison_result.HasValue())
+                Expected<bool, t_ErrorInfo> comparison_result = 
+                PerformComparison(left_typed, binary->op.type, right_typed);
+                if (!comparison_result)
                 {
                     return Expected<std::string, t_ErrorInfo>(comparison_result.Error());
                 }
@@ -2281,13 +2282,13 @@ Expected<std::string, t_ErrorInfo> Interpreter::EvaluateFormatExpression
             // Evaluate left and right operands
             Expected<std::string, t_ErrorInfo> left_result = 
             EvaluateFormatExpression(left_str);
-            if (!left_result.HasValue())
+            if (!left_result)
             {
                 return left_result;
             }
             Expected<std::string, t_ErrorInfo> right_result = 
             EvaluateFormatExpression(right_str);
-            if (!right_result.HasValue())
+            if (!right_result)
             {
                 return right_result;
             }
@@ -2339,13 +2340,13 @@ Expected<std::string, t_ErrorInfo> Interpreter::EvaluateFormatExpression
             // Evaluate left and right operands
             Expected<std::string, t_ErrorInfo> left_result = 
             EvaluateFormatExpression(left_str);
-            if (!left_result.HasValue())
+            if (!left_result)
             {
                 return left_result;
             }
             Expected<std::string, t_ErrorInfo> right_result = 
             EvaluateFormatExpression(right_str);
-            if (!right_result.HasValue())
+            if (!right_result)
             {
                 return right_result;
             }
@@ -2410,13 +2411,13 @@ Expected<std::string, t_ErrorInfo> Interpreter::EvaluateFormatExpression
             // Evaluate left and right operands
             Expected<std::string, t_ErrorInfo> left_result = 
             EvaluateFormatExpression(left_str);
-            if (!left_result.HasValue())
+            if (!left_result)
             {
                 return left_result;
             }
             Expected<std::string, t_ErrorInfo> right_result = 
             EvaluateFormatExpression(right_str);
-            if (!right_result.HasValue())
+            if (!right_result)
             {
                 return right_result;
             }
@@ -2468,13 +2469,13 @@ Expected<std::string, t_ErrorInfo> Interpreter::EvaluateFormatExpression
             // Evaluate left and right operands
             Expected<std::string, t_ErrorInfo> left_result = 
             EvaluateFormatExpression(left_str);
-            if (!left_result.HasValue())
+            if (!left_result)
             {
                 return left_result;
             }
             Expected<std::string, t_ErrorInfo> right_result = 
             EvaluateFormatExpression(right_str);
-            if (!right_result.HasValue())
+            if (!right_result)
             {
                 return right_result;
             }
@@ -3489,7 +3490,7 @@ Expected<int, t_ErrorInfo> Interpreter::ExecuteSimpleNumericLoop
             Expected<int, t_ErrorInfo> body_result = 
             Execute(for_stmt->body.get());
 
-            if (!body_result.HasValue())
+            if (!body_result)
             {
                 PopScope(); // Clean up scope before returning
                 m_LoopDepth--;
