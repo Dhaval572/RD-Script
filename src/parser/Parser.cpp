@@ -244,7 +244,7 @@ Expected<t_Stmt*, t_ErrorInfo> Parser::BlockStatement()
         Expected<t_Stmt*, t_ErrorInfo> result = Statement();
         if (!result)
         {
-            return Expected<t_Stmt*, t_ErrorInfo>(result.Error());
+            return result.Error();
         }
         statements.emplace_back(PoolPtr<t_Stmt>(result.Value()));
     }
@@ -253,7 +253,7 @@ Expected<t_Stmt*, t_ErrorInfo> Parser::BlockStatement()
     Consume(e_TokenType::RIGHT_BRACE, "Expect '}' after block.");
     if (!consume_result)
     {
-        return Expected<t_Stmt*, t_ErrorInfo>(consume_result.Error());
+        return consume_result.Error();
     }
     
     t_BlockStmt* stmt = 
@@ -281,21 +281,18 @@ Expected<t_Stmt*, t_ErrorInfo> Parser::BreakStatement()
     Consume(e_TokenType::SEMICOLON, "Expect ';' after 'break'.");
     if (!result)
     {
-        return Expected<t_Stmt*, t_ErrorInfo>(result.Error());
+        return result.Error();
     }
     
     t_BreakStmt* stmt = m_Context.CreateStmt<t_BreakStmt>(keyword);
     if (!stmt)
     {
-        return Expected<t_Stmt*, t_ErrorInfo>
+        return t_ErrorInfo  
         (
-            t_ErrorInfo
-            (
-                e_ErrorType::RUNTIME_ERROR, 
-                "Out of memory", 
-                keyword.line, 
-                0
-            )
+            e_ErrorType::RUNTIME_ERROR, 
+            "Out of memory", 
+            keyword.line, 
+            0
         );
     }
     return Expected<t_Stmt*, t_ErrorInfo>(stmt);
@@ -308,21 +305,18 @@ Expected<t_Stmt*, t_ErrorInfo> Parser::ContinueStatement()
     Consume(e_TokenType::SEMICOLON, "Expect ';' after 'continue'.");
     if (!result)
     {
-        return Expected<t_Stmt*, t_ErrorInfo>(result.Error());
+        return result.Error();
     }
     
     t_ContinueStmt* stmt = m_Context.CreateStmt<t_ContinueStmt>(keyword);
     if (!stmt)
     {
-        return Expected<t_Stmt*, t_ErrorInfo>
+        return t_ErrorInfo  
         (
-            t_ErrorInfo
-            (
-                e_ErrorType::RUNTIME_ERROR, 
-                "Out of memory", 
-                keyword.line, 
-                0
-            )
+            e_ErrorType::RUNTIME_ERROR, 
+            "Out of memory", 
+            keyword.line, 
+            0
         );
     }
     return Expected<t_Stmt*, t_ErrorInfo>(stmt);
@@ -334,13 +328,13 @@ Expected<t_Stmt*, t_ErrorInfo> Parser::IfStatement()
     Consume(e_TokenType::LEFT_PAREN, "Expect '(' after 'if'.");
     if (!paren_result)
     {
-        return Expected<t_Stmt*, t_ErrorInfo>(paren_result.Error());
+        return paren_result.Error();
     }
     
     Expected<t_Expr*, t_ErrorInfo> condition_result = Expression();
     if (!condition_result)
     {
-        return Expected<t_Stmt*, t_ErrorInfo>(condition_result.Error());
+        return condition_result.Error();
     }
     t_Expr *condition = condition_result.Value();
     
@@ -348,14 +342,14 @@ Expected<t_Stmt*, t_ErrorInfo> Parser::IfStatement()
     Consume(e_TokenType::RIGHT_PAREN, "Expect ')' after if condition.");
     if (!close_paren_result)
     {
-        return Expected<t_Stmt*, t_ErrorInfo>(close_paren_result.Error());
+        return close_paren_result.Error();
     }
 
     // Parse the then branch
     Expected<t_Stmt*, t_ErrorInfo> then_result = Statement();
     if (!then_result)
     {
-        return Expected<t_Stmt*, t_ErrorInfo>(then_result.Error());
+        return then_result.Error();
     }
     t_Stmt *then_branch = then_result.Value();
 
@@ -366,7 +360,7 @@ Expected<t_Stmt*, t_ErrorInfo> Parser::IfStatement()
         Expected<t_Stmt*, t_ErrorInfo> else_result = Statement();
         if (!else_result)
         {
-            return Expected<t_Stmt*, t_ErrorInfo>(else_result.Error());
+            return else_result.Error();
         }
         else_branch = PoolPtr<t_Stmt>(else_result.Value());
     }
@@ -379,15 +373,12 @@ Expected<t_Stmt*, t_ErrorInfo> Parser::IfStatement()
     );
     if (!stmt)
     {
-        return Expected<t_Stmt*, t_ErrorInfo>
+        return t_ErrorInfo
         (
-            t_ErrorInfo
-            (
-                e_ErrorType::RUNTIME_ERROR, 
-                "Out of memory", 
-                Peek().line, 
-                0
-            )
+            e_ErrorType::RUNTIME_ERROR, 
+            "Out of memory", 
+            Peek().line, 
+            0
         );
     }
     return Expected<t_Stmt*, t_ErrorInfo>(stmt);
@@ -399,7 +390,7 @@ Expected<t_Stmt*, t_ErrorInfo> Parser::ForStatement()
     Consume(e_TokenType::LEFT_PAREN, "Expect '(' after 'for'.");
     if (!paren_result)
     {
-        return Expected<t_Stmt*, t_ErrorInfo>(paren_result.Error());
+        return paren_result.Error();
     }
 
     // Parse initializer (can be variable declaration, expression statement, or empty)
@@ -424,7 +415,7 @@ Expected<t_Stmt*, t_ErrorInfo> Parser::ForStatement()
         Expected<t_Stmt*, t_ErrorInfo> var_result = VarDeclaration();
         if (!var_result)
         {
-            return Expected<t_Stmt*, t_ErrorInfo>(var_result.Error());
+            return var_result.Error();
         }
         initializer = PoolPtr<t_Stmt>(var_result.Value());
     }
@@ -435,7 +426,7 @@ Expected<t_Stmt*, t_ErrorInfo> Parser::ForStatement()
         Expected<t_Expr*, t_ErrorInfo> expr_result = Expression();
         if (!expr_result)
         {
-            return Expected<t_Stmt*, t_ErrorInfo>(expr_result.Error());
+            return expr_result.Error();
         }
         
         // Create an expression statement
@@ -446,15 +437,12 @@ Expected<t_Stmt*, t_ErrorInfo> Parser::ForStatement()
         );
         if (!expr_stmt)
         {
-            return Expected<t_Stmt*, t_ErrorInfo>
+            return t_ErrorInfo
             (
-                t_ErrorInfo
-                (
-                    e_ErrorType::RUNTIME_ERROR, 
-                    "Out of memory", 
-                    Peek().line, 
-                    0
-                )
+                e_ErrorType::RUNTIME_ERROR, 
+                "Out of memory", 
+                Peek().line, 
+                0
             );
         }
         initializer = PoolPtr<t_Stmt>(expr_stmt);
@@ -2109,7 +2097,7 @@ Expected<t_Stmt*, t_ErrorInfo> Parser::ReturnStatement()
     m_Context.CreateStmt<t_ReturnStmt>(std::move(value));
     if (!stmt)
     {
-        return Expected<t_Stmt*, t_ErrorInfo>
+        return t_ErrorInfo
         (
             t_ErrorInfo
             (

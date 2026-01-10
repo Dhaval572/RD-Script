@@ -446,7 +446,7 @@ Expected<int, t_ErrorInfo> Interpreter::Execute(t_Stmt *stmt)
 				if (!result)
 				{
 					PopScope(); // Clean up scope before returning
-					return Expected<int, t_ErrorInfo>(result.Error());
+					return result.Error();
 				}
 
                 // If a control signal was raised inside this block (break/continue),
@@ -528,7 +528,7 @@ Expected<int, t_ErrorInfo> Interpreter::Execute(t_Stmt *stmt)
         );
         if (!condition_result)
         {
-            return Expected<int, t_ErrorInfo>(condition_result.Error());
+            return condition_result.Error();
         }
         
         if (IsTruthy(condition_result.Value()))
@@ -641,10 +641,7 @@ Expected<int, t_ErrorInfo> Interpreter::Execute(t_Stmt *stmt)
                         {
                             PopScope(); // Clean up scope before returning
                             m_LoopDepth--;
-                            return Expected<int, t_ErrorInfo>
-                            (
-                                condition_result.Error()
-                            );
+                            return condition_result.Error();
                         }
 
                         if (!IsTruthy(condition_result.Value()))
@@ -700,7 +697,7 @@ Expected<int, t_ErrorInfo> Interpreter::Execute(t_Stmt *stmt)
                         {
                             PopScope(); // Clean up scope before returning
                             m_LoopDepth--;
-                            return Expected<int, t_ErrorInfo>(increment_result.Error());
+                            return increment_result.Error();
                         }
                     }
                 }
@@ -754,7 +751,7 @@ Expected<int, t_ErrorInfo> Interpreter::Execute(t_Stmt *stmt)
 
         if (!declare_result)
         {
-            return Expected<int, t_ErrorInfo>(declare_result.Error());
+            return declare_result.Error();
         }
 
         t_TypedValue typed_value;
@@ -765,7 +762,7 @@ Expected<int, t_ErrorInfo> Interpreter::Execute(t_Stmt *stmt)
 
             if (!value_result)
             {
-                return Expected<int, t_ErrorInfo>(value_result.Error());
+                return value_result.Error();
             }
             
             std::string value = value_result.Value();
@@ -797,7 +794,7 @@ Expected<int, t_ErrorInfo> Interpreter::Execute(t_Stmt *stmt)
 
             if (!value_result)
             {
-                return Expected<int, t_ErrorInfo>(value_result.Error());
+                return value_result.Error();
             }
             
             std::string value = value_result.Value();
@@ -1057,7 +1054,7 @@ Expected<int, t_ErrorInfo> Interpreter::Execute(t_Stmt *stmt)
 
         if (!result)
         {
-            return Expected<int, t_ErrorInfo>(result.Error());
+            return result.Error();
         }
     }
     else if 
@@ -1074,7 +1071,7 @@ Expected<int, t_ErrorInfo> Interpreter::Execute(t_Stmt *stmt)
 
             if (!result)
             {
-                return Expected<int, t_ErrorInfo>(result.Error());
+                return result.Error();
             }
             
             m_ReturnValue = result.Value();
@@ -1128,10 +1125,7 @@ Expected<std::string, t_ErrorInfo> Interpreter::Evaluate(t_Expr *expr)
                     EvaluateFormatExpression(expression);
                     if (!expr_result)
                     {
-                        return Expected<std::string, t_ErrorInfo>
-                        (
-                            expr_result.Error()
-                        );
+                        return expr_result.Error();
                     }
 
                     result.replace
@@ -1226,10 +1220,7 @@ Expected<std::string, t_ErrorInfo> Interpreter::Evaluate(t_Expr *expr)
                     if (!body_result)
                     {
                         PopScope();
-                        return Expected<std::string, t_ErrorInfo>
-                        (
-                            body_result.Error()
-                        );
+                        return body_result.Error();
                     }
                 
                     if (m_IsReturning)
@@ -2172,7 +2163,7 @@ Expected<std::string, t_ErrorInfo> Interpreter::Evaluate(t_Expr *expr)
                 PerformComparison(left_typed, binary->op.type, right_typed);
                 if (!comparison_result)
                 {
-                    return Expected<std::string, t_ErrorInfo>(comparison_result.Error());
+                    return comparison_result.Error();
                 }
                 return Expected<std::string, t_ErrorInfo>
                 (

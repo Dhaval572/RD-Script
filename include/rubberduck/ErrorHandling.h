@@ -47,37 +47,45 @@ class Expected
 {
 private:
     std::variant<T, E> m_Value;
-
+    bool HasValue() const { return std::holds_alternative<T>(m_Value); }
 public:
     // Constructors
     Expected(const T& value) : m_Value(value) {}
     Expected(T&& value) : m_Value(std::move(value)) {}
     Expected(const E& error) : m_Value(error) {}
     Expected(E&& error) : m_Value(std::move(error)) {}
-
-    explicit operator bool() const 
-    { 
-        return std::holds_alternative<T>(m_Value); 
-    }
     
-    // Access the value (undefined behavior if operator bool() returns false)
-    const T& Value() const { return std::get<T>(m_Value); }
-    T& Value() { return std::get<T>(m_Value); }
+    // Boolean conversion for clean conditional checks
+    explicit operator bool() const { return HasValue(); }
     
-    // Access the error (undefined behavior if operator bool() returns true)
-    const E& Error() const { return std::get<E>(m_Value); }
-    E& Error() { return std::get<E>(m_Value); }
+    // Access the value (undefined behavior if HasValue() is false)
+    const T& Value() const & { return std::get<T>(m_Value); }
+    T& Value() & { return std::get<T>(m_Value); }
+    
+    // Move version of Value
+    T Value() && { return std::get<T>(std::move(m_Value)); }
+    
+    // Access the error (undefined behavior if HasValue() is true)
+    const E& Error() const & { return std::get<E>(m_Value); }
+    E& Error() & { return std::get<E>(m_Value); }
+    
+    // Move version of Error
+    E Error() && { return std::get<E>(std::move(m_Value)); }
     
     // Value or default
-    T ValueOr(const T& default_value) const
+    T ValueOr(const T& default_value) const &
     {
-        return static_cast<bool>(*this) ? Value() : default_value;
+        return HasValue() ? Value() : default_value;
+    }
+    
+    // Move version of ValueOr
+    T ValueOr(T&& default_value) &&
+    {
+        return HasValue() ? std::move(Value()) : std::move(default_value);
     }
 };
 
 // Convenience type aliases
 using ParsingResult = Expected<std::vector<t_Token>, t_ErrorInfo>;
 using InterpretationResult = Expected<int, t_ErrorInfo>; 
-
-// Error reporting function
 void ReportError(const t_ErrorInfo& error);
