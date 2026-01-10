@@ -720,7 +720,7 @@ Expected<t_Stmt*, t_ErrorInfo> Parser::ForStatement()
         
         if (!stmt->increment)
         {
-            return Expected<t_Stmt*, t_ErrorInfo>
+            return t_ErrorInfo
             (
                 Error(Previous(), "For-loop increment is required.")
             );
@@ -730,7 +730,7 @@ Expected<t_Stmt*, t_ErrorInfo> Parser::ForStatement()
     else if (stmt->initializer)
     {
         // Some other type of statement - might want to handle this case
-        return Expected<t_Stmt*, t_ErrorInfo>
+        return t_ErrorInfo
         (
             Error
             (

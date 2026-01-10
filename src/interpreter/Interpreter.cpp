@@ -181,16 +181,13 @@ Expected<int, t_ErrorInfo> Interpreter::DeclareVariable
         if (previous_scope.find(name) == previous_scope.end()) 
         {
             // Variable exists but was declared in current scope - this is an error
-            return Expected<int, t_ErrorInfo>
+            return t_ErrorInfo
             (
-                t_ErrorInfo
-                (
-                    e_ErrorType::RUNTIME_ERROR, 
-                    "Variable '" 
-                    + name + 
-                    "' has already been declared in this scope", 
-                    line
-                )
+                e_ErrorType::RUNTIME_ERROR, 
+                "Variable '" 
+                + name + 
+                "' has already been declared in this scope", 
+                line
             );
         }
     }
@@ -419,13 +416,10 @@ Expected<bool, t_ErrorInfo> Interpreter::PerformComparison
         case e_TokenType::BANG_EQUAL:
             return Expected<bool, t_ErrorInfo>(left.value != right.value);
         default:
-            return Expected<bool, t_ErrorInfo>
+            return t_ErrorInfo
             (
-                t_ErrorInfo
-                (
-                    e_ErrorType::RUNTIME_ERROR, 
-                    "Cannot compare non-numeric values"
-                )
+                e_ErrorType::RUNTIME_ERROR, 
+                "Cannot compare non-numeric values"
             );
         }
     }
@@ -474,13 +468,10 @@ Expected<int, t_ErrorInfo> Interpreter::Execute(t_Stmt *stmt)
 		{
 			// Ensure scope is popped and convert to runtime error
 			PopScope();
-			return Expected<int, t_ErrorInfo>
+			return t_ErrorInfo
 			(
-				t_ErrorInfo
-				(
-					e_ErrorType::RUNTIME_ERROR,
-					"Unhandled exception in block"
-				)
+				e_ErrorType::RUNTIME_ERROR,
+				"Unhandled exception in block"
 			);
 		}
     }
@@ -489,13 +480,10 @@ Expected<int, t_ErrorInfo> Interpreter::Execute(t_Stmt *stmt)
         // Validate that we're inside a loop
         if (m_LoopDepth <= 0)
         {
-            return Expected<int, t_ErrorInfo>
+            return t_ErrorInfo
             (
-                t_ErrorInfo
-                (
-                    e_ErrorType::RUNTIME_ERROR,
-                    "'break' used outside of a loop"
-                )
+                e_ErrorType::RUNTIME_ERROR,
+                "'break' used outside of a loop"
             );
         }
         // Signal break without throwing
@@ -507,13 +495,10 @@ Expected<int, t_ErrorInfo> Interpreter::Execute(t_Stmt *stmt)
         // Validate that we're inside a loop
         if (m_LoopDepth <= 0)
         {
-            return Expected<int, t_ErrorInfo>
+            return t_ErrorInfo
             (
-                t_ErrorInfo
-                (
-                    e_ErrorType::RUNTIME_ERROR,
-                    "'continue' used outside of a loop"
-                )
+                e_ErrorType::RUNTIME_ERROR,
+                "'continue' used outside of a loop"
             );
         }
         // Signal continue without throwing
@@ -729,13 +714,10 @@ Expected<int, t_ErrorInfo> Interpreter::Execute(t_Stmt *stmt)
 				// Ensure scope is cleaned and convert to runtime error
 				PopScope();
 				m_LoopDepth--;
-				return Expected<int, t_ErrorInfo>
+				return t_ErrorInfo
 				(
-					t_ErrorInfo
-					(
-						e_ErrorType::RUNTIME_ERROR,
-						"Unhandled exception in for-loop"
-					)
+					e_ErrorType::RUNTIME_ERROR,
+					"Unhandled exception in for-loop"
 				);
 			}
         }
@@ -809,26 +791,20 @@ Expected<int, t_ErrorInfo> Interpreter::Execute(t_Stmt *stmt)
         auto it = m_Environment.find(var_name);
         if (it == m_Environment.end())
         {
-            return Expected<int, t_ErrorInfo>
+            return t_ErrorInfo
             (
-                t_ErrorInfo
-                (
-                    e_ErrorType::RUNTIME_ERROR,
-                    "Variable '" + var_name +
-                    "' must be declared with 'auto' keyword before use"
-                )
+                e_ErrorType::RUNTIME_ERROR,
+                "Variable '" + var_name +
+                "' must be declared with 'auto' keyword before use"
             );
         }
 
         if(m_Constants.count(var_name))
         {
-            return Expected<int, t_ErrorInfo>
+            return t_ErrorInfo
             (
-                t_ErrorInfo
-                (
-                    e_ErrorType::RUNTIME_ERROR,
-                    "Cannot modify constant '" + var_name + "' with getin"
-                )
+                e_ErrorType::RUNTIME_ERROR,
+                "Cannot modify constant '" + var_name + "' with getin"
             );
         }
 
@@ -840,13 +816,10 @@ Expected<int, t_ErrorInfo> Interpreter::Execute(t_Stmt *stmt)
         {
             // If getline fails, clear the error state
             std::cin.clear();
-            return Expected<int, t_ErrorInfo>
+            return t_ErrorInfo
             (
-                t_ErrorInfo
-                (
-                    e_ErrorType::RUNTIME_ERROR,
-                    "Failed to read input for variable '" + var_name + "'"
-                )
+                e_ErrorType::RUNTIME_ERROR,
+                "Failed to read input for variable '" + var_name + "'"
             );
         }
 
@@ -873,14 +846,11 @@ Expected<int, t_ErrorInfo> Interpreter::Execute(t_Stmt *stmt)
                 }
                 catch (...)
                 {
-                    return Expected<int, t_ErrorInfo>
+                    return t_ErrorInfo
                     (
-                        t_ErrorInfo
-                        (
-                            e_ErrorType::RUNTIME_ERROR,
-                            "Invalid type for variable " +
-                            var_name
-                        )
+                        e_ErrorType::RUNTIME_ERROR,
+                        "Invalid type for variable " +
+                        var_name
                     );
                 }
                 break;
@@ -918,15 +888,12 @@ Expected<int, t_ErrorInfo> Interpreter::Execute(t_Stmt *stmt)
                     }
                     catch (...)
                     {
-                        return Expected<int, t_ErrorInfo>
+                        return t_ErrorInfo
                         (
-                            t_ErrorInfo
-                            (
-                                e_ErrorType::RUNTIME_ERROR,
-                                "Failed to convert input to boolean for variable '" +
-                                var_name    + 
-                                "'. Valid values: true, false, 1, 0"
-                            )
+                            e_ErrorType::RUNTIME_ERROR,
+                            "Failed to convert input to boolean for variable '" +
+                            var_name    + 
+                            "'. Valid values: true, false, 1, 0"
                         );
                     }
                 }
@@ -1163,14 +1130,11 @@ Expected<std::string, t_ErrorInfo> Interpreter::Evaluate(t_Expr *expr)
             t_FunStmt *fun_stmt = fun_it->second;
             if (call_expr->arguments.size() != fun_stmt->parameters.size())
             {
-                return Expected<std::string, t_ErrorInfo>
+                return t_ErrorInfo
                 (
-                    t_ErrorInfo
-                    (
-                        e_ErrorType::RUNTIME_ERROR,
-                        "Function '" + fun_stmt->name +
-                        "' called with wrong number of arguments"
-                    )
+                    e_ErrorType::RUNTIME_ERROR,
+                    "Function '" + fun_stmt->name +
+                    "' called with wrong number of arguments"
                 );
             }
 
@@ -1257,26 +1221,20 @@ Expected<std::string, t_ErrorInfo> Interpreter::Evaluate(t_Expr *expr)
             catch (...)
             {
                 PopScope();
-                return Expected<std::string, t_ErrorInfo>
+                return t_ErrorInfo
                 (
-                    t_ErrorInfo
-                    (
-                        e_ErrorType::RUNTIME_ERROR,
-                        "Unhandled exception in function '" +
-                        fun_stmt->name + "'"
-                    )
+                    e_ErrorType::RUNTIME_ERROR,
+                    "Unhandled exception in function '" +
+                    fun_stmt->name + "'"
                 );
             }
         }
 
-        return Expected<std::string, t_ErrorInfo>
+        return t_ErrorInfo
         (
-            t_ErrorInfo
-            (
-                e_ErrorType::RUNTIME_ERROR,
-                "Undefined function '" + call_expr->callee + "'",
-                call_expr->line
-            )
+            e_ErrorType::RUNTIME_ERROR,
+            "Undefined function '" + call_expr->callee + "'",
+            call_expr->line
         );
     }
 
@@ -1323,13 +1281,10 @@ Expected<std::string, t_ErrorInfo> Interpreter::Evaluate(t_Expr *expr)
             );
 
         default:
-            return Expected<std::string, t_ErrorInfo>
+            return t_ErrorInfo
             (
-                t_ErrorInfo
-                (
-                    e_ErrorType::RUNTIME_ERROR,
-                    "Unsupported unary operator"
-                )
+                e_ErrorType::RUNTIME_ERROR,
+                "Unsupported unary operator"
             );
         }
     }
@@ -1347,25 +1302,19 @@ Expected<std::string, t_ErrorInfo> Interpreter::Evaluate(t_Expr *expr)
             
             if (it == m_Environment.end())
             {
-                return Expected<std::string, t_ErrorInfo>
+                return t_ErrorInfo
                 (
-                    t_ErrorInfo
-                    (
-                        e_ErrorType::RUNTIME_ERROR, 
-                        "Undefined variable '" + var_name + "'"
-                    )
+                    e_ErrorType::RUNTIME_ERROR, 
+                    "Undefined variable '" + var_name + "'"
                 );
             }
             
             if (m_Constants.count(var_name))
             {
-                return Expected<std::string, t_ErrorInfo>
+                return t_ErrorInfo
                 (
-                    t_ErrorInfo
-                    (
-                        e_ErrorType::RUNTIME_ERROR,
-                        "Cannot modify constant '" + var_name + "'"
-                    )
+                    e_ErrorType::RUNTIME_ERROR,
+                    "Cannot modify constant '" + var_name + "'"
                 );
             }
             
@@ -1445,24 +1394,18 @@ Expected<std::string, t_ErrorInfo> Interpreter::Evaluate(t_Expr *expr)
                 }
                 catch (...)
                 {
-                    return Expected<std::string, t_ErrorInfo>
+                    return t_ErrorInfo
                     (
-                        t_ErrorInfo
-                        (
-                            e_ErrorType::RUNTIME_ERROR, 
-                            "Cannot perform increment/decrement on non-numeric value"
-                        )
+                        e_ErrorType::RUNTIME_ERROR, 
+                        "Cannot perform increment/decrement on non-numeric value"
                     );
                 }
             }
         }
-        return Expected<std::string, t_ErrorInfo>
+        return t_ErrorInfo
         (
-            t_ErrorInfo
-            (
-                e_ErrorType::RUNTIME_ERROR, 
-                "Prefix increment/decrement can only be applied to variables"
-            )
+            e_ErrorType::RUNTIME_ERROR, 
+            "Prefix increment/decrement can only be applied to variables"
         );
     }
 
@@ -1478,25 +1421,19 @@ Expected<std::string, t_ErrorInfo> Interpreter::Evaluate(t_Expr *expr)
             auto it = m_Environment.find(var_name);
             if (it == m_Environment.end())
             {
-                return Expected<std::string, t_ErrorInfo>
+                return t_ErrorInfo
                 (
-                    t_ErrorInfo
-                    (
-                        e_ErrorType::RUNTIME_ERROR, 
-                        "Undefined variable '" + var_name + "'"
-                    )
+                    e_ErrorType::RUNTIME_ERROR, 
+                    "Undefined variable '" + var_name + "'"
                 );
             }
 
             if (m_Constants.count(var_name))
             {
-                return Expected<std::string, t_ErrorInfo>
+                return t_ErrorInfo
                 (
-                    t_ErrorInfo
-                    (
-                        e_ErrorType::RUNTIME_ERROR,
-                        "Cannot modify constant '" + var_name + "'"
-                    )
+                    e_ErrorType::RUNTIME_ERROR,
+                    "Cannot modify constant '" + var_name + "'"
                 );
             }
 
@@ -1525,13 +1462,10 @@ Expected<std::string, t_ErrorInfo> Interpreter::Evaluate(t_Expr *expr)
                     }
                     catch (...)
                     {
-                        return Expected<std::string, t_ErrorInfo>
+                        return t_ErrorInfo
                         (
-                            t_ErrorInfo
-                            (
-                                e_ErrorType::RUNTIME_ERROR, 
-                                "Cannot perform increment on non-numeric value"
-                            )
+                            e_ErrorType::RUNTIME_ERROR, 
+                            "Cannot perform increment on non-numeric value"
                         );
                     }
                 }
@@ -1559,13 +1493,10 @@ Expected<std::string, t_ErrorInfo> Interpreter::Evaluate(t_Expr *expr)
                     }
                     catch (...)
                     {
-                        return Expected<std::string, t_ErrorInfo>
+                        return t_ErrorInfo
                         (
-                            t_ErrorInfo
-                            (
-                                e_ErrorType::RUNTIME_ERROR, 
-                                "Cannot perform decrement on non-numeric value"
-                            )
+                            e_ErrorType::RUNTIME_ERROR, 
+                            "Cannot perform decrement on non-numeric value"
                         );
                     }
                 }
@@ -1583,13 +1514,10 @@ Expected<std::string, t_ErrorInfo> Interpreter::Evaluate(t_Expr *expr)
 
             return Expected<std::string, t_ErrorInfo>(old_value);
         }
-        return Expected<std::string, t_ErrorInfo>
+        return t_ErrorInfo
         (
-            t_ErrorInfo
-            (
-                e_ErrorType::RUNTIME_ERROR, 
-                "Postfix increment/decrement can only be applied to variables"
-            )
+            e_ErrorType::RUNTIME_ERROR, 
+            "Postfix increment/decrement can only be applied to variables"
         );
     }
 
@@ -1619,25 +1547,19 @@ Expected<std::string, t_ErrorInfo> Interpreter::Evaluate(t_Expr *expr)
                 // All variables must be declared before use
                 if (!m_Environment.contains(var_name))
                 {
-                    return Expected<std::string, t_ErrorInfo>
+                    return t_ErrorInfo
                     (
-                        t_ErrorInfo
-                        (
-                            e_ErrorType::RUNTIME_ERROR, 
-                            "Variable '" + var_name + "' must be declared with 'auto' keyword before use"
-                        )
+                        e_ErrorType::RUNTIME_ERROR, 
+                        "Variable '" + var_name + "' must be declared with 'auto' keyword before use"
                     );
                 }
                 
                 if (m_Constants.count(var_name))
                 {
-                    return Expected<std::string, t_ErrorInfo>
+                    return t_ErrorInfo
                     (
-                        t_ErrorInfo
-                        (
-                            e_ErrorType::RUNTIME_ERROR,
-                            "Cannot assign to constant '" + var_name + "'"
-                        )
+                        e_ErrorType::RUNTIME_ERROR,
+                        "Cannot assign to constant '" + var_name + "'"
                     );
                 }
 
@@ -1687,13 +1609,10 @@ Expected<std::string, t_ErrorInfo> Interpreter::Evaluate(t_Expr *expr)
                         }
                         catch (...)
                         {
-                            final_value_result = Expected<std::string, t_ErrorInfo>
+                            final_value_result = t_ErrorInfo
                             (
-                                t_ErrorInfo
-                                (
-                                    e_ErrorType::RUNTIME_ERROR, 
-                                    "String concatenation with '+' is not allowed. Use comma-separated values in display statements instead."
-                                )
+                                e_ErrorType::RUNTIME_ERROR, 
+                                "String concatenation with '+' is not allowed. Use comma-separated values in display statements instead."
                             );
                         }
                     }
@@ -1714,13 +1633,10 @@ Expected<std::string, t_ErrorInfo> Interpreter::Evaluate(t_Expr *expr)
                         catch (...)
                         {
                             final_value_result = 
-                            Expected<std::string, t_ErrorInfo>
+                            t_ErrorInfo
                             (
-                                t_ErrorInfo
-                                (
-                                    e_ErrorType::RUNTIME_ERROR, 
-                                    "Cannot perform arithmetic operation"
-                                )
+                                e_ErrorType::RUNTIME_ERROR, 
+                                "Cannot perform arithmetic operation"
                             );
                         }
                     }
@@ -1740,13 +1656,10 @@ Expected<std::string, t_ErrorInfo> Interpreter::Evaluate(t_Expr *expr)
                         }
                         catch (...)
                         {
-                            final_value_result = Expected<std::string, t_ErrorInfo>
+                            final_value_result = t_ErrorInfo
                             (
-                                t_ErrorInfo
-                                (
-                                    e_ErrorType::RUNTIME_ERROR, 
-                                    "Cannot perform arithmetic operation"
-                                )
+                                e_ErrorType::RUNTIME_ERROR, 
+                                "Cannot perform arithmetic operation"
                             );
                         }
                     }
@@ -1761,13 +1674,10 @@ Expected<std::string, t_ErrorInfo> Interpreter::Evaluate(t_Expr *expr)
                             
                             if (right_val == 0)
                             {
-                                final_value_result = Expected<std::string, t_ErrorInfo>
+                                final_value_result = t_ErrorInfo
                                 (
-                                    t_ErrorInfo
-                                    (
-                                        e_ErrorType::RUNTIME_ERROR, 
-                                        "Modulus by zero"
-                                    )
+                                    e_ErrorType::RUNTIME_ERROR, 
+                                    "Modulus by zero"
                                 );
                             }
                             else
@@ -1781,13 +1691,10 @@ Expected<std::string, t_ErrorInfo> Interpreter::Evaluate(t_Expr *expr)
                         }
                         catch (...)
                         {
-                            final_value_result = Expected<std::string, t_ErrorInfo>
+                            final_value_result = t_ErrorInfo
                             (
-                                t_ErrorInfo
-                                (
-                                    e_ErrorType::RUNTIME_ERROR, 
-                                    "Cannot perform arithmetic operation"
-                                )
+                                e_ErrorType::RUNTIME_ERROR, 
+                                "Cannot perform arithmetic operation"
                             );
                         }
                     }
@@ -1802,13 +1709,10 @@ Expected<std::string, t_ErrorInfo> Interpreter::Evaluate(t_Expr *expr)
                             
                             if (right_val == 0)
                             {
-                                final_value_result = Expected<std::string, t_ErrorInfo>
+                                final_value_result = t_ErrorInfo
                                 (
-                                    t_ErrorInfo
-                                    (
-                                        e_ErrorType::RUNTIME_ERROR, 
-                                        "Division by zero"
-                                    )
+                                    e_ErrorType::RUNTIME_ERROR, 
+                                    "Division by zero"
                                 );
                             }
                             else
@@ -1822,13 +1726,10 @@ Expected<std::string, t_ErrorInfo> Interpreter::Evaluate(t_Expr *expr)
                         }
                         catch (...)
                         {
-                            final_value_result = Expected<std::string, t_ErrorInfo>
+                            final_value_result = t_ErrorInfo
                             (
-                                t_ErrorInfo
-                                (
-                                    e_ErrorType::RUNTIME_ERROR, 
-                                    "Cannot perform arithmetic operation"
-                                )
+                                e_ErrorType::RUNTIME_ERROR, 
+                                "Cannot perform arithmetic operation"
                             );
                         }
                     }
@@ -1897,18 +1798,15 @@ Expected<std::string, t_ErrorInfo> Interpreter::Evaluate(t_Expr *expr)
                             break;
                         }
                         
-                        return Expected<std::string, t_ErrorInfo>
+                        return t_ErrorInfo
                         (
-                            t_ErrorInfo
-                            (
-                                e_ErrorType::TYPE_ERROR, 
-                                "Type mismatch: variable '" + 
-                                var_name                    + 
-                                "' is "                     + 
-                                type_name                   + 
-                                ", cannot assign "          + 
-                                new_type_name
-                            )
+                            e_ErrorType::TYPE_ERROR, 
+                            "Type mismatch: variable '" + 
+                            var_name                    + 
+                            "' is "                     + 
+                            type_name                   + 
+                            ", cannot assign "          + 
+                            new_type_name
                         );
                     }
                 }
@@ -1927,13 +1825,10 @@ Expected<std::string, t_ErrorInfo> Interpreter::Evaluate(t_Expr *expr)
             }
             else
             {
-                return Expected<std::string, t_ErrorInfo>
+                return t_ErrorInfo
                 (
-                    t_ErrorInfo
-                    (
-                        e_ErrorType::RUNTIME_ERROR, 
-                        "Left side of assignment must be a variable"
-                    )
+                    e_ErrorType::RUNTIME_ERROR, 
+                    "Left side of assignment must be a variable"
                 );
             }
         }
@@ -2015,13 +1910,10 @@ Expected<std::string, t_ErrorInfo> Interpreter::Evaluate(t_Expr *expr)
                 }
                 catch (...)
                 {
-                    return Expected<std::string, t_ErrorInfo>
+                    return t_ErrorInfo
                     (
-                        t_ErrorInfo
-                        (
-                            e_ErrorType::RUNTIME_ERROR, 
-                            "String concatenation with '+' is not allowed. Use comma-separated values in display statements instead."
-                        )
+                        e_ErrorType::RUNTIME_ERROR, 
+                        "String concatenation with '+' is not allowed. Use comma-separated values in display statements instead."
                     );
                 }
             }
@@ -2040,13 +1932,10 @@ Expected<std::string, t_ErrorInfo> Interpreter::Evaluate(t_Expr *expr)
                 }
                 catch (...)
                 {
-                    return Expected<std::string, t_ErrorInfo>
+                    return t_ErrorInfo
                     (
-                        t_ErrorInfo
-                        (
-                            e_ErrorType::RUNTIME_ERROR, 
-                            "Cannot perform arithmetic operation"
-                        )
+                        e_ErrorType::RUNTIME_ERROR, 
+                        "Cannot perform arithmetic operation"
                     );
                 }
             }
@@ -2065,13 +1954,10 @@ Expected<std::string, t_ErrorInfo> Interpreter::Evaluate(t_Expr *expr)
                 }
                 catch (...)
                 {
-                    return Expected<std::string, t_ErrorInfo>
+                    return t_ErrorInfo
                     (
-                        t_ErrorInfo
-                        (
-                            e_ErrorType::RUNTIME_ERROR, 
-                            "Cannot perform arithmetic operation"
-                        )
+                        e_ErrorType::RUNTIME_ERROR, 
+                        "Cannot perform arithmetic operation"
                     );
                 }
             }
@@ -2086,13 +1972,10 @@ Expected<std::string, t_ErrorInfo> Interpreter::Evaluate(t_Expr *expr)
                     
                     if (right_val == 0)
                     {
-                        return Expected<std::string, t_ErrorInfo>
+                        return t_ErrorInfo
                         (
-                            t_ErrorInfo
-                            (
-                                e_ErrorType::RUNTIME_ERROR, 
-                                "Modulus by zero"
-                            )
+                            e_ErrorType::RUNTIME_ERROR, 
+                            "Modulus by zero"
                         );
                     }
                     
@@ -2103,13 +1986,10 @@ Expected<std::string, t_ErrorInfo> Interpreter::Evaluate(t_Expr *expr)
                 }
                 catch (...)
                 {
-                    return Expected<std::string, t_ErrorInfo>
+                    return t_ErrorInfo
                     (
-                        t_ErrorInfo
-                        (
-                            e_ErrorType::RUNTIME_ERROR, 
-                            "Cannot perform arithmetic operation"
-                        )
+                        e_ErrorType::RUNTIME_ERROR, 
+                        "Cannot perform arithmetic operation"
                     );
                 }
             }
@@ -2124,13 +2004,10 @@ Expected<std::string, t_ErrorInfo> Interpreter::Evaluate(t_Expr *expr)
                     
                     if (right_val == 0)
                     {
-                        return Expected<std::string, t_ErrorInfo>
+                        return t_ErrorInfo
                         (
-                            t_ErrorInfo
-                            (
-                                e_ErrorType::RUNTIME_ERROR, 
-                                "Division by zero"
-                            )
+                            e_ErrorType::RUNTIME_ERROR, 
+                            "Division by zero"
                         );
                     }
                     
@@ -2141,13 +2018,10 @@ Expected<std::string, t_ErrorInfo> Interpreter::Evaluate(t_Expr *expr)
                 }
                 catch (...)
                 {
-                    return Expected<std::string, t_ErrorInfo>
+                    return t_ErrorInfo
                     (
-                        t_ErrorInfo
-                        (
-                            e_ErrorType::RUNTIME_ERROR, 
-                            "Cannot perform arithmetic operation"
-                        )
+                        e_ErrorType::RUNTIME_ERROR, 
+                        "Cannot perform arithmetic operation"
                     );
                 }
             }
@@ -2173,13 +2047,10 @@ Expected<std::string, t_ErrorInfo> Interpreter::Evaluate(t_Expr *expr)
         
         default:
             {
-                return Expected<std::string, t_ErrorInfo>
+                return t_ErrorInfo
                 (
-                    t_ErrorInfo
-                    (
-                        e_ErrorType::RUNTIME_ERROR, 
-                        "Unsupported binary operator"
-                    )
+                    e_ErrorType::RUNTIME_ERROR, 
+                    "Unsupported binary operator"
                 );
             }
         }
@@ -2196,15 +2067,12 @@ Expected<std::string, t_ErrorInfo> Interpreter::Evaluate(t_Expr *expr)
             return Expected<std::string, t_ErrorInfo>(it->second.value);
         }
         // Variables must be declared with 'auto' keyword before use
-        return Expected<std::string, t_ErrorInfo>
+        return t_ErrorInfo
         (
-            t_ErrorInfo
-            (
-                e_ErrorType::RUNTIME_ERROR, 
-                "Variable '"   + 
-                variable->name + 
-                "' must be declared with 'auto' keyword before use"
-            )
+            e_ErrorType::RUNTIME_ERROR, 
+            "Variable '"   + 
+            variable->name + 
+            "' must be declared with 'auto' keyword before use"   
         );
     }
 
@@ -2299,13 +2167,10 @@ Expected<std::string, t_ErrorInfo> Interpreter::EvaluateFormatExpression
             }
             catch (...)
             {
-                return Expected<std::string, t_ErrorInfo>
+                return t_ErrorInfo
                 (
-                    t_ErrorInfo
-                    (
-                        e_ErrorType::RUNTIME_ERROR, 
-                        "Cannot perform arithmetic operation"
-                    )
+                    e_ErrorType::RUNTIME_ERROR, 
+                    "Cannot perform arithmetic operation"
                 );
             }
 
@@ -2353,13 +2218,10 @@ Expected<std::string, t_ErrorInfo> Interpreter::EvaluateFormatExpression
                 
                 if (right_val == 0)
                 {
-                    return Expected<std::string, t_ErrorInfo>
+                    return t_ErrorInfo
                     (
-                        t_ErrorInfo
-                        (
-                            e_ErrorType::RUNTIME_ERROR, 
-                            "Division by zero"
-                        )
+                        e_ErrorType::RUNTIME_ERROR, 
+                        "Division by zero"
                     );
                 }
                 
@@ -2370,13 +2232,10 @@ Expected<std::string, t_ErrorInfo> Interpreter::EvaluateFormatExpression
             }
             catch (...)
             {
-                return Expected<std::string, t_ErrorInfo>
+                return t_ErrorInfo
                 (
-                    t_ErrorInfo
-                    (
-                        e_ErrorType::RUNTIME_ERROR, 
-                        "Cannot perform arithmetic operation"
-                    )
+                    e_ErrorType::RUNTIME_ERROR, 
+                    "Cannot perform arithmetic operation"
                 );
             }
 
@@ -2428,13 +2287,10 @@ Expected<std::string, t_ErrorInfo> Interpreter::EvaluateFormatExpression
             }
             catch (...)
             {
-                return Expected<std::string, t_ErrorInfo>
+                return t_ErrorInfo
                 (
-                    t_ErrorInfo
-                    (
-                        e_ErrorType::RUNTIME_ERROR, 
-                        "String concatenation with '+' is not allowed. Use comma-separated values in display statements instead."
-                    )
+                    e_ErrorType::RUNTIME_ERROR, 
+                    "String concatenation with '+' is not allowed. Use comma-separated values in display statements instead."
                 );
             }
 
@@ -2486,13 +2342,10 @@ Expected<std::string, t_ErrorInfo> Interpreter::EvaluateFormatExpression
             }
             catch (...)
             {
-                return Expected<std::string, t_ErrorInfo>
+                return t_ErrorInfo
                 (
-                    t_ErrorInfo
-                    (
-                        e_ErrorType::RUNTIME_ERROR, 
-                        "Cannot perform arithmetic operation"
-                    )
+                    e_ErrorType::RUNTIME_ERROR, 
+                    "Cannot perform arithmetic operation"
                 );
             }
         }
@@ -2881,15 +2734,12 @@ Expected<int, t_ErrorInfo> Interpreter::ExecuteAccumulationLoop
     auto acc_it = m_Environment.find(acc_var_name);
     if (acc_it == m_Environment.end())
     {
-        return Expected<int, t_ErrorInfo>
+        return t_ErrorInfo
         (
-            t_ErrorInfo
-            (
-                e_ErrorType::RUNTIME_ERROR, 
-                "Variable '" + 
-                acc_var_name + 
-                "' must be declared with 'auto' keyword before use"
-            )
+            e_ErrorType::RUNTIME_ERROR, 
+            "Variable '" + 
+            acc_var_name + 
+            "' must be declared with 'auto' keyword before use"
         );
     }
     
@@ -2907,13 +2757,10 @@ Expected<int, t_ErrorInfo> Interpreter::ExecuteAccumulationLoop
         }
         catch (...)
         {
-            return Expected<int, t_ErrorInfo>
+            return t_ErrorInfo
             (
-                t_ErrorInfo
-                (
-                    e_ErrorType::RUNTIME_ERROR, 
-                    "Variable '" + acc_var_name + "' must be numeric for accumulation"
-                )
+                e_ErrorType::RUNTIME_ERROR, 
+                "Variable '" + acc_var_name + "' must be numeric for accumulation"
             );
         }
     }
@@ -3089,15 +2936,12 @@ Expected<int, t_ErrorInfo> Interpreter::ExecuteNestedArithmeticLoop
     auto acc_it = m_Environment.find(acc_var_name);
     if (acc_it == m_Environment.end())
     {
-        return Expected<int, t_ErrorInfo>
+        return t_ErrorInfo
         (
-            t_ErrorInfo
-            (
-                e_ErrorType::RUNTIME_ERROR, 
-                "Variable '" + 
-                acc_var_name + 
-                "' must be declared with 'auto' keyword before use"
-            )
+            e_ErrorType::RUNTIME_ERROR, 
+            "Variable '" + 
+            acc_var_name + 
+            "' must be declared with 'auto' keyword before use"
         );
     }
     
@@ -3115,13 +2959,10 @@ Expected<int, t_ErrorInfo> Interpreter::ExecuteNestedArithmeticLoop
         }
         catch (...)
         {
-            return Expected<int, t_ErrorInfo>
+            return t_ErrorInfo
             (
-                t_ErrorInfo
-                (
-                    e_ErrorType::RUNTIME_ERROR, 
-                    "Variable '" + acc_var_name + "' must be numeric for accumulation"
-                )
+                e_ErrorType::RUNTIME_ERROR, 
+                "Variable '" + acc_var_name + "' must be numeric for accumulation"
             );
         }
     }
@@ -3181,13 +3022,10 @@ Expected<int, t_ErrorInfo> Interpreter::ExecuteNestedArithmeticLoop
             case e_TokenType::SLASH:
                 if (right_val == 0.0)
                 {
-                    return Expected<int, t_ErrorInfo>
+                    return t_ErrorInfo
                     (
-                        t_ErrorInfo
-                        (
-                            e_ErrorType::RUNTIME_ERROR, 
-                            "Division by zero"
-                        )
+                        e_ErrorType::RUNTIME_ERROR, 
+                        "Division by zero"
                     );
                 }
                 arith_result = left_val / right_val;
@@ -3195,25 +3033,19 @@ Expected<int, t_ErrorInfo> Interpreter::ExecuteNestedArithmeticLoop
             case e_TokenType::MODULUS:
                 if (right_val == 0.0)
                 {
-                    return Expected<int, t_ErrorInfo>
+                    return t_ErrorInfo
                     (
-                        t_ErrorInfo
-                        (
-                            e_ErrorType::RUNTIME_ERROR, 
-                            "Modulus by zero"
-                        )
+                        e_ErrorType::RUNTIME_ERROR, 
+                        "Modulus by zero"
                     );
                 }
                 arith_result = std::fmod(left_val, right_val);
                 break;
             default:
-                return Expected<int, t_ErrorInfo>
+                return t_ErrorInfo
                 (
-                    t_ErrorInfo
-                    (
-                        e_ErrorType::RUNTIME_ERROR, 
-                        "Unsupported arithmetic operation in optimized loop"
-                    )
+                    e_ErrorType::RUNTIME_ERROR, 
+                    "Unsupported arithmetic operation in optimized loop"
                 );
             }
             
@@ -3232,13 +3064,10 @@ Expected<int, t_ErrorInfo> Interpreter::ExecuteNestedArithmeticLoop
             case e_TokenType::SLASH_EQUAL:
                 if (arith_result == 0.0)
                 {
-                    return Expected<int, t_ErrorInfo>
+                    return t_ErrorInfo
                     (
-                        t_ErrorInfo
-                        (
-                            e_ErrorType::RUNTIME_ERROR, 
-                            "Division by zero"
-                        )
+                        e_ErrorType::RUNTIME_ERROR, 
+                        "Division by zero"
                     );
                 }
                 accumulator /= arith_result;
@@ -3246,25 +3075,19 @@ Expected<int, t_ErrorInfo> Interpreter::ExecuteNestedArithmeticLoop
             case e_TokenType::MODULUS_EQUAL:
                 if (arith_result == 0.0)
                 {
-                    return Expected<int, t_ErrorInfo>
+                    return t_ErrorInfo
                     (
-                        t_ErrorInfo
-                        (
-                            e_ErrorType::RUNTIME_ERROR, 
-                            "Modulus by zero"
-                        )
+                        e_ErrorType::RUNTIME_ERROR, 
+                        "Modulus by zero"
                     );
                 }
                 accumulator = std::fmod(accumulator, arith_result);
                 break;
             default:
-                return Expected<int, t_ErrorInfo>
+                return t_ErrorInfo
                 (
-                    t_ErrorInfo
-                    (
-                        e_ErrorType::RUNTIME_ERROR, 
-                        "Unsupported assignment operation in optimized loop"
-                    )
+                    e_ErrorType::RUNTIME_ERROR, 
+                    "Unsupported assignment operation in optimized loop"
                 );
             }
         }
