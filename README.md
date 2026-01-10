@@ -1,14 +1,13 @@
-# Rubber Duck Scripting Language
-
-![Rubber Duck Script Logo](Assets/Rubberduck.png)
-
-A statically-typed scripting language with C-like syntax, featuring automatic memory management and intuitive programming constructs.
+<div align="center">
+    <h1>Rubber Duck Script</h1>
+  <img src="Assets/Rubberduck.png" alt="Rubber Duck Script Logo" width="200" height="200">
+</div>
 
 ## Overview
 
 **Name:** Rubber Duck Script  
 **Extension:** `.rd`  
-**Philosophy:** Simple, expressive, and efficient
+**Philosophy:** Simple and expressive
 
 ## Key Features
 
@@ -287,7 +286,9 @@ benchmark
 
 **Example Benchmark Results:**
 
-![Benchmark Output](Assets/print.jpeg)
+<div align="center">
+  <img src="Assets/print.jpeg" alt="Benchmark Output" width="600">
+</div>
 
 **Performance Test: Printing 1,000,000 numbers**
 
@@ -435,4 +436,6 @@ Contributions are welcome! Please follow the coding guidelines and ensure all te
 
 ---
 
-**Happy scripting with Rubber Duck!** 🦆
+<div align="center">
+  <h3>🦆 Happy scripting with Rubber Duck! 🦆</h3>
+</div>
