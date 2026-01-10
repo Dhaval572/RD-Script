@@ -66,6 +66,7 @@ enum class e_TokenType
     BENCHMARK,  
     GETIN,      
     TYPEOF, // TODO
+    SIZEOF,
     EOF_TOKEN
 };
 
