@@ -1,5 +1,7 @@
 # Rubber Duck Scripting Language
 
+![Rubber Duck Script Logo](Assets/Rubberduck.png)
+
 A statically-typed scripting language with C-like syntax, featuring automatic memory management and intuitive programming constructs.
 
 ## Overview
