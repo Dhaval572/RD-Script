@@ -12,8 +12,8 @@ add_executable(
     src/main.cpp
 )
 
-# Require modern C++ (can be raised to cxx_std_23 when desired)
-target_compile_features(rubberduck PRIVATE cxx_std_20)
+# Require modern C++23
+target_compile_features(rubberduck PRIVATE cxx_std_23)
 
 # Include directories (scoped to the target)
 target_include_directories(

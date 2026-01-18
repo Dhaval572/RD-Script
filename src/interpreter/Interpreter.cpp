@@ -56,8 +56,8 @@ void Interpreter::WriteOutput(const std::string& text)
     if (m_BufferOutput)
     {
         m_OutputBuffer.append(text);
-        static const std::size_t flush_threshold = 4 * 1024 * 1024;
-        if (m_OutputBuffer.size() >= flush_threshold)
+        static const std::size_t FLUSH_THRESHOLD = 4 * 1024 * 1024;
+        if (m_OutputBuffer.size() >= FLUSH_THRESHOLD)
         {
             std::cout.write
             (

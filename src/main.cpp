@@ -1,6 +1,6 @@
 #include <fstream>
-#include <iostream>
 #include <memory>
+#include <print>
 #include <rubberduck/Lexer.h>
 #include <rubberduck/Parser.h>
 #include <rubberduck/Interpreter.h>
@@ -11,14 +11,14 @@ static std::string ReadFile(const std::string &filename)
 {
     if (filename.find(".rd") == std::string::npos)
     {
-        std::cerr << "Error: File name must contain .rd extension.\n";
+        std::println("Error: File name must contain .rd extension.");
         return "";
     }
 
     std::ifstream file(filename);
     if (!file.is_open())
     {
-        std::cerr << "Error: Could not open file '" << filename << "'\n";
+        std::println("Error: Could not open file {}'", filename);
         return "";
     }
 
@@ -48,14 +48,14 @@ int main(int argc, char* argv[])
 {
     if (argc < 2) 
     {
-        std::cerr << "Usage: rubberduck <script.rd>\n";
+        std::println("Usage: rubberduck <script.rd>");
         return 1;
     }
 
     std::string source = ReadFile(argv[1]);
     if (source.empty())
     {
-        std::cerr << "Error: file is empty or could not be read.\n";
+        std::println("Error: file is empty or could not be read.");
         return 1; 
     }
 
