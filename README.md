@@ -20,7 +20,7 @@
 
 ## Quick Start
 
-### Building and Running
+### Building and Running ( windows )
 
 **To build the project:**
 ```bash
@@ -30,6 +30,17 @@
 **To run a script:**
 ```bash
 ./rd.bat script.rd
+```
+### Building and Running ( Linux )
+
+**To build the project:**
+```bash
+./rd.sh
+```
+
+**To run a script:**
+```bash
+./rd.sh script.rd
 ```
 
 > **Note:** The `rd.bat` script automatically handles build updates. You don't need to manually delete the `build` folder before rebuilding - the batch file will detect changes and recompile only what's necessary.
