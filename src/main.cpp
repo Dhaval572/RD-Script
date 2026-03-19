@@ -8,7 +8,7 @@
 
 static std::string ReadFile(const std::string &filename)
 {
-    if (!filename.contains(".rd"))
+    if (!filename.ends_with(".rd"))
     {
         std::println("Error: File name must contain .rd extension.");
         return "";
