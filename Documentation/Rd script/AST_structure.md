@@ -1,3 +1,6 @@
+# AST (Abstract Syntax Tree) Class Diagram
+
+```mermaid
 classDiagram
     class t_Expr {
         <<abstract>>
@@ -140,3 +143,4 @@ classDiagram
     t_ForStmt --> t_Stmt : contains
     t_BlockStmt --> t_Stmt : contains
     t_BenchmarkStmt --> t_Stmt : contains
+```
