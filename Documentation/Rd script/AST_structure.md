@@ -1,7 +1,4 @@
-# AST (Abstract Syntax Tree) Class Diagram
-
-```mermaid
-classDiagram`
+classDiagram
     class t_Expr {
         <<abstract>>
         +~t_Expr() virtual
@@ -143,4 +140,3 @@ classDiagram`
     t_ForStmt --> t_Stmt : contains
     t_BlockStmt --> t_Stmt : contains
     t_BenchmarkStmt --> t_Stmt : contains
-```
