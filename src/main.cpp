@@ -11,14 +11,14 @@ static std::string ReadFile(const std::string &filename)
 {
     if (filename.find(".rd") == std::string::npos)
     {
-        std::println("Error: File name must contain .rd extension.");
+        std::println(stderr, "Error: File name must contain .rd extension.");
         return "";
     }
 
     std::ifstream file(filename);
     if (!file.is_open())
     {
-        std::println("Error: Could not open file {}'", filename);
+        std::println(stderr, "Error: Could not open file {}'", filename);
         return "";
     }
 

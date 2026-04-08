@@ -2,7 +2,7 @@
 #include <rubberduck/AST.h>
 #include <rubberduck/ErrorHandling.h>
 #include <rubberduck/ASTContext.h> 
-#include <iostream>
+#include <print>
 #include <string>
 #include <cctype>
 #include <cmath>
@@ -155,12 +155,7 @@ Expected<t_Token, t_ErrorInfo> Parser::Consume
 
 t_ErrorInfo Parser::Error(t_Token token, const std::string &message)
 {
-    std::cerr << "Error: " 
-              << message 
-              << " at line " 
-              << token.line 
-              << std::endl;
-
+    std::println(stderr, "Error: {} at line {}", message, token.line);
     return t_ErrorInfo(e_ErrorType::PARSING_ERROR, message, token.line, 0);
 }
 
