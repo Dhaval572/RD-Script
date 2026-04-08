@@ -1,10 +1,6 @@
 @echo off
 setlocal enabledelayedexpansion
 
-REM ===============================
-REM RubberDuck RD Script Runner
-REM ===============================
-
 set BUILD_DIR=build
 set CONFIG=Debug
 set EXE_NAME=rubberduck.exe

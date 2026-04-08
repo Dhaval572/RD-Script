@@ -4,9 +4,7 @@
 #include <rubberduck/ASTContext.h> 
 #include <print>
 #include <string>
-#include <cctype>
 #include <cmath>
-#include <algorithm>
 
 namespace
 {

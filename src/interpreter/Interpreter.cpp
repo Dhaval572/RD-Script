@@ -1,12 +1,9 @@
 #include <rubberduck/Interpreter.h>
 #include <iostream>
 #include <sstream>
-#include <regex>
-#include <stack>
 #include <cctype>
 #include <iomanip>
 #include <unordered_set>
-#include <limits>
 #include <cmath>
 #include <rubberduck/Lexer.h>
 #include <rubberduck/Parser.h>

@@ -1,5 +1,4 @@
 #include <fstream>
-#include <memory>
 #include <print>
 #include <rubberduck/Lexer.h>
 #include <rubberduck/Parser.h>
@@ -9,7 +8,7 @@
 
 static std::string ReadFile(const std::string &filename)
 {
-    if (filename.find(".rd") == std::string::npos)
+    if (!filename.ends_with(".rd"))
     {
         std::println(stderr, "Error: File name must contain .rd extension.");
         return "";
